@@ -1,0 +1,72 @@
+<ion-header [translucent]="true">
+  <ion-toolbar class="header-profesor">
+    <ion-title class="titulo-profesor">
+      Bienvenido, <span class="nombre-profesor">{{ profesor?.NombreProfesor }}</span>
+    </ion-title>
+    <ion-buttons slot="end">
+      <ion-button fill="clear" (click)="abrirAlertaSalir()">
+        <ion-icon name="exit-outline"></ion-icon>
+        <span class="texto-salir">SALIR</span>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="contenido-profesor">
+  <div *ngIf="profesor; else noProfesor">
+    <p class="subtitulo">Selecciona alguno de las instituciones educativas:</p>
+
+    <ion-grid class="grid-instituciones">
+      <ion-row>
+        <ion-col size="12" size-md="6" *ngFor="let inst of instituciones">
+          <ion-card class="card-institucion" (click)="irAEstudiantes(inst)">
+            <ion-card-header>
+              <ion-icon class="icono-institucion" name="business-outline"></ion-icon>
+              <ion-card-title>{{ inst.NombreInstitucion }}</ion-card-title>
+            </ion-card-header>
+          </ion-card>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+
+    <!-- Sólo si hay instituciones, mostramos el icono+botón centrados -->
+<ion-grid *ngIf="instituciones.length > 0">
+  <!-- Esta fila centra todo verticalmente -->
+  <ion-row class="ion-align-items-center">
+    <ion-col
+      size="12" size-md="6" offset-md="3"
+      class="col-graficos ion-text-center ion-align-self-center">
+      <ion-button
+        fill="solid"
+        expand="block"
+        class="btn-graficos"
+        routerLink="/graficos"
+        style="--btn-width: 800px; --btn-height: 80px;">
+        <ion-icon name="stats-chart-outline" class="icono-btn-graficos"></ion-icon>
+       <span class="texto-btn-graficos">GRAFICOS</span>
+      </ion-button>
+    </ion-col>
+  </ion-row>
+</ion-grid>
+
+  </div>
+
+  <ng-template #noProfesor>
+    <div class="mensaje-sin-profesor">
+      <ion-icon name="alert-circle-outline"></ion-icon>
+      <p>No se encontró información del profesor. Regresa e inicia sesión nuevamente.</p>
+    </div>
+  </ng-template>
+</ion-content>
+
+<!-- ALERTA PERSONALIZADA “CONFIRMAR SALIR” -->
+<div class="alert-overlay" *ngIf="mostrarAlertaSalir">
+  <div class="alert-box">
+    <h2 class="alert-title">Confirmación</h2>
+    <p class="alert-message">¿Seguro que quieres salir?</p>
+    <div class="alert-buttons">
+      <button class="btn-accept" (click)="confirmarSalir()">SÍ</button>
+      <button class="btn-cancel" (click)="cerrarAlertaSalir()">NO</button>
+    </div>
+  </div>
+</div>

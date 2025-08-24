@@ -1,0 +1,817 @@
+/* ------------------------------------------------------------ */
+/* Variables globales                                           */
+/* ------------------------------------------------------------ */
+$sidebar-bg: #2c2c2c;
+$sidebar-active-bg: #FFD700;
+$sidebar-color: #fff;
+$sidebar-active-color: #000;
+$custom-orange: #ff8800;
+$form-padding: 16px;
+$form-margin-left: 80px;
+$header-default-bg: #ffffff;
+$header-default-color: #000000;
+
+/* ------------------------------------------------------------ */
+/* 0) GLOBAL: Forzar texto negro y fondo blanco en todo         */
+/* ------------------------------------------------------------ */
+ion-content,
+ion-list,
+ion-item,
+ion-grid,
+ion-row,
+ion-col,
+ion-label,
+ion-input,
+ion-select,
+ion-select-option,
+ion-checkbox,
+ion-button,
+ion-title,
+ion-toolbar,
+ion-icon {
+  color: #000 !important;
+  background-color: #ffffff !important;
+}
+
+/* ------------------------------------------------------------ */
+/* 1) Fondo blanco para todo el contenido del ion-content       */
+/* ------------------------------------------------------------ */
+.content-white {
+  --background: #ffffff !important;
+  background-color: #ffffff !important;
+}
+
+/* ------------------------------------------------------------ */
+/* 2) MINI‑SIDEBAR (E, D, F, S) – COLORES ESTUDIANTES            */
+/* ------------------------------------------------------------ */
+.mini-sidebar.toolbar-left {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 10px;
+  width: 65px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 75px;
+  z-index: 1000;
+  background: transparent;
+  background-color: $header-default-bg;
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1) !important;
+
+  /* Botones redondos: quitamos cualquier regla genérica previa */
+  ion-button[fill="solid"][shape="round"] {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+    padding: 0;
+    border-radius: 50%;
+    transition: 0.3s ease;
+    /* RESET: ninguna variable de color aquí */
+  }
+
+  /* E y F (1º y 3º): gris oscuro + texto blanco */
+  ion-button[fill="solid"][shape="round"]:nth-child(1),
+  ion-button[fill="solid"][shape="round"]:nth-child(3) {
+    --background: $sidebar-bg !important;    // #2c2c2c
+    --color:      $sidebar-color !important; // #fff
+  }
+
+  /* D (2º, con class="active"): amarillo + texto negro */
+  ion-button[fill="solid"][shape="round"].active {
+    --background: $sidebar-active-bg !important;    // #FFD700
+    --color:      $sidebar-active-color !important; // #000
+  }
+
+  /* S (4º, color="custom-orange"): naranja + texto negro */
+  ion-button[fill="solid"][shape="round"][color="custom-orange"],
+  ion-button[fill="solid"][shape="round"]:nth-child(4) {
+    --background:       $custom-orange !important; // #ff8800
+    --color:            #000 !important;
+    --background-hover: $custom-orange !important;
+    --background-focused:   $custom-orange !important;
+    --background-activated: $custom-orange !important;
+    --background-pressed:   $custom-orange !important;
+  }
+}
+
+/* ------------------------------------------------------------ */
+/* 3) Toolbar principal y colapsable con fondo blanco           */
+/* ------------------------------------------------------------ */
+ion-toolbar.toolbar-top {
+  --background: $header-default-bg !important;
+  --color:      $header-default-color !important;
+}
+
+/* ------------------------------------------------------------ */
+/* 4) Formulario de docente                                     */
+/* ------------------------------------------------------------ */
+.formulario-estudiante {
+  padding: $form-padding;
+  margin-left: $form-margin-left;
+
+  ion-item {
+    background: #ffffff !important;
+    color:      #000 !important;
+    --border-color: transparent !important;
+  }
+
+  ion-grid {
+    margin-top: 1rem;
+
+    ion-row {
+      ion-col {
+        color:            #000 !important;
+        background-color: #ffffff !important;
+      }
+    }
+  }
+
+  ion-row {
+    margin-bottom: 0;
+  }
+
+  ion-col {
+    padding:            0.5rem 0.75rem;
+    background-color:   #ffffff !important;
+    color:              #000 !important;
+  }
+
+  .clickable {
+    cursor: pointer;
+  }
+}
+
+/* ------------------------------------------------------------ */
+/* 5) Grid personalizado para campos del formulario             */
+/* ------------------------------------------------------------ */
+.grid-3cols {
+  margin-top: 1rem;
+  /* ya no ponemos margin-left aquí */
+
+  ion-row {
+    margin-bottom: 1rem;
+    background-color: #ffffff !important;
+
+    ion-col {
+      color:            #000 !important;
+      background-color: #ffffff !important;
+    }
+  }
+}
+
+/* ------------------------------------------------------------ */
+/* 6) Inputs “casillas”: fondo blanco, texto y sin bordes       */
+/* ------------------------------------------------------------ */
+.black-item {
+  --background:   #ffffff !important;
+  --border-color: transparent !important;
+  background-color: #ffffff !important;
+  color:            #000 !important;
+
+  ion-input,
+  ion-select,
+  ion-checkbox {
+    background-color: #ffffff !important;
+    box-shadow: none !important;
+  }
+}
+
+.black-item ion-label {
+  color:         #000 !important;
+  margin-bottom: 0.25rem;
+  display:       block;
+}
+
+.black-item ion-input,
+.black-item ion-select {
+  position: relative;
+  color:      #000 !important;
+  --color:            #000 !important;
+  --placeholder-color: #000 !important;
+  padding-top:    0.75rem;
+  padding-bottom: 0.25rem;
+  border: none;
+}
+
+ion-input input,
+ion-input textarea,
+ion-select select {
+  color: #000 !important;
+}
+
+ion-input input::placeholder,
+ion-select select::placeholder {
+  color: #000 !important;
+}
+
+.black-item ion-input::after,
+black-item ion-select::after {
+  content: "";
+  position: absolute;
+  bottom:  0.5rem;
+  left:    0;
+  width:   100%;
+  height:  2px !important;
+  background-color: #e2e2e2;
+  pointer-events: none;
+}
+
+.black-item ion-input:focus,
+.black-item ion-select:focus {
+  padding-top:    0.75rem;
+  padding-bottom: 0.25rem;
+}
+
+/* ------------------------------------------------------------ */
+/* 7) Contenedor relativo para el input con error               */
+/* ------------------------------------------------------------ */
+.input-with-error {
+  position: relative;
+}
+
+/* ------------------------------------------------------------ */
+/* 8) Mensaje de error absolutamente posicionado                */
+/* ------------------------------------------------------------ */
+.error-text-above {
+  position: absolute;
+  top:      calc(100% + -6px);
+  left:     50%;
+  transform: translateX(-50%);
+  font-size: 0.6rem;
+  color:      var(--ion-color-danger);
+  line-height: 1.2;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* ------------------------------------------------------------ */
+/* 9) Quitar ripple, sombras y highlights de Ionic              */
+/* ------------------------------------------------------------ */
+ion-item,
+ion-checkbox,
+ion-button,
+ion-label,
+ion-input,
+ion-textarea,
+ion-select {
+  --ripple-color:             transparent !important;
+  --highlight-color-focused:  transparent !important;
+  --highlight-color:          transparent !important;
+  --box-shadow: none !important;
+  box-shadow:   none !important;
+  filter:      none !important;
+}
+
+ion-checkbox::part(container) {
+  box-shadow: none !important;
+
+}
+
+ion-item::part(native),
+ion-item::part(container) {
+  box-shadow: none !important;
+  background-color: #ffffff !important;
+  --background: #ffffff !important;
+  --ripple-color:    transparent !important;
+  --highlight-color: transparent !important;
+}
+
+ion-button::part(native) {
+  box-shadow: none !important;
+}
+
+/* ------------------------------------------------------------ */
+/* 10) Botones de acción y búsqueda (alineados)                 */
+/* ------------------------------------------------------------ */
+.search-buttons-row {
+  margin-top: 1rem !important;
+  gap:        0.5rem;
+}
+
+.search-buttons-row ion-col {
+  padding: 0 !important;
+}
+
+/* ------------------------------------------------------------ */
+/* 11) Tabla de Docentes CON BORDES                             */
+/* ------------------------------------------------------------ */
+.tabla-docente ion-row ion-col {
+  border-left:  1px solid #000;
+  border-top:   1px solid #000;
+  padding:      0.5rem 0.75rem;
+  background-color: #ffffff !important;
+  color:            #000 !important;
+}
+
+.tabla-docente ion-row:first-child {
+  border-top: none;
+  background-color: #f5f5f5 !important;
+}
+
+.tabla-docente ion-row:last-child {
+  border-bottom: 1px solid #000;
+}
+
+.tabla-docente ion-row ion-col:last-child {
+  border-right: 1px solid #000;
+}
+
+/* ------------------------------------------------------------ */
+/* 12) Ajustes responsivos                                      */
+/* ------------------------------------------------------------ */
+@media (max-width: 768px) {
+  ion-col[size-sm="12"] {
+    margin: 0;
+    padding: 0;
+  }
+
+  .formulario-estudiante {
+    margin-left: 0 !important;
+  }
+}
+
+/* Separador debajo de Botones Agregar/Cancelar */
+.separator-line {
+  width:  100%;
+  height: 1px;
+  background-color: #ccc;
+  margin: 0.5rem 0;
+}
+
+.formulario-estudiante {
+  position: relative;
+
+  .buttons-row {
+    margin-bottom: 0;
+  }
+}
+/* ------------------------------------------------------------ */
+/* MINI‑SIDEBAR – Colores exactos de Estudiantes                */
+/* ------------------------------------------------------------ */
+.mini-sidebar.toolbar-left {
+  /* mantiene tu layout original */
+  position: fixed; top: 0; bottom: 0; left: 10px;
+  width: 65px; display: flex; flex-direction: column; gap: 12px;
+  padding-top: 75px; z-index: 1000;
+  background: $header-default-bg;
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1) !important;
+
+/* 1) Botón E (1º) – gris claro igual que en Estudiantes */
+ion-button:nth-of-type(1)::part(native) {
+  background-color: #c0c0c0 !important;
+  color:            #000000 !important;
+}
+
+  /* 2) Botón D (2º, .active) – amarillo / texto negro */
+  ion-button.active::part(native) {
+    background-color: $sidebar-active-bg !important;    /* #FFD700 */
+    color:            $sidebar-active-color !important; /* #000 */
+  }
+
+/* 3) Botón F (3º) – gris claro igual que en Estudiantes */
+ion-button:nth-of-type(3)::part(native) {
+  background-color: #c0c0c0 !important;
+  color:            #000000 !important;
+}
+  /* 4) Botón S (4º) – naranja / texto negro */
+  ion-button:nth-of-type(4)::part(native) {
+    background-color: $custom-orange !important; /* #ff8800 */
+    color:            #000 !important;
+  }
+}
+
+:host ::ng-deep ion-action-sheet.custom-export-sheet {
+  --background: #ffffff !important;
+  --backdrop-opacity: 0.4 !important;
+  --border-radius: 8px !important;
+}
+
+:host ::ng-deep ion-action-sheet.custom-export-sheet .action-sheet-group {
+  background-color: #ffffff !important;
+}
+
+:host ::ng-deep ion-action-sheet.custom-export-sheet .action-sheet-button {
+  --color: #000000 !important;
+  font-weight: 600;
+}
+
+:host ::ng-deep ion-action-sheet.custom-export-sheet .action-sheet-button:active {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+:host ::ng-deep ion-action-sheet.custom-export-sheet .action-sheet-button[role="cancel"] {
+  margin-top: 0.5rem;
+  border-top: 1px solid #e2e2e2;
+}
+
+
+/* 1) Sobre el wrapper interno de Ionic Button */
+:host ::ng-deep ion-button .button-inner {
+  font-weight: bold !important;
+}
+
+/* 2) Directamente sobre el “native” part (shadow DOM) */
+:host ::ng-deep ion-button::part(native) {
+  font-weight: bold !important;
+}
+
+/* 1ª columna: ID */
+.tabla-docente ion-row > ion-col:nth-child(1) {
+  flex: 0 0 60px !important;
+  max-width: 60px !important;
+}
+
+/* 2ª columna: Nombre docente */
+.tabla-docente ion-row > ion-col:nth-child(2) {
+  flex: 0 0 420px !important;
+  min-width: 420px !important;
+}
+
+/* 3ª columna: Nombre estudiante */
+.tabla-docente ion-row > ion-col:nth-child(3) {
+  flex: 0 0 420px !important;
+  min-width: 420px !important;
+}
+
+/* 4ª columna: DNI */
+.tabla-docente ion-row > ion-col:nth-child(4) {
+  flex: 0 0 115px !important;
+  max-width: 115px !important;
+}
+
+/* 5ª columna: Email */
+.tabla-docente ion-row > ion-col:nth-child(5) {
+  flex: 0 0 285px !important;
+  max-width: 285px !important;
+}
+
+/* 6ª columna: Telefono */
+.tabla-docente ion-row > ion-col:nth-child(6) {
+  flex: 0 0 125px !important;
+  max-width: 125px !important;
+}
+
+/* 7ª columna: GyS */
+.tabla-docente ion-row > ion-col:nth-child(7) {
+  flex: 0 0 155px !important;
+  max-width: 155px !important;
+}
+
+
+.tabla-container-docente {
+  display: inline-block !important;      /* que mida solo lo que ocupa la tabla */
+  background-color: #ffffff !important;  /* fondo blanco puro */
+  overflow-x: hidden !important;         /* oculta cualquier exceso horizontal */
+}
+
+.tabla-docente {
+  width: auto !important;                /* ancho basado en columnas */
+  justify-content: flex-start !important;/* alineación al inicio */
+}
+
+
+/* ------------------------------------------------------------ */
+/* Modal de SELECCIONAR ESTUDIANTES (misma decoración que Colegios) */
+/* ------------------------------------------------------------ */
+.modal-instituciones {
+  --width: 90%;
+  --max-width: 700px;
+  --border-radius: 8px;
+  --background: #ffffff;
+}
+
+.modal-toolbar {
+  --background: #cccccc !important; /* Gris claro */
+}
+
+.modal-title {
+  background-color: #f2f2f2 !important;
+  color: #000000;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.modal-close-icon {
+  color: #000000;
+  background-color: #f2f2f2 !important;
+}
+
+.modal-content-padding {
+  padding: 1rem 1rem 2rem;
+}
+
+.modal-searchbar {
+  margin: 0.5rem 0 1rem;
+  --background: #f2f2f2;
+  --border-radius: 8px;
+  --color: #000;
+  --placeholder-color: #888;
+}
+
+.cards-grid {
+  --ion-grid-padding: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.cards-grid ion-row {
+  margin: 0;
+  padding: 0;
+}
+
+.cards-grid ion-col {
+  padding: 0.5rem 0.5rem;
+}
+
+.card-institucion {
+  --border-radius: 8px;
+  --box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease-in-out;
+}
+
+.card-institucion:hover {
+  transform: translateY(-2px);
+}
+
+.align-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nombre-institucion {
+  font-size: 1rem;
+  color: #333;
+  white-space: normal;
+  word-break: break-word;
+  max-width: 100%;
+}
+
+.modal-footer-button {
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #ffffff;
+  --background: transparent;
+  --box-shadow: none;
+  --border-radius: 4px;
+  padding: 0 1rem;
+  width: 100%;
+}
+
+.cancel-button {
+  --background: #e74c3c; /* Rojo */
+  background-color: #f2f2f2 !important;
+}
+
+.cancel-button:hover {
+  --background: #c0392b;
+}
+
+.accept-button {
+  --background: #27ae60; /* Verde */
+  background-color: #f2f2f2 !important;
+}
+
+.accept-button:hover {
+  --background: #1e8449;
+}
+/* Hacer siempre clicable la 1ª columna (ID) */
+.tabla-docente ion-row > ion-col:nth-child(1) {
+  cursor: pointer !important;
+  transition: background-color 0.2s ease;
+}
+
+/* Feedback visual al pasar el ratón */
+.tabla-docente ion-row > ion-col:nth-child(1):hover {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+.disabled {
+  pointer-events: none !important;
+  opacity: 0.5;
+}
+.clickable {
+  cursor: pointer !important;
+}
+
+/* ---------------------------------------------------------------- */
+/* Ajustes para el modal “SELECCIONAR ESTUDIANTES”                 */
+/* ---------------------------------------------------------------- */
+.modal-instituciones {
+  /* fondo general del modal (detrás de todo) */
+  --backdrop-opacity: 0.4;
+}
+
+/* 1) Header y barra de título en gris claro */
+.modal-instituciones ion-header,
+.modal-instituciones ion-toolbar.modal-toolbar {
+  --background: #f2f2f2 !important;
+  background-color: #f2f2f2 !important;
+  color: #000 !important;
+}
+
+/* 2) Input de búsqueda con fondo gris claro */
+.modal-instituciones ion-searchbar {
+  --background: #f2f2f2 !important;
+  --border-radius: 8px;
+  --placeholder-color: #888;
+  color: #000 !important;
+}
+
+/* 3) Área de contenido: fondo blanco para las tarjetas */
+.modal-instituciones ion-content {
+  --background: #ffffff !important;
+  background-color: #ffffff !important;
+}
+
+.modal-instituciones .cards-grid ion-card.card-institucion {
+  --background: #ffffff !important;
+  background-color: #ffffff !important;
+  color: #000 !important;
+}
+
+/* 4) Footer (botones Cancelar / Aceptar) en gris claro */
+.modal-instituciones ion-footer,
+.modal-instituciones ion-toolbar.modal-toolbar:last-of-type {
+  --background: #f2f2f2 !important;
+  background-color: #f2f2f2 !important;
+}
+
+/* 5) Botón de cerrar (“X”) con fondo gris claro */
+.modal-instituciones ion-button[fill="clear"] {
+  --background: #f2f2f2 !important;
+  border-radius: 4px;
+}
+
+/* 6) Asegurar que el texto y bordes mantengan contraste */
+.modal-instituciones ion-button,
+.modal-instituciones ion-icon,
+.modal-instituciones ion-label {
+  color: #000 !important;
+}
+
+/* 7) Ajuste de sombreado de la lista para que no salga negro de fondo */
+.modal-instituciones .modal-content-padding,
+.modal-instituciones .cards-grid {
+  background-color: #ffffff !important;
+}
+
+/* 8) Fondo gris para el header del modal “SELECCIONAR ESTUDIANTES” */
+.modal-instituciones ion-header,
+.modal-instituciones ion-header ion-toolbar {
+  --background: #f2f2f2 !important;
+  background-color: #f2f2f2 !important;
+}
+
+/* 9) Fondo gris para el footer (botones Cancelar/Aceptar) */
+.modal-instituciones ion-footer,
+.modal-instituciones ion-footer ion-toolbar {
+  --background: #f2f2f2 !important;
+  background-color: #f2f2f2 !important;
+}
+
+/* ------------------------------------------------------------ */
+/* Forzar gris claro en header y footer dentro del modal        */
+/* ------------------------------------------------------------ */
+:host ::ng-deep .modal-instituciones ion-modal .modal-wrapper ion-header,
+:host ::ng-deep .modal-instituciones ion-modal .modal-wrapper ion-footer {
+  --background: #f2f2f2 !important;
+  background-color: #f2f2f2 !important;
+}
+
+/* Asegurar que el toolbar interno también herede el gris */
+:host ::ng-deep .modal-instituciones ion-modal .modal-wrapper ion-toolbar {
+  --background: #f2f2f2 !important;
+  background-color: #f2f2f2 !important;
+}
+
+/* Overlay y caja de exportar */
+.export-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+}
+
+.export-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #ffffff;
+  width: 90%;
+  max-width: 340px;
+  border-radius: 1rem;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.2);
+  padding: 2rem 1rem; /* Espacio simétrico arriba y abajo */
+}
+
+/* Título */
+.export-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #000;
+  margin: 0;
+  margin-bottom: 1rem; /* REDUCIDO para juntar con los botones */
+}
+
+/* Contenedor de botones */
+.export-buttons {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+/* Estilo común para todos los botones */
+.export-buttons button {
+  flex: 1;
+  padding: 0.6rem 0;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+/* Botón PDF y Excel */
+.btn-export {
+  background-color: #4a90e2;
+  color: #fff;
+}
+.btn-export:hover {
+  background-color: #357ab8;
+}
+
+/* Botón Cancelar */
+.btn-cancel {
+  background-color: #c54e4e;
+  color: #fff;
+}
+.btn-cancel:hover {
+  background-color: #a03030;
+}
+
+
+
+
+
+
+
+
+/* Overlay de error – idéntico a export */
+.error-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+}
+
+.error-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #ffffff;
+  width: 90%;
+  max-width: 340px;
+  border-radius: 1rem;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.2);
+  padding: 2rem 1rem;
+}
+
+.error-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #000;
+  margin: 0;
+  margin-bottom: 1rem;
+}
+
+.error-message {
+  margin: 0 0 1rem;
+  color: #000;
+}
+
+.btn-ok {
+  display: block;   /* para que respete width en bloque */
+  width: 20%;      /* ocupa todo el ancho disponible */
+  padding: 0.7rem 0;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  background-color: #c54e4e;
+  color: #fff;
+  transition: background-color 0.2s ease;
+}
+
+.btn-ok:hover {
+  background-color: #a03030;
+}

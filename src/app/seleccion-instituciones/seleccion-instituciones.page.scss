@@ -1,0 +1,377 @@
+/* ------------------------------------------------------------ */
+/* Fondo general y scroll                                       */
+/* ------------------------------------------------------------ */
+ion-content.contenido-profesor {
+  --background: #f9f9f9;
+  padding-top: 0;
+}
+
+/* ------------------------------------------------------------ */
+/* CABECERA: fondo CELESTE y texto NEGRO                        */
+/* ------------------------------------------------------------ */
+ion-toolbar.header-profesor {
+  --background: #4a90e2 !important;
+  --color: #000000 !important;
+  color: #000000;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+}
+
+/* ------------------------------------------------------------ */
+/* Título del profesor                                          */
+/* ------------------------------------------------------------ */
+.titulo-profesor {
+  color: #000000;
+  font-size: 1.3rem;
+  font-weight: 600;
+  text-align: left;
+}
+
+.nombre-profesor {
+  font-weight: 700;
+}
+
+/* ------------------------------------------------------------ */
+/* Botón SALIR                                                  */
+/* ------------------------------------------------------------ */
+ion-button {
+  --color: #000000;
+  --background: transparent;
+  padding: 0 0.5rem;
+}
+
+ion-button ion-icon {
+  font-size: 1.2rem;
+  margin-right: 0.3rem;
+  color: #000000;
+}
+
+.texto-salir {
+  color: #000000;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+/* ------------------------------------------------------------ */
+/* Subtítulo                                                    */
+/* ------------------------------------------------------------ */
+.subtitulo {
+  margin: 1rem 0 0.5rem 1rem;
+  font-size: 1rem;
+  color: #333333;
+}
+
+.titulo-profesor {
+  color: white;
+  text-transform: uppercase;
+  font-weight: bold;
+
+  .nombre-profesor {
+    color: white;
+    text-transform: uppercase;
+    font-weight: bold;
+  }
+}
+
+/* ------------------------------------------------------------ */
+/* Grid de instituciones                                        */
+/* ------------------------------------------------------------ */
+.grid-instituciones {
+  --ion-grid-padding: 0.5rem;
+}
+
+.grid-instituciones ion-row {
+  margin: 0;
+}
+
+/* ------------------------------------------------------------ */
+/* Tarjetas de institución                                      */
+/* ------------------------------------------------------------ */
+.card-institucion {
+  --ion-card-background: #ffffff;
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  margin: 0.5rem 0;
+  cursor: pointer;
+  transition: transform 150ms ease-in-out, box-shadow 150ms ease-in-out;
+}
+
+.card-institucion:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.card-institucion ion-card-header {
+  display: flex;
+  align-items: center;
+  padding: 0.75rem 1rem;
+}
+
+.icono-institucion {
+  font-size: 1.5rem;
+  margin-right: 0.6rem;
+  color: #4a90e2;
+}
+
+.card-institucion ion-card-title {
+  font-size: 1.1rem;
+  color: #333333;
+  font-weight: 600;
+}
+
+/* ------------------------------------------------------------ */
+/* Mensaje si no hay profesor                                   */
+/* ------------------------------------------------------------ */
+.mensaje-sin-profesor {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  color: #999999;
+  text-align: center;
+  padding: 1rem;
+}
+
+.mensaje-sin-profesor ion-icon {
+  font-size: 3rem;
+  margin-bottom: 0.5rem;
+  color: #cccccc;
+}
+
+.mensaje-sin-profesor p {
+  font-size: 1rem;
+}
+
+/* ------------------------------------------------------------ */
+/* Responsivo                                                   */
+/* ------------------------------------------------------------ */
+@media (max-width: 600px) {
+  .subtitulo {
+    text-align: center;
+    margin-left: 0;
+  }
+
+  .grid-instituciones ion-col {
+    margin-bottom: 0.25rem;
+  }
+}
+
+/* ------------------------------------------------------------ */
+/* Overlay y caja de alerta                                     */
+/* ------------------------------------------------------------ */
+.alert-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+}
+
+.alert-box {
+  background-color: #ffffff;
+  width: 80%;
+  max-width: 360px;
+  border-radius: 1rem;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
+  padding: 1.5rem 1rem;
+  text-align: center;
+  position: relative;
+  color: #000000;
+}
+
+.alert-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+}
+
+.alert-message {
+  font-size: 1rem;
+  margin-bottom: 1rem;
+}
+
+/* ------------------------------------------------------------ */
+/* Centrar los botones                                          */
+/* ------------------------------------------------------------ */
+.alert-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.btn-cancel,
+.btn-accept {
+  flex: none;
+  width: 40%;
+}
+
+/* ------------------------------------------------------------ */
+/* Estilos de los botones                                       */
+/* ------------------------------------------------------------ */
+.btn-cancel {
+  background-color: #c54e4e;
+  color: #000000;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  font-weight: bold;
+}
+
+.btn-cancel:hover {
+  background-color: #ff0000;
+}
+
+.btn-accept {
+  background-color: #57d35d;
+  color: #000000;
+  border: none;
+  border-radius: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  font-size: 1rem;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+  font-weight: bold;
+}
+
+.btn-accept:hover {
+  background-color: #00ff0d;
+}
+
+@media (max-width: 480px) {
+  .alert-box {
+    width: 95%;
+    padding: 1.2rem 0.8rem;
+  }
+  .alert-title {
+    font-size: 1.3rem;
+  }
+  .alert-message {
+    font-size: 0.9rem;
+  }
+  .btn-cancel,
+  .btn-accept {
+    font-size: 0.9rem;
+    padding: 0.5rem 1rem;
+  }
+}
+
+/* ==================== ALERTA TOTALMENTE CENTRADA ==================== */
+.alert-box {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  width: 80%;
+  max-width: 360px;
+  padding: 2rem 1.5rem;
+  background-color: #fff;
+  border-radius: 1rem;
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.2);
+  text-align: center;
+}
+
+/* Centrado y márgenes iguales */
+.alert-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  margin: 0 0 0.8rem 0;
+}
+
+.alert-message {
+  font-size: 1rem;
+  margin: 0 0 1.2rem 0;
+}
+
+/* Botones centrados y con separación */
+.alert-buttons {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  width: 100%;
+}
+
+/* Botones iguales */
+.btn-cancel,
+.btn-accept {
+  flex: none;
+  width: 40%;
+  padding: 0.6rem 1.2rem;
+  font-size: 1rem;
+  font-weight: bold;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-accept {
+  background-color: #57d35d;
+  color: #000000;
+}
+.btn-accept:hover {
+  background-color: #00ff0d;
+}
+
+.btn-cancel {
+  background-color: #c54e4e;
+  color: #000000;
+}
+.btn-cancel:hover {
+  background-color: #ff0000;
+}
+
+/* ------------------------------------------------------------ */
+/* Botón GRAFICOS: icono encima del texto, texto blanco/negrita */
+/* ------------------------------------------------------------ */
+/* ------------------------------------------------------------ */
+/* Botón GRAFICOS: icono encima del texto, texto blanco/negrita, centrado */
+/* ------------------------------------------------------------ */
+.btn-graficos {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  /* tamaño configurable */
+  width: var(--btn-width, 200px);
+  height: var(--btn-height, 50px);
+
+  /* centrar el botón dentro de su contenedor */
+  margin: auto;
+
+  /* fondo gris Ionic “medium” */
+  --background: var(--ion-color-medium);
+  /* texto 100% blanco */
+  --color: #ffffff;
+  font-weight: bold;
+  text-transform: uppercase;
+}
+
+/* Ajustes del icono dentro del botón */
+.icono-btn-graficos {
+  font-size: 1.5rem;
+  margin-bottom: 0.3rem;
+  color: #ffffff !important; /* forzar blanco */
+}
+
+/* ------------------------------------------------------------ */
+/* Columna que contiene el botón GRAFICOS, centrada en la fila  */
+/* ------------------------------------------------------------ */
+.col-graficos {
+  /* auto‑alinearse al centro del row */
+  align-self: center;
+}
+.texto-btn-graficos {
+  font-size: 1rem;      /* Tamaño del texto */
+  font-weight: bold;    /* Negrita */
+  color: #ffffff;       /* Blanco */
+  text-transform: uppercase;
+}
+
+
+

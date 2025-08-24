@@ -1,20 +1,178 @@
-<ion-header [translucent]="true">
-  <ion-toolbar>
-    <ion-title>
-      Blank
-    </ion-title>
-  </ion-toolbar>
-</ion-header>
+<!-- src/app/home/home.page.html -->
+<ion-content>
+  <ion-grid class="grid-container">
+    <ion-row class="ion-justify-content-center">
+      <ion-col size-md="auto" size-sm="12">
+        <ion-card class="capsula">
+          <ion-card-header>
+            <ion-card-title class="card-title">
+              REGISTRO DE DATOS DEL SAANEE
+            </ion-card-title>
+          </ion-card-header>
 
-<ion-content [fullscreen]="true">
-  <ion-header collapse="condense">
-    <ion-toolbar>
-      <ion-title size="large">Blank</ion-title>
-    </ion-toolbar>
-  </ion-header>
+          <ion-card-content>
+            <ion-grid>
+              <!-- Primera fila: Correo y Nombre -->
+              <ion-row class="row-spacing">
+                <ion-col size="6">
+                  <ion-item class="black-item">
+                    <ion-label position="stacked">Correo</ion-label>
+                    <ion-input
+                      type="email"
+                      [(ngModel)]="correo"
+                      (ionInput)="errorMensaje = ''"
+                    ></ion-input>
+                  </ion-item>
+                </ion-col>
+                <ion-col size="6">
+                  <ion-item class="black-item">
+                    <ion-label position="stacked">Nombre</ion-label>
+                    <ion-input
+                      type="text"
+                      [(ngModel)]="nombreProfesor"
+                      (ionInput)="errorMensaje = ''"
+                    ></ion-input>
+                  </ion-item>
+                </ion-col>
+              </ion-row>
 
-  <div id="container">
-    <strong>Ready to create an app?</strong>
-    <p>Start with Ionic <a target="_blank" rel="noopener noreferrer" href="https://ionicframework.com/docs/components">UI Components</a></p>
+              <!-- Segunda fila: Clave -->
+              <ion-row class="row-spacing">
+                <ion-col size="6">
+                  <ion-item class="black-item">
+                    <ion-label position="stacked">Clave</ion-label>
+                    <ion-input
+                      type="password"
+                      [(ngModel)]="clave"
+                      (ionInput)="errorMensaje = ''"
+                    ></ion-input>
+                  </ion-item>
+                </ion-col>
+                <ion-col size="6"></ion-col>
+              </ion-row>
+
+              <!-- Botones + error -->
+              <div class="buttons-container">
+                <ion-text class="error-text" *ngIf="errorMensaje">
+                  {{ errorMensaje }}
+                </ion-text>
+                <ion-row class="button-row">
+                  <ion-col>
+                    <ion-button expand="block" color="primary" (click)="ingresar()">
+                      Ingresar
+                    </ion-button>
+                  </ion-col>
+                  <ion-col>
+                    <ion-button expand="block" color="success" (click)="verificarAdminAntesDeCrearCuenta()">
+                      Crear cuenta
+                    </ion-button>
+                  </ion-col>
+                  <ion-col>
+                    <ion-button expand="block" color="warning" (click)="abrirAlertaReset()">
+                      Cambiar clave
+                    </ion-button>
+                  </ion-col>
+                </ion-row>
+              </div>
+            </ion-grid>
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+
+  <!-- ALERTA: Registrar Administrador -->
+  <div class="alert-overlay registrar-alert" *ngIf="mostrarAlertaAdmin">
+    <div class="alert-box">
+      <h2 class="alert-title">Registro del Administrador</h2>
+      <p>Ingresa un correo y clave:</p>
+      <input
+        type="email"
+        class="input-codigo"
+        placeholder="Correo"
+        [(ngModel)]="correoAdmin"
+      />
+      <input
+        type="password"
+        class="input-codigo"
+        placeholder="Clave"
+        [(ngModel)]="claveAdmin"
+      />
+      <p class="alert-error" *ngIf="errorAdmin">{{ errorAdmin }}</p>
+      <div class="alert-buttons">
+        <button class="btn-cancel" (click)="cerrarAlertaAdmin()">CANCELAR</button>
+        <button class="btn-accept" (click)="registrarAdmin()">Registrar</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ALERTA: Login Administrador -->
+  <div class="alert-overlay" *ngIf="mostrarAlertaLoginAdmin">
+    <div class="alert-box">
+      <h2 class="alert-title">Login Administrador</h2>
+      <p>Ingresa tu correo y clave para acceder:</p>
+      <input
+        type="email"
+        class="input-codigo"
+        placeholder="Correo"
+        [(ngModel)]="correoAdmin"
+      />
+      <input
+        type="password"
+        class="input-codigo"
+        placeholder="Clave"
+        [(ngModel)]="claveAdmin"
+      />
+      <p class="alert-error" *ngIf="errorAdmin">{{ errorAdmin }}</p>
+      <div class="alert-buttons">
+        <button class="btn-cancel" (click)="cerrarAlertaLoginAdmin()">CANCELAR</button>
+        <button class="btn-accept" (click)="loginAdmin()">INGRESAR</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ALERTA: Cambiar Clave -->
+  <div class="alert-overlay" *ngIf="mostrarAlertaReset">
+    <div class="alert-box">
+      <h2 class="alert-title">Resetear Clave</h2>
+
+      <!-- Paso 1: solicitar token -->
+      <div *ngIf="pasoReset === 1">
+        <p>Ingresa tu correo para recibir el token:</p>
+        <input
+          type="email"
+          class="input-codigo"
+          placeholder="Correo"
+          [(ngModel)]="correoReset"
+        />
+        <p class="alert-error" *ngIf="errorReset">{{ errorReset }}</p>
+        <div class="alert-buttons">
+          <button class="btn-cancel" (click)="cerrarAlertaReset()">Cancelar</button>
+          <button class="btn-accept" (click)="enviarCorreoReset()">Aceptar</button>
+        </div>
+      </div>
+
+      <!-- Paso 2: confirmar cambio -->
+      <div *ngIf="pasoReset === 2">
+        <p>Token recibido. Ingresa token y nueva clave:</p>
+        <input
+          type="text"
+          class="input-codigo"
+          placeholder="Token"
+          [(ngModel)]="tokenReset"
+        />
+        <input
+          type="password"
+          class="input-codigo"
+          placeholder="Nueva clave"
+          [(ngModel)]="nuevaClave"
+        />
+        <p class="alert-error" *ngIf="errorReset">{{ errorReset }}</p>
+        <div class="alert-buttons">
+          <button class="btn-cancel" (click)="cerrarAlertaReset()">Cancelar</button>
+          <button class="btn-accept" (click)="confirmarReset()">Aceptar</button>
+        </div>
+      </div>
+    </div>
   </div>
 </ion-content>

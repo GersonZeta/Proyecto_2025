@@ -1,0 +1,298 @@
+<!-- estudiantes.page.html -->
+<ion-header>
+  <ion-toolbar class="toolbar-top">
+    <!-- Título a la izquierda en negrilla -->
+    <ion-title slot="start"><strong>ESTUDIANTES</strong></ion-title>
+    <!-- Botón “Salir” con ícono a la derecha -->
+    <ion-buttons slot="end">
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<!-- Estilos inline -->
+<style>
+  input,
+  textarea {
+    caret-color: #000 !important;
+  }
+  /* Reducimos la grilla a 11 columnas */
+  .tabla-estudiantes {
+    --ion-grid-columns: 11;
+  }
+</style>
+
+<ion-content [fullscreen]="true" class="content-white">
+  <!-- 2) Mini‐sidebar -->
+  <div class="mini-sidebar toolbar-left">
+    <ion-button fill="solid" shape="round" class="active">E</ion-button>
+    <ion-button fill="solid" shape="round" routerLink="/docentes">D</ion-button>
+    <ion-button fill="solid" shape="round" routerLink="/familias">F</ion-button>
+    <ion-button fill="solid" shape="round" routerLink="/seleccion-instituciones">S</ion-button>
+  </div>
+
+  <!-- 4) Lista / Formulario de estudiante -->
+  <ion-list class="formulario-estudiante">
+    <ion-grid class="grid-3cols">
+
+      <!-- Fila 1 -->
+      <ion-row>
+        <!-- Apellido y Nombres -->
+        <ion-col size="2.7" class="input-with-error">
+          <ion-item class="black-item">
+            <ion-label position="stacked">Apellido y Nombres</ion-label>
+            <ion-input
+              type="text"
+              [(ngModel)]="alumno.ApellidosNombres"
+              name="ApellidosNombres"
+              required
+              (keypress)="onlyLetters($event)"
+            ></ion-input>
+          </ion-item>
+        </ion-col>
+
+        <!-- Fecha de Nacimiento -->
+        <ion-col size="1.5" class="input-with-error">
+          <ion-item class="black-item">
+            <ion-label position="stacked">Fecha de Nacimiento</ion-label>
+            <ion-input
+              type="text"
+              maxlength="10"
+              placeholder="dd/mm/yyyy"
+              [(ngModel)]="alumno.FechaNacimiento"
+              name="FechaNacimiento"
+              required
+              (ionInput)="onFechaChange()"
+              (keypress)="validateNumber($event)"
+            ></ion-input>
+          </ion-item>
+        </ion-col>
+
+        <!-- Edad (solo lectura) -->
+        <ion-col size="0.8">
+          <ion-item class="black-item">
+            <ion-label position="stacked">Edad</ion-label>
+            <ion-input
+              [value]="alumno.Edad"
+              readonly
+            ></ion-input>
+          </ion-item>
+        </ion-col>
+
+        <!-- DNI -->
+        <ion-col size="1" class="input-with-error">
+          <ion-item class="black-item">
+            <ion-label position="stacked">DNI</ion-label>
+            <ion-input
+              type="text"
+              maxlength="8"
+              [(ngModel)]="alumno.DNI"
+              name="DNI"
+              required
+              (keypress)="validateNumber($event)"
+            ></ion-input>
+          </ion-item>
+        </ion-col>
+
+        <!-- Grado y Sección -->
+        <ion-col size="1.3">
+          <ion-item class="black-item">
+            <ion-label position="stacked">Grado y Sección</ion-label>
+            <ion-input
+              type="text"
+              [(ngModel)]="alumno.GradoSeccion"
+              name="GradoSeccion"
+            ></ion-input>
+          </ion-item>
+        </ion-col>
+
+        <!-- Tipo de Discapacidad -->
+        <ion-col size="1.7">
+          <ion-item class="black-item">
+            <ion-label position="stacked">Tipo de Discapacidad</ion-label>
+            <ion-input
+              type="text"
+              [(ngModel)]="alumno.TipoDiscapacidad"
+              name="TipoDiscapacidad"
+            ></ion-input>
+          </ion-item>
+        </ion-col>
+
+        <!-- Documento Sustentatorio -->
+        <ion-col size="1.4">
+          <ion-item class="black-item">
+            <ion-label position="stacked">Doc. Sustentatorio</ion-label>
+            <ion-input
+              type="text"
+              [(ngModel)]="alumno.DocumentoSustentatorio"
+              name="DocumentoSustentatorio"
+            ></ion-input>
+          </ion-item>
+        </ion-col>
+
+        <!-- Documento Inclusiva -->
+        <ion-col size="1.3">
+          <ion-item class="black-item">
+            <ion-label position="stacked">Doc. Inclusiva</ion-label>
+            <ion-input
+              type="text"
+              [(ngModel)]="alumno.DocumentoInclusiva"
+              name="DocumentoInclusiva"
+            ></ion-input>
+          </ion-item>
+        </ion-col>
+      </ion-row>
+
+      <!-- Fila 2 -->
+      <ion-row>
+        <ion-col size="1">
+          <ion-item class="black-item">
+            <ion-label>IPP</ion-label>
+            <ion-checkbox
+              slot="start"
+              [(ngModel)]="alumno.IPP"
+              name="IPP"
+              tappable="false"
+            ></ion-checkbox>
+          </ion-item>
+        </ion-col>
+        <ion-col size="1">
+          <ion-item class="black-item">
+            <ion-label>PEP</ion-label>
+            <ion-checkbox
+              slot="start"
+              [(ngModel)]="alumno.PEP"
+              name="PEP"
+              tappable="false"
+            ></ion-checkbox>
+          </ion-item>
+        </ion-col>
+        <ion-col size="1">
+          <ion-button
+            expand="block"
+            color="primary"
+            (click)="registrarEstudiante()"
+            [disabled]="nombreBusqueda.trim() !== '' || datosCargados"
+          >
+            Agregar
+          </ion-button>
+        </ion-col>
+        <ion-col size="1">
+          <ion-button expand="block" color="medium" (click)="resetForm()">
+            Cancelar
+          </ion-button>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+
+    <!-- Buscador + Acciones -->
+    <ion-grid>
+      <ion-row class="search-buttons-row ion-justify-content-start ion-align-items-center">
+        <ion-col size="3.0">
+          <ion-item class="black-item search-below">
+            <ion-label position="stacked">Buscar Estudiante</ion-label>
+            <ion-input
+              type="text"
+              [(ngModel)]="nombreBusqueda"
+              name="nombreBusquedaBelow"
+              (keypress)="onlyLetters($event)"
+            ></ion-input>
+            <ion-icon
+              name="search-outline"
+              slot="end"
+              (click)="buscarEstudiante()"
+              style="cursor: pointer;"
+            ></ion-icon>
+          </ion-item>
+        </ion-col>
+        <ion-col size="1.5">
+          <ion-button
+            expand="block"
+            color="tertiary"
+            (click)="actualizarEstudiante()"
+            [disabled]="!datosCargados"
+          >
+            Actualizar Datos
+          </ion-button>
+        </ion-col>
+        <ion-col size="1">
+          <ion-button expand="block" color="secondary" (click)="abrirAlertaExportar()">
+            Descargar
+          </ion-button>
+        </ion-col>
+        <ion-col size="1">
+          <ion-button
+            expand="block"
+            color="danger"
+            (click)="confirmEliminar()"
+            [disabled]="!datosCargados"
+          >
+            Eliminar
+          </ion-button>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+
+    <!-- 5) Tabla de Estudiantes -->
+    <div class="tabla-container">
+      <ion-grid class="tabla-estudiantes">
+        <ion-row class="header-row">
+          <ion-col><strong>ID</strong></ion-col>
+          <ion-col><strong>Apellido y Nombres</strong></ion-col>
+          <ion-col><strong>Fecha Nacimiento</strong></ion-col>
+          <ion-col><strong>Edad</strong></ion-col>
+          <ion-col><strong>DNI</strong></ion-col>
+          <ion-col><strong>G y S</strong></ion-col>
+          <ion-col><strong>Discapacidad</strong></ion-col>
+          <ion-col><strong>Doc. Sus.</strong></ion-col>
+          <ion-col><strong>Doc. Inc.</strong></ion-col>
+          <ion-col><strong>IPP</strong></ion-col>
+          <ion-col><strong>PEP</strong></ion-col>
+        </ion-row>
+        <ion-row *ngFor="let est of estudiantesFiltrados">
+          <ion-col
+            [class.clickable]="seleccionMultiple"
+            (click)="seleccionMultiple && seleccionarEstudiante(est)"
+          >
+            {{ est.fila }}
+          </ion-col>
+          <ion-col
+            [class.clickable]="seleccionMultiple"
+            (click)="seleccionMultiple && seleccionarEstudiante(est)"
+          >
+            {{ est.ApellidosNombres }}
+          </ion-col>
+          <ion-col>{{ est.FechaNacimiento }}</ion-col>
+          <ion-col>{{ est.Edad }}</ion-col>
+          <ion-col>{{ est.DNI }}</ion-col>
+          <ion-col>{{ est.GradoSeccion }}</ion-col>
+          <ion-col>{{ est.TipoDiscapacidad || '-' }}</ion-col>
+          <ion-col>{{ est.DocumentoSustentatorio || '-' }}</ion-col>
+          <ion-col>{{ est.DocumentoInclusiva || '-' }}</ion-col>
+          <ion-col>{{ est.IPP ? 'Si' : 'No' }}</ion-col>
+          <ion-col>{{ est.PEP ? 'Si' : 'No' }}</ion-col>
+        </ion-row>
+      </ion-grid>
+    </div>
+
+  </ion-list>
+</ion-content>
+<!-- ==================== ALERTA PERSONALIZADA “EXPORTAR” ==================== -->
+<div class="export-overlay" *ngIf="mostrarAlertaExportar">
+  <div class="export-box">
+    <h2 class="export-title">Exportar como</h2>
+    <div class="export-buttons">
+      <button class="btn-export" (click)="exportPDF(); cerrarAlertaExportar()">PDF</button>
+      <button class="btn-export" (click)="exportExcel(); cerrarAlertaExportar()">Excel</button>
+      <button class="btn-cancel" (click)="cerrarAlertaExportar()">Cancelar</button>
+    </div>
+  </div>
+</div>
+<!-- ====================================================== -->
+<!-- OVERLAY DE ERROR DE CAMPOS REQUERIDOS -->
+<div class="error-overlay" *ngIf="mostrarErrorCampos">
+  <div class="error-box">
+    <h2 class="error-title">Error</h2>
+    <p class="error-message">Completa todos los campos requeridos</p>
+    <button class="btn-ok" (click)="cerrarErrorCampos()">OK</button>
+  </div>
+</div>

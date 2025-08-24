@@ -1,0 +1,330 @@
+<!-- src/app/docentes/docentes.page.html -->
+<ion-header>
+  <ion-toolbar class="toolbar-top">
+    <!-- Título a la izquierda en negrita -->
+    <ion-title slot="start"><strong>DOCENTES POR ESTUDIANTE</strong></ion-title>
+    <!-- Botón “Salir” con ícono a la derecha -->
+    <ion-buttons slot="end">
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<!-- AGREGAR ESTE <style> JUSTO AQUÍ ABAJO -->
+<style>
+  /* 1) Nativos */
+  input,
+  textarea {
+    caret-color: #000 !important;
+  }
+
+  /* 2) Para ion-input con Shadow DOM */
+  ion-input .native-input,
+  ion-textarea .native-textarea {
+    caret-color: #000 !important;
+  }
+
+  /* 3) Angular ViewEncapsulation workaround */
+  :host ::ng-deep input,
+  :host ::ng-deep textarea,
+  :host ::ng-deep ion-input .native-input,
+  :host ::ng-deep ion-textarea .native-textarea {
+    caret-color: #000 !important;
+  }
+</style>
+
+<ion-content [fullscreen]="true" class="content-white">
+  <!-- Mini‑sidebar (botones redondos) en Docentes -->
+  <div class="mini-sidebar toolbar-left">
+    <ion-button fill="solid" shape="round" routerLink="/estudiantes">E</ion-button>
+    <ion-button fill="solid" shape="round" class="active">D</ion-button>
+    <ion-button fill="solid" shape="round" routerLink="/familias">F</ion-button>
+    <ion-button fill="solid" shape="round" color="custom-orange" routerLink="/seleccion-instituciones">S</ion-button>
+  </div>
+
+  <!-- Toolbar colapsable al hacer scroll -->
+  <ion-header collapse="condense">
+    <ion-toolbar>
+      <ion-title size="large">Docentes por Estudiante</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <!-- Se quitan líneas entre items -->
+  <ion-list class="formulario-estudiante" lines="none">
+    <ion-grid class="grid-3cols">
+      <!-- 1ª fila: Nombre del Docente / DNI Docente / Email / Teléfono / GyS -->
+      <ion-row>
+        <ion-col size="2.5" class="input-with-error">
+          <ion-item class="black-item">
+            <ion-label position="stacked">Nombre del Docente</ion-label>
+            <ion-input
+              type="text"
+              [(ngModel)]="docente.NombreDocente"
+              name="NombreDocente"
+              required
+              (keypress)="validateLetters($event)"
+            ></ion-input>
+          </ion-item>
+        </ion-col>
+
+        <ion-col size="1.2" class="input-with-error">
+          <ion-item class="black-item">
+            <ion-label position="stacked">DNI Docente</ion-label>
+            <ion-input
+              type="text"
+              maxlength="8"
+              [(ngModel)]="docente.DNIDocente"
+              name="DNIDocente"
+              required
+              (keypress)="validateNumber($event)"
+            ></ion-input>
+          </ion-item>
+        </ion-col>
+
+        <ion-col size="2.2" class="input-with-error">
+          <ion-item class="black-item" [class.invalid]="emailInvalid">
+            <ion-label position="stacked">Email</ion-label>
+            <ion-input
+              type="email"
+              [(ngModel)]="docente.Email"
+              name="Email"
+              required
+              (blur)="validarEmail()"
+            ></ion-input>
+          </ion-item>
+          <ion-text color="danger" *ngIf="emailInvalid" class="error-text-above">
+            Ingresa un email válido (ej. usuario&#64;dominio.com)
+          </ion-text>
+        </ion-col>
+
+        <ion-col size="1.2">
+          <ion-item class="black-item">
+            <ion-label position="stacked">Teléfono</ion-label>
+            <ion-input
+              type="text"
+              maxlength="11"
+              [(ngModel)]="docente.Telefono"
+              name="Telefono"
+              (keypress)="validateNumber($event)"
+              (ionInput)="formatTelefono($event)"
+            ></ion-input>
+          </ion-item>
+        </ion-col>
+
+        <ion-col size="1.4">
+          <ion-item class="black-item">
+            <ion-label position="stacked">Grado y Sección</ion-label>
+            <ion-input
+              type="text"
+              [(ngModel)]="docente.GradoSeccionLabora"
+              name="GradoSeccionLabora"
+            ></ion-input>
+          </ion-item>
+        </ion-col>
+
+        <!-- Botón “Estudiantes” abre modal -->
+<ion-col size="1.5">
+  <ion-button
+    class="single-line-button"
+    expand="block"
+    color="tertiary"
+    [disabled]="estudiantesDisponibles.length === 0"
+    (click)="openStudentsModal()"
+  >
+    Estudiantes
+  </ion-button>
+</ion-col>
+
+        <ion-col size="1">
+          <ion-button
+            expand="block"
+            color="primary"
+            (click)="registrarDocente()"
+            [disabled]="datosCargados || estudiantesDisponibles.length === 0"
+          >
+            Agregar
+          </ion-button>
+        </ion-col>
+
+        <ion-col size="1">
+          <ion-button expand="block" color="medium" (click)="resetForm()">
+            Cancelar
+          </ion-button>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+
+    <ion-grid>
+      <!-- LÍNEA SEPARADORA GRIS DEBAJO DE LOS BOTONES -->
+      <div class="separator-line"></div>
+
+      <!-- 2ª fila: Buscar / Actualizar / Descargar / Eliminar -->
+      <ion-row class="search-buttons-row ion-align-items-center">
+        <ion-col size="2.5" class="input-with-error">
+          <ion-item class="black-item">
+            <ion-label position="stacked">Nombre del Docente a Buscar</ion-label>
+            <ion-input
+              type="text"
+              [(ngModel)]="nombreBusqueda"
+              name="nombreBusquedaSearch"
+              (keypress)="validateLetters($event)"
+            ></ion-input>
+            <ion-icon
+              name="search-outline"
+              slot="end"
+              (click)="buscarDocente()"
+              style="cursor: pointer;"
+            ></ion-icon>
+          </ion-item>
+        </ion-col>
+
+        <ion-col size="1.5">
+          <ion-button
+            expand="block"
+            color="tertiary"
+            (click)="actualizarDocente()"
+            [disabled]="!datosCargados"
+          >
+            Actualizar Datos
+          </ion-button>
+        </ion-col>
+
+        <ion-col size="1">
+<ion-button expand="block" color="secondary" (click)="mostrarAlertaExportar = true">
+  Descargar
+</ion-button>
+        </ion-col>
+
+        <ion-col size="1">
+          <ion-button
+            expand="block"
+            color="danger"
+            (click)="eliminarDocente()"
+            [disabled]="!datosCargados"
+          >
+            Eliminar
+          </ion-button>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+
+    <!-- Tabla de Docentes CON BORDES -->
+    <div class="tabla-container-docente">
+      <ion-grid class="tabla-docente">
+        <ion-row class="header-row">
+          <ion-col><strong>ID</strong></ion-col>
+          <ion-col><strong>Nombre docente</strong></ion-col>
+          <ion-col><strong>Nombre estudiante</strong></ion-col>
+          <ion-col><strong>DNI</strong></ion-col>
+          <ion-col><strong>Email</strong></ion-col>
+          <ion-col><strong>Teléfono</strong></ion-col>
+          <ion-col><strong>Grado/Sección</strong></ion-col>
+        </ion-row>
+
+        <ion-row *ngFor="let d of docentesFiltradosIndexados">
+<ion-col
+  [class.clickable]="buscandoDocente"
+  [class.disabled]="!buscandoDocente"
+  (click)="buscandoDocente && buscarPorId(d)"
+>
+  {{ d.index }}
+</ion-col>
+
+
+          <ion-col>{{ d.NombreDocente }}</ion-col>
+          <ion-col>{{ d.NombreEstudiante }}</ion-col>
+          <ion-col>{{ d.DNIDocente }}</ion-col>
+          <ion-col>{{ d.Email }}</ion-col>
+          <ion-col>{{ d.Telefono || '-' }}</ion-col>
+          <ion-col>{{ d.GradoSeccionLabora || '-' }}</ion-col>
+        </ion-row>
+      </ion-grid>
+    </div>
+  </ion-list>
+
+  <!-- Modal personalizado de selección de Estudiantes -->
+  <ion-modal
+    [isOpen]="showStudentsModal"
+    backdropDismiss="true"
+    (ionModalDidDismiss)="closeStudentsModal()"
+    class="modal-instituciones"
+  >
+    <ng-template>
+      <ion-header>
+        <ion-toolbar class="modal-toolbar">
+          <ion-title class="modal-title">SELECCIONAR ESTUDIANTES</ion-title>
+          <ion-buttons slot="end">
+            <ion-button fill="clear" (click)="closeStudentsModal()">
+              <ion-icon name="close-outline" class="modal-close-icon"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+
+      <ion-content class="modal-content-padding">
+        <ion-searchbar
+          class="modal-searchbar"
+          [(ngModel)]="studentFilter"
+          placeholder="Buscar estudiante..."
+          debounce="300"
+          (ionInput)="filterStudents()"
+        ></ion-searchbar>
+
+        <ion-grid class="cards-grid">
+          <ion-row>
+            <ion-col size="12" *ngFor="let s of filteredStudents">
+              <ion-card class="card-institucion">
+                <ion-grid>
+                  <ion-row class="card-row">
+                    <ion-col size="auto" class="align-center">
+                      <ion-checkbox [(ngModel)]="s.selected" color="dark"></ion-checkbox>
+                    </ion-col>
+                    <ion-col class="align-center">
+                      <div class="nombre-institucion">{{ s.ApellidosNombres }}</div>
+                    </ion-col>
+                  </ion-row>
+                </ion-grid>
+              </ion-card>
+            </ion-col>
+          </ion-row>
+        </ion-grid>
+      </ion-content>
+
+      <ion-footer>
+        <ion-toolbar class="modal-toolbar">
+          <ion-buttons slot="start">
+            <ion-button class="modal-footer-button cancel-button" (click)="closeStudentsModal()">
+              CANCELAR
+            </ion-button>
+          </ion-buttons>
+          <ion-buttons slot="end">
+            <ion-button class="modal-footer-button accept-button" (click)="applyStudentsSelection()">
+              ACEPTAR
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-footer>
+    </ng-template>
+  </ion-modal>
+</ion-content>
+
+  <!-- ==================== OVERLAY PERSONALIZADO “EXPORTAR” ==================== -->
+  <div class="export-overlay" *ngIf="mostrarAlertaExportar">
+    <div class="export-box">
+      <h2 class="export-title">Exportar como</h2>
+      <div class="export-buttons">
+        <button class="btn-export" (click)="exportPDF(); cerrarAlertaExportar()">PDF</button>
+        <button class="btn-export" (click)="exportExcel(); cerrarAlertaExportar()">Excel</button>
+        <button class="btn-cancel" (click)="cerrarAlertaExportar()">Cancelar</button>
+      </div>
+    </div>
+  </div>
+  <!-- ====================================================== -->
+
+  <!-- OVERLAY DE ERROR DE CAMPOS REQUERIDOS -->
+  <div class="error-overlay" *ngIf="mostrarErrorCampos">
+    <div class="error-box">
+      <h2 class="error-title">Error</h2>
+      <p class="error-message">Completa todos los campos requeridos</p>
+      <button class="btn-ok" (click)="cerrarErrorCampos()">OK</button>
+    </div>
+  </div>

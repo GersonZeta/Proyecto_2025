@@ -1,0 +1,261 @@
+<!-- src/app/familias/familias.component.html -->
+<ion-header [translucent]="true" class="toolbar-top">
+  <ion-toolbar>
+    <ion-title slot="start"><strong>FAMILIAS</strong></ion-title>
+    <ion-buttons slot="end"></ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="content-white">
+  <!-- Mini‑sidebar -->
+  <div class="mini-sidebar toolbar-left">
+    <ion-button fill="solid" shape="round" class="btn-estudiantes" routerLink="/estudiantes">E</ion-button>
+    <ion-button fill="solid" shape="round" class="btn-docentes" routerLink="/docentes">D</ion-button>
+    <ion-button fill="solid" shape="round" class="btn-familias">F</ion-button>
+    <ion-button fill="solid" shape="round" class="btn-seleccion" routerLink="/seleccion-instituciones">S</ion-button>
+  </div>
+
+  <ion-header collapse="condense">
+    <ion-toolbar>
+      <ion-title size="large">Familias</ion-title>
+    </ion-toolbar>
+  </ion-header>
+
+  <ion-list class="formulario-estudiante" lines="none">
+    <!-- Formulario -->
+    <ion-grid class="grid-3cols">
+      <ion-row>
+        <ion-col size="2.2" class="input-with-error">
+          <ion-item class="black-item">
+            <ion-label position="stacked">Madre/Apoderado</ion-label>
+            <ion-input
+              type="text"
+              [(ngModel)]="familia.NombreMadreApoderado"
+              name="NombreMadreApoderado"
+              required
+              (keypress)="validateLetters($event)"
+            ></ion-input>
+          </ion-item>
+        </ion-col>
+
+        <ion-col size="1" class="input-with-error">
+          <ion-item class="black-item">
+            <ion-label position="stacked">DNI</ion-label>
+            <ion-input
+              type="text"
+              maxlength="8"
+              [(ngModel)]="familia.DNI"
+              name="DNI"
+              required
+              (keypress)="validateNumber($event)"
+            ></ion-input>
+          </ion-item>
+        </ion-col>
+
+        <ion-col size="2" class="input-with-error">
+          <ion-item class="black-item">
+            <ion-label position="stacked">Dirección</ion-label>
+            <ion-input
+              type="text"
+              [(ngModel)]="familia.Direccion"
+              name="Direccion"
+              (keypress)="validateLetters($event)"
+            ></ion-input>
+          </ion-item>
+        </ion-col>
+
+        <ion-col size="1.2" class="input-with-error">
+          <ion-item class="black-item">
+            <ion-label position="stacked">Teléfono</ion-label>
+            <ion-input
+              type="text"
+              maxlength="11"
+              [(ngModel)]="familia.Telefono"
+              name="Telefono"
+              (keypress)="validateNumber($event)"
+              (ionInput)="formatTelefono($event)"
+            ></ion-input>
+          </ion-item>
+        </ion-col>
+
+        <ion-col size="1.5" class="input-with-error">
+          <ion-item class="black-item">
+            <ion-label position="stacked">Ocupación</ion-label>
+            <ion-input
+              type="text"
+              [(ngModel)]="familia.Ocupacion"
+              name="Ocupacion"
+              (keypress)="validateLetters($event)"
+            ></ion-input>
+          </ion-item>
+        </ion-col>
+
+        <!-- Botón Seleccionar Estudiantes -->
+        <ion-col size="1.5" class="ion-text-center">
+          <ion-button
+            expand="block"
+            color="tertiary"
+            (click)="openStudentsModal()"
+            [disabled]="datosCargados || estudiantesDisponibles.length === 0"
+          >
+            Estudiantes
+          </ion-button>
+          <div class="selected-list" *ngIf="selectedStudentNames">
+            {{ selectedStudentNames }}
+          </div>
+        </ion-col>
+
+        <ion-col size="1">
+          <ion-button expand="block" color="primary" (click)="validarYRegistrar()" [disabled]="datosCargados">
+            Agregar
+          </ion-button>
+        </ion-col>
+        <ion-col size="1">
+          <ion-button expand="block" color="medium" (click)="resetForm()">
+            Cancelar
+          </ion-button>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+
+    <div class="separator-line"></div>
+
+    <!-- Acciones Buscar/Actualizar/Descargar/Eliminar -->
+    <ion-grid class="grid-acciones">
+      <ion-row class="ion-align-items-center">
+        <ion-col size="2" class="input-with-error">
+          <ion-item class="black-item">
+            <ion-label position="stacked">Buscar Madre/Apoderado</ion-label>
+            <ion-input
+              type="text"
+              [(ngModel)]="busquedaMadre"
+              name="busquedaMadre"
+              required
+              (keypress)="validateLetters($event)"
+            ></ion-input>
+            <ion-icon name="search-outline" slot="end" (click)="buscarFamilia()" style="cursor: pointer;"></ion-icon>
+          </ion-item>
+        </ion-col>
+        <ion-col size="1.5">
+          <ion-button expand="block" color="tertiary" (click)="actualizarFamilia()" [disabled]="!datosCargados">
+            Actualizar Datos
+          </ion-button>
+        </ion-col>
+        <ion-col size="1">
+          <ion-button expand="block" color="secondary" (click)="showExportOptions()">
+            Descargar
+          </ion-button>
+        </ion-col>
+        <ion-col size="1">
+          <ion-button expand="block" color="danger" (click)="confirmEliminar()" [disabled]="!datosCargados">
+            Eliminar
+          </ion-button>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+
+    <!-- Tabla de Familias -->
+    <ion-grid class="tabla-familias">
+      <ion-row class="header-row">
+        <ion-col><strong>ID</strong></ion-col>
+        <ion-col><strong>Estudiante</strong></ion-col>
+        <ion-col><strong>Madre/Apoderado</strong></ion-col>
+        <ion-col><strong>DNI</strong></ion-col>
+        <ion-col><strong>Dirección</strong></ion-col>
+        <ion-col><strong>Teléfono</strong></ion-col>
+        <ion-col><strong>Ocupación</strong></ion-col>
+      </ion-row>
+      <ion-row *ngFor="let f of familiasFiltradas">
+        <ion-col [class.clickable]="seleccionMultiple" (click)="seleccionarFamilia(f)">
+          {{ f.displayId }}
+        </ion-col>
+        <ion-col>{{ f.NombreEstudiante }}</ion-col>
+        <ion-col>{{ f.NombreMadreApoderado }}</ion-col>
+        <ion-col>{{ f.DNI }}</ion-col>
+        <ion-col>{{ f.Direccion || '-' }}</ion-col>
+        <ion-col>{{ f.Telefono || '-' }}</ion-col>
+        <ion-col>{{ f.Ocupacion || '-' }}</ion-col>
+      </ion-row>
+    </ion-grid>
+  </ion-list>
+</ion-content>
+
+<!-- Modal de Selección de Estudiantes -->
+<ion-modal
+  [isOpen]="showStudentsModal"
+  backdropDismiss="true"
+  (ionModalDidDismiss)="closeStudentsModal()"
+  class="modal-estudiantes"
+>
+  <ng-template>
+    <ion-header>
+      <ion-toolbar class="modal-toolbar">
+        <ion-title class="modal-title">SELECCIONAR ESTUDIANTES</ion-title>
+        <ion-buttons slot="end">
+          <ion-button fill="clear" (click)="closeStudentsModal()">
+            <ion-icon name="close-outline" class="modal-close-icon"></ion-icon>
+          </ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-header>
+
+    <ion-content class="modal-content-padding">
+      <ion-searchbar
+        [(ngModel)]="studentFilter"
+        placeholder="Buscar estudiante..."
+        debounce="300"
+        (ionInput)="filterStudents()"
+        class="modal-searchbar"
+      ></ion-searchbar>
+      <ion-grid class="cards-grid">
+        <ion-row>
+          <ion-col size="12" *ngFor="let s of filteredStudents">
+            <ion-card class="card-estudiante">
+              <ion-grid>
+                <ion-row class="card-row">
+                  <ion-col size="auto" class="align-center">
+                    <ion-checkbox [(ngModel)]="s.selected" color="dark"></ion-checkbox>
+                  </ion-col>
+                  <ion-col class="align-center">
+                    <div class="nombre-estudiante">{{ s.ApellidosNombres }}</div>
+                  </ion-col>
+                </ion-row>
+              </ion-grid>
+            </ion-card>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+    </ion-content>
+
+    <ion-footer>
+      <ion-toolbar class="modal-toolbar">
+        <ion-buttons slot="start">
+          <ion-button class="modal-footer-button cancel-button" (click)="closeStudentsModal()">CANCELAR</ion-button>
+        </ion-buttons>
+        <ion-buttons slot="end">
+          <ion-button class="modal-footer-button accept-button" (click)="applyStudentsSelection()">ACEPTAR</ion-button>
+        </ion-buttons>
+      </ion-toolbar>
+    </ion-footer>
+  </ng-template>
+</ion-modal>
+
+<!-- Overlays Exportar y Error fuera de ion-content -->
+<div class="export-overlay" *ngIf="mostrarAlertaExportar">
+  <div class="export-box">
+    <h2 class="export-title">Exportar como</h2>
+    <div class="export-buttons">
+      <button class="btn-export" (click)="exportPDF(); cerrarAlertaExportar()">PDF</button>
+      <button class="btn-export" (click)="exportExcel(); cerrarAlertaExportar()">Excel</button>
+      <button class="btn-cancel" (click)="cerrarAlertaExportar()">Cancelar</button>
+    </div>
+  </div>
+</div>
+
+<div class="error-overlay" *ngIf="mostrarErrorCampos">
+  <div class="error-box">
+    <h2 class="error-title">Error</h2>
+    <p class="error-message">Completa todos los campos requeridos</p>
+    <button class="btn-ok" (click)="cerrarErrorCampos()">OK</button>
+  </div>
+</div>

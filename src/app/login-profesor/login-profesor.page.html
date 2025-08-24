@@ -1,0 +1,305 @@
+<ion-header>
+  <ion-toolbar class="custom-toolbar">
+    <!-- Título a la izquierda en negrilla -->
+    <ion-title slot="start"><strong>ADMINISTRACIÓN DE CUENTAS</strong></ion-title>
+    <!-- Botón “Salir” con ícono a la derecha -->
+    <ion-buttons slot="end">
+      <ion-button routerLink="/home" color="light">
+        <ion-icon name="log-out-outline" slot="start"></ion-icon>
+        Salir
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <!-- ------------------------------------------------------------ -->
+  <!-- 1) Primera fila: Cuatro casillas + botones Seleccionar IE, Registrar, Actualizar & Cancelar -->
+  <!-- ------------------------------------------------------------ -->
+  <ion-grid>
+    <ion-row class="row-spacing">
+      <!-- Correo -->
+      <ion-col size="2" class="input-with-error">
+        <ion-item class="black-item">
+          <ion-label position="stacked">Correo</ion-label>
+          <ion-input
+            type="email"
+            [(ngModel)]="correo"
+            required
+            (ionFocus)="clearEmailError()"
+          ></ion-input>
+        </ion-item>
+        <!-- Mensaje de error en rojo sin desplazar nada -->
+        <div *ngIf="emailError" class="error-text-above">{{ emailError }}</div>
+      </ion-col>
+
+      <!-- Nombre del Profesor (solo letras) -->
+      <ion-col size="2">
+        <ion-item class="black-item">
+          <ion-label position="stacked">Nombre</ion-label>
+          <ion-input
+            type="text"
+            [(ngModel)]="nombreProfesor"
+            (keydown)="onlyLetters($event)"
+          ></ion-input>
+        </ion-item>
+      </ion-col>
+
+      <!-- Clave -->
+      <ion-col size="2">
+        <ion-item class="black-item">
+          <ion-label position="stacked">Clave</ion-label>
+          <ion-input
+            [type]="showPassword ? 'text' : 'password'"
+            [(ngModel)]="clave"
+          ></ion-input>
+          <ion-icon
+            slot="end"
+            [name]="showPassword ? 'eye-off' : 'eye'"
+            (click)="togglePasswordVisibility()"
+            style="cursor: pointer;"
+          ></ion-icon>
+        </ion-item>
+      </ion-col>
+
+      <!-- Teléfono del Profesor -->
+      <ion-col size="2">
+        <ion-item class="black-item">
+          <ion-label position="stacked">Teléfono</ion-label>
+          <ion-input
+            type="tel"
+            inputmode="numeric"
+            maxlength="11"
+            [(ngModel)]="telefonoProf"
+            (keydown)="onlyNumbers($event)"
+            (ionInput)="formatearTelefono($event)"
+          ></ion-input>
+        </ion-item>
+      </ion-col>
+
+      <!-- Botones “Seleccionar IE”, “Registrar”, “Actualizar” y “Cancelar” juntos -->
+      <ion-col size="4" class="ion-align-self-end">
+        <ion-grid>
+          <ion-row>
+            <!-- Seleccionar IE: conserva expand="block" y padding igual a los demás -->
+            <ion-col size="3">
+              <ion-button
+                class="single-line-button"
+                expand="block"
+                color="tertiary"
+                (click)="openModal()"
+              >
+                COLEGIOS
+              </ion-button>
+            </ion-col>
+            <!-- Registrar Profesor -->
+            <ion-col size="3">
+              <ion-button
+                expand="block"
+                color="primary"
+                (click)="registrarProfesor()"
+                [disabled]="!isFormValid()"
+              >
+                Registrar
+              </ion-button>
+            </ion-col>
+            <!-- Actualizar Profesor -->
+            <ion-col size="3">
+              <ion-button
+                expand="block"
+                color="success"
+                [disabled]="!datosCargados"
+                (click)="actualizarProfesor()"
+              >
+                Actualizar
+              </ion-button>
+            </ion-col>
+            <!-- Cancelar -->
+            <ion-col size="3">
+              <ion-button
+                expand="block"
+                color="medium"
+                (click)="resetForm()"
+              >
+                Cancelar
+              </ion-button>
+            </ion-col>
+          </ion-row>
+        </ion-grid>
+      </ion-col>
+    </ion-row>
+
+    <!-- ------------------------------------------------------------ -->
+    <!-- 2) Segunda fila: Buscar Profesor con lupa a la derecha -->
+    <!-- ------------------------------------------------------------ -->
+    <ion-row class="row-spacing no-background" style="align-items: flex-end;">
+      <!-- Buscar Profesor (Nombre) -->
+      <ion-col size="6">
+        <ion-item class="black-item">
+          <ion-label position="stacked">Buscar nombre del profesor</ion-label>
+          <ion-input type="text" [(ngModel)]="searchName"></ion-input>
+        </ion-item>
+      </ion-col>
+
+      <!-- Botón Lupa -->
+      <ion-col size="6" style="display: flex; justify-content: flex-start; align-items: flex-end;">
+        <ion-button color="primary" (click)="buscarProfesor()">
+          <ion-icon name="search-outline"></ion-icon>
+        </ion-button>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+
+  <!-- ------------------------------------------------------------ -->
+  <!-- 3) Modal personalizado de selección/edición de Instituciones -->
+  <!-- ------------------------------------------------------------ -->
+  <ion-modal
+    [isOpen]="showModal"
+    backdropDismiss="true"
+    (ionModalDidDismiss)="closeModal()"
+    class="modal-instituciones"
+  >
+    <ng-template>
+      <!-- Encabezado del modal con fondo gris claro y texto negro -->
+      <ion-header>
+        <ion-toolbar class="modal-toolbar">
+          <ion-title class="modal-title">ADMINISTRAR INSTITUCIONES</ion-title>
+          <ion-buttons slot="end">
+            <ion-button fill="clear" (click)="closeModal()">
+              <ion-icon name="close-outline" class="modal-close-icon"></ion-icon>
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-header>
+
+      <ion-content class="modal-content-padding">
+        <!-- Barra de búsqueda dentro del modal (texto en negro) -->
+        <ion-searchbar
+          class="modal-searchbar"
+          [(ngModel)]="filterText"
+          placeholder="Buscar institución..."
+          debounce="300"
+          (ionInput)="filtrarInstituciones()"
+        ></ion-searchbar>
+
+        <!-- Contenedor de tarjetas: 1 por fila (size="12") -->
+        <ion-grid class="cards-grid">
+          <ion-row>
+            <ion-col
+              size="12"
+              *ngFor="let inst of modalInstitucionesFiltradas"
+            >
+              <ion-card class="card-institucion">
+                <ion-grid>
+                  <ion-row class="card-row">
+                    <ion-col size="auto" class="align-center">
+                      <!-- Checkbox con fondo gris claro o blanco -->
+                      <ion-checkbox
+                        [(ngModel)]="inst.selected"
+                        color="dark"
+                      ></ion-checkbox>
+                    </ion-col>
+                    <ion-col class="align-center">
+                      <div *ngIf="!inst.editing" class="nombre-institucion">
+                        {{ inst.newName }}
+                      </div>
+                      <ion-input
+                        *ngIf="inst.editing"
+                        [(ngModel)]="inst.newName"
+                        placeholder="Nuevo nombre"
+                        maxlength="40"
+                        class="input-edit"
+                      ></ion-input>
+                    </ion-col>
+                    <ion-col size="auto" class="align-center">
+                      <ion-button
+                        fill="clear"
+                        size="small"
+                        *ngIf="!inst.editing"
+                        (click)="toggleModalEdit(inst)"
+                      >
+                        <ion-icon slot="icon-only" name="create-outline"></ion-icon>
+                      </ion-button>
+                      <ion-button
+                        fill="clear"
+                        size="small"
+                        *ngIf="inst.editing"
+                        (click)="saveModalEdit(inst)"
+                      >
+                        <ion-icon slot="icon-only" name="save-outline"></ion-icon>
+                      </ion-button>
+                    </ion-col>
+                  </ion-row>
+                </ion-grid>
+              </ion-card>
+            </ion-col>
+          </ion-row>
+        </ion-grid>
+
+        <!-- Input para añadir una nueva institución (maxlength 40) -->
+        <div class="add-institution-row" *ngIf="!datosCargados">
+          <ion-item class="black-item add-item">
+            <ion-input
+              placeholder="Escribir nueva institución..."
+              [(ngModel)]="newInstitutionName"
+              maxlength="40"
+            ></ion-input>
+            <ion-button
+              slot="end"
+              size="small"
+              fill="clear"
+              (click)="addInstitutionModal()"
+              [disabled]="
+                !newInstitutionName.trim() ||
+                modalInstituciones.length >= 20
+              "
+            >
+              Añadir
+            </ion-button>
+          </ion-item>
+        </div>
+      </ion-content>
+
+      <!-- Pie del modal con fondo gris claro y botones “CANCELAR” rojo y “ACEPTAR” verde -->
+      <ion-footer>
+        <ion-toolbar class="modal-toolbar">
+          <ion-buttons slot="start">
+            <ion-button class="modal-footer-button cancel-button" (click)="closeModal()">
+              CANCELAR
+            </ion-button>
+          </ion-buttons>
+          <ion-buttons slot="end">
+            <ion-button class="modal-footer-button accept-button" (click)="applyModal()">
+              ACEPTAR
+            </ion-button>
+          </ion-buttons>
+        </ion-toolbar>
+      </ion-footer>
+    </ng-template>
+  </ion-modal>
+
+  <!-- ------------------------------------------------------------ -->
+  <!-- 4) Tabla de Profesores e Instituciones -->
+  <!-- ------------------------------------------------------------ -->
+  <ng-container *ngIf="profesores.length > 0">
+    <div class="tabla-titulo">Profesores e Instituciones</div>
+
+    <ion-grid class="grid-sin-capsula ion-margin-top">
+      <ion-row class="fila-encabezado">
+        <ion-col size="4"><strong>Profesor</strong></ion-col>
+        <ion-col size="8"><strong>Instituciones</strong></ion-col>
+      </ion-row>
+
+      <ion-row *ngFor="let prof of profesores" class="fila-dato">
+        <ion-col size="4">{{ prof.NombreProfesor }}</ion-col>
+        <ion-col size="8">
+          <ng-container *ngFor="let id of prof.Instituciones; let last = last">
+            <span [style.color]="newInstituciones.includes(id) ? 'red' : '#000'">
+              {{ obtenerNombreInstitucion(id) }}<span *ngIf="!last">, </span>
+            </span>
+          </ng-container>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+  </ng-container>
+</ion-content>

@@ -1,0 +1,588 @@
+/* familias.component.scss */
+
+/* ------------------------------------------------------------ */
+/* Variables globales                                           */
+/* ------------------------------------------------------------ */
+$sidebar-bg: #2c2c2c;
+$sidebar-active-bg: #FFD700;
+$sidebar-color: #fff;
+$sidebar-active-color: #000;
+$custom-orange: #ff8800;
+$form-padding: 16px;
+$form-margin-left: 80px;
+$header-default-bg: #ffffff;
+$header-default-color: #000000;
+
+/* ------------------------------------------------------------ */
+/* 0) GLOBAL: Forzar texto negro y fondo blanco en todo         */
+/* ------------------------------------------------------------ */
+ion-content,
+ion-list,
+ion-item,
+ion-grid,
+ion-row,
+ion-col,
+ion-label,
+ion-input,
+ion-textarea,
+ion-select,
+ion-select-option,
+ion-checkbox,
+ion-button,
+ion-title,
+ion-toolbar,
+ion-icon {
+  color: #000 !important;
+  background-color: #fff !important;
+}
+
+/* ------------------------------------------------------------ */
+/* 1) Fondo blanco para ion-content                             */
+/* ------------------------------------------------------------ */
+.content-white {
+  --background: #fff !important;
+  background-color: #fff !important;
+}
+
+/* ------------------------------------------------------------ */
+/* 2) Fondo blanco en header de Familias                        */
+/* ------------------------------------------------------------ */
+ion-header.toolbar-top,
+ion-header.toolbar-top ion-toolbar,
+ion-header[translucent].toolbar-top ion-toolbar {
+  --background: #fff !important;
+  background-color: #fff !important;
+}
+
+/* ------------------------------------------------------------ */
+/* 3) MINI‑SIDEBAR (E, D, F, S) – Colores exactos               */
+/* ------------------------------------------------------------ */
+.mini-sidebar.toolbar-left {
+  position: fixed;
+  top: 0; bottom: 0; left: 10px;
+  width: 65px; display: flex; flex-direction: column; gap: 12px;
+  padding-top: 75px; z-index: 1000;
+  background: $header-default-bg;
+  box-shadow: 2px 0 4px rgba(0,0,0,0.1) !important;
+
+  ion-button[fill="solid"][shape="round"] {
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+    padding: 0;
+    border-radius: 50%;
+    transition: .3s ease;
+  }
+
+  ion-button.btn-estudiantes {
+    --background: #c0c0c0 !important;
+    --color:      #fff    !important;
+  }
+  ion-button.btn-docentes {
+    --background: #c0c0c0 !important;
+    --color:      #fff    !important;
+  }
+  ion-button.btn-familias {
+    --background: #FFD700 !important;
+    --color:      #000    !important;
+  }
+  ion-button.btn-seleccion {
+    --background:       #ff8800 !important;
+    --color:            #000    !important;
+    --background-hover: #ff8800 !important;
+    --background-focused:   #ff8800 !important;
+    --background-activated: #ff8800 !important;
+    --background-pressed:   #ff8800 !important;
+  }
+}
+
+/* ------------------------------------------------------------ */
+/* 4) Toolbar principal                                         */
+/* ------------------------------------------------------------ */
+ion-toolbar.toolbar-top {
+  --background: $header-default-bg !important;
+  --color:      $header-default-color !important;
+}
+
+/* ------------------------------------------------------------ */
+/* 5) Formulario de familia                                     */
+/* ------------------------------------------------------------ */
+.formulario-estudiante {
+  padding: $form-padding;
+  margin-left: $form-margin-left;
+
+  ion-item {
+    background: #fff !important;
+    --border-color: transparent !important;
+  }
+
+  .input-with-error {
+    position: relative;
+  }
+
+  .black-item {
+    --background: #fff !important;
+    --border-color: transparent !important;
+
+    ion-input,
+    ion-select {
+      background-color: #fff !important;
+      box-shadow: none !important;
+    }
+
+    ion-label {
+      color: #000 !important;
+      margin-bottom: .25rem;
+      display: block;
+    }
+
+    ion-input,
+    ion-select {
+      position: relative;
+      color: #000 !important;
+      padding: .75rem 0 .25rem 0;
+      border: none;
+    }
+
+    ion-input::after,
+    ion-select::after {
+      content: "";
+      position: absolute;
+      bottom: .5rem;
+      left: 0;
+      width: 100%;
+      height: 2px;
+      background-color: #e2e2e2;
+      pointer-events: none;
+    }
+  }
+
+  .error-text-above {
+    position: absolute;
+    top: calc(100% - 6px);
+    left: 50%;
+    transform: translateX(-50%);
+    font-size: .6rem;
+    color: var(--ion-color-danger);
+    white-space: nowrap;
+    pointer-events: none;
+  }
+
+  ion-col {
+    padding: 0.5rem 0.75rem;
+  }
+}
+
+/* ------------------------------------------------------------ */
+/* 6) Grid personalizado para campos                            */
+/* ------------------------------------------------------------ */
+.grid-3cols {
+  margin-top: 1rem;
+}
+.grid-3cols ion-row {
+  margin-bottom: 1rem;
+  background-color: #fff !important;
+}
+
+/* ------------------------------------------------------------ */
+/* 7) Fila de búsqueda y acciones                               */
+/* ------------------------------------------------------------ */
+.grid-acciones ion-row {
+  margin-top: 1rem;
+  gap: .5rem;
+}
+.grid-acciones ion-col {
+  padding: 0 !important;
+}
+
+/* ------------------------------------------------------------ */
+/* 8) Remover ripple y sombras de Ionic                         */
+/* ------------------------------------------------------------ */
+ion-item,
+ion-checkbox,
+ion-button,
+ion-label,
+ion-input,
+ion-textarea,
+ion-select {
+  --ripple-color: transparent !important;
+  --highlight-color: transparent !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+/* ------------------------------------------------------------ */
+/* 9) Tabla de familias — estilos de líneas                     */
+/* ------------------------------------------------------------ */
+.tabla-familias {
+  --ion-grid-columns: 7;
+}
+.tabla-familias ion-row {
+  display: flex;
+}
+.tabla-familias ion-row.header-row ion-col,
+.tabla-familias ion-row ion-col {
+  border-top: 1px solid #000 !important;
+  border-left: 1px solid #000 !important;
+}
+.tabla-familias ion-row:last-child ion-col {
+  border-bottom: 1px solid #000 !important;
+}
+.tabla-familias ion-row ion-col:last-child {
+  border-right: 1px solid #000 !important;
+}
+
+/* ------------------------------------------------------------ */
+/* 10) Responsivo                                               */
+/* ------------------------------------------------------------ */
+@media (max-width: 768px) {
+  .formulario-estudiante {
+    margin-left: 0 !important;
+  }
+}
+
+/* ------------------------------------------------------------ */
+/* 11) Action Sheet export                                      */
+/* ------------------------------------------------------------ */
+:host ::ng-deep ion-action-sheet.custom-export-sheet {
+  --background: #fff !important;
+  --backdrop-opacity: 0.4 !important;
+  --border-radius: 8px !important;
+}
+:host ::ng-deep ion-action-sheet.custom-export-sheet .action-sheet-group {
+  background-color: #fff !important;
+}
+:host ::ng-deep ion-action-sheet.custom-export-sheet .action-sheet-button {
+  --color: #000 !important;
+  font-weight: 600;
+}
+:host ::ng-deep ion-action-sheet.custom-export-sheet .action-sheet-button:active {
+  background-color: rgba(0,0,0,0.05) !important;
+}
+:host ::ng-deep ion-action-sheet.custom-export-sheet .action-sheet-button[role="cancel"] {
+  margin-top: .5rem;
+  border-top: 1px solid #fff;
+}
+
+/* ------------------------------------------------------------ */
+/* 12) Botones bold                                             */
+/* ------------------------------------------------------------ */
+:host ::ng-deep ion-button .button-inner,
+:host ::ng-deep ion-button::part(native) {
+  font-weight: bold !important;
+}
+
+/* ------------------------------------------------------------ */
+/* Línea gris debajo de la primera fila del formulario de familias */
+/* ------------------------------------------------------------ */
+.separator-line {
+  border-bottom: 1px solid #e2e2e2 !important;
+}
+
+/* 1ª columna: ID */
+.tabla-familias ion-row > ion-col:nth-child(1) {
+  flex: 0 0 60px !important;
+  max-width: 60px !important;
+}
+
+/* 2ª columna: nombre docente */
+.tabla-familias ion-row > ion-col:nth-child(2) {
+  flex: 0 0 420px !important;
+  max-width: 420px !important;
+}
+
+/* 3ª columna: nombre apoderado */
+.tabla-familias ion-row > ion-col:nth-child(3) {
+  flex: 0 0 420px !important;
+  max-width: 420px !important;
+}
+
+/* 4ª columna: DNI */
+.tabla-familias ion-row > ion-col:nth-child(4) {
+  flex: 0 0 95px !important;
+  max-width: 95px !important;
+}
+
+/* 5ª columna: direccion*/
+.tabla-familias ion-row > ion-col:nth-child(5) {
+  flex: 0 0 275px !important;
+  max-width: 275px !important;
+}
+
+/* 6ª columna: Telefono */
+.tabla-familias ion-row > ion-col:nth-child(6) {
+  flex: 0 0 95px !important;
+  max-width: 95px !important;
+}
+
+/* 7ª columna: Ocupacion */
+.tabla-familias ion-row > ion-col:nth-child(7) {
+  flex: 0 0 255px !important;
+  max-width: 255px !important;
+}
+
+/* Overlay y caja de exportar */
+.export-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+}
+
+.export-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #ffffff;
+  width: 90%;
+  max-width: 340px;
+  border-radius: 1rem;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.2);
+  padding: 2rem 1rem; /* Espacio simétrico arriba y abajo */
+}
+
+/* Título */
+.export-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #000;
+  margin: 0;
+  margin-bottom: 1rem; /* REDUCIDO para juntar con los botones */
+}
+
+/* Contenedor de botones */
+.export-buttons {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+/* Estilo común para todos los botones */
+.export-buttons button {
+  flex: 1;
+  padding: 0.6rem 0;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+/* Botón PDF y Excel */
+.btn-export {
+  background-color: #4a90e2;
+  color: #fff;
+}
+.btn-export:hover {
+  background-color: #357ab8;
+}
+
+/* Botón Cancelar */
+.btn-cancel {
+  background-color: #c54e4e;
+  color: #fff;
+}
+.btn-cancel:hover {
+  background-color: #a03030;
+}
+
+
+/* Overlay de error – idéntico a export */
+.error-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+}
+
+.error-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #ffffff;
+  width: 90%;
+  max-width: 340px;
+  border-radius: 1rem;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.2);
+  padding: 2rem 1rem;
+}
+
+.error-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #000;
+  margin: 0;
+  margin-bottom: 1rem;
+}
+
+.error-message {
+  margin: 0 0 1rem;
+  color: #000;
+}
+
+.btn-ok {
+  display: block;   /* para que respete width en bloque */
+  width: 20%;      /* ocupa todo el ancho disponible */
+  padding: 0.7rem 0;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  background-color: #c54e4e;
+  color: #fff;
+  transition: background-color 0.2s ease;
+}
+
+.btn-ok:hover {
+  background-color: #a03030;
+}
+/* OVERLAYS FUERA DE ION-CONTENT */
+.export-overlay,
+.error-overlay {
+  position: fixed !important;
+  top: 0; left: 0;
+  width: 100vw; height: 100vh;
+  background-color: rgba(0,0,0,0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 99999 !important; /* súper alto */
+}
+
+/* Contenedor interno */
+.export-box,
+.error-box {
+  background-color: #fff;
+  border-radius: 1rem;
+  box-shadow: 0 6px 22px rgba(0,0,0,0.2);
+  padding: 2rem 1rem;
+  position: relative;
+  z-index: 100000; /* aún más dentro */
+}
+/* Quita TODO box‑shadow del native part de ion-button */
+:host ::ng-deep ion-button::part(native) {
+  box-shadow: none !important;
+}
+
+/* Modal de Selección de Estudiantes (igual al de Familias) */
+.modal-estudiantes {
+  --width: 90%;
+  --max-width: 700px;
+  --border-radius: 8px;
+  --background: #ffffff;
+  --backdrop-opacity: 0.4 !important;
+}
+
+.modal-estudiantes ion-header,
+.modal-estudiantes ion-toolbar.modal-toolbar {
+  --background: #f2f2f2 !important;
+  background-color: #f2f2f2 !important;
+  color: #000 !important;
+}
+
+.modal-estudiantes .modal-toolbar {
+  --background: #cccccc !important;
+}
+
+.modal-estudiantes .modal-title {
+  background-color: #f2f2f2 !important;
+  color: #000 !important;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.modal-estudiantes .modal-close-icon {
+  color: #000 !important;
+  background-color: #f2f2f2 !important;
+}
+
+.modal-estudiantes .modal-content-padding {
+  padding: 1rem 1rem 2rem;
+  --background: #ffffff !important;
+}
+
+.modal-estudiantes .modal-searchbar {
+  margin: 0.5rem 0 1rem;
+  --background: #f2f2f2 !important;
+  --border-radius: 8px !important;
+  --color: #000 !important;
+  --placeholder-color: #888 !important;
+}
+
+.modal-estudiantes .cards-grid {
+  --ion-grid-padding: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.modal-estudiantes .card-estudiante {
+  --border-radius: 8px;
+  --box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease-in-out;
+}
+
+.modal-estudiantes .card-estudiante:hover {
+  transform: translateY(-2px);
+}
+
+.modal-estudiantes .card-row {
+  display: flex;
+  align-items: center;
+}
+
+.modal-estudiantes .align-center {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+}
+
+.modal-estudiantes .nombre-estudiante {
+  font-size: 1rem;
+  color: #333;
+  white-space: normal;
+  word-break: break-word;
+  max-width: 100%;
+}
+
+.modal-estudiantes .modal-footer-button {
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #fff;
+  --background: transparent;
+  --box-shadow: none;
+  --border-radius: 4px;
+  padding: 0 1rem;
+  width: 100%;
+}
+
+.modal-estudiantes .cancel-button {
+  --background: #e74c3c !important;
+  background-color: #f2f2f2 !important;
+}
+
+.modal-estudiantes .cancel-button:hover {
+  --background: #c0392b !important;
+}
+
+.modal-estudiantes .accept-button {
+  --background: #27ae60 !important;
+  background-color: #f2f2f2 !important;
+}
+
+.modal-estudiantes .accept-button:hover {
+  --background: #1e8449 !important;
+}
+
+:host ::ng-deep input,
+:host ::ng-deep textarea {
+  caret-color: #000 !important;
+}

@@ -19,15 +19,29 @@
     "target": "es2022",
     "module": "es2020",
     "lib": [
-      "es2018", 
+      "es2018",
       "dom"
     ],
-    "useDefineForClassFields": false
+    "useDefineForClassFields": false,
+
+    // ─── NUEVAS OPCIONES ─────────────────────────────────────────────────────────────
+    "esModuleInterop": true,      // permite compatibilidad de importaciones CommonJS
+    "skipLibCheck": true,         // omite chequeo de tipos en librerías externas
+    "typeRoots": [                // dónde buscar definiciones de tipos
+      "node_modules/@types"
+    ]
   },
+
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,
     "strictInjectionParameters": true,
     "strictInputAccessModifiers": true,
     "strictTemplates": true
-  }
+  },
+
+  // ─── INCLUIMOS .d.ts PARA DECLARACIONES PROPIAS ─────────────────────────────────
+  "include": [
+    "src/**/*.ts",
+    "src/**/*.d.ts"
+  ]
 }

@@ -1,0 +1,11 @@
+#zoom-fix {
+  overflow: hidden;
+}
+/* global.scss */
+
+.tabla-container {
+  contain: layout style;
+  overflow-x: auto;
+  padding-bottom: 1rem;
+}
+

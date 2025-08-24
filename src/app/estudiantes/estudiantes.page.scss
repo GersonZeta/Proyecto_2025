@@ -1,0 +1,721 @@
+/* ------------------------------------------------------------ */
+/* Variables globales                                           */
+/* ------------------------------------------------------------ */
+$sidebar-bg: #2c2c2c;
+$sidebar-active-bg: #FFD700;
+$sidebar-color: #fff;
+$sidebar-active-color: #000;
+$form-padding: 16px;
+$form-margin-left: 80px;
+$header-default-bg: #ffffff;
+$header-default-color: #000000;
+
+/* ------------------------------------------------------------ */
+/* 0) GLOBAL: Forzar texto negro y fondo blanco en todo         */
+/* ------------------------------------------------------------ */
+ion-content,
+ion-list,
+ion-item,
+ion-grid,
+ion-row,
+ion-col,
+ion-label,
+ion-input,
+ion-checkbox,
+ion-button,
+ion-title,
+ion-toolbar,
+ion-icon {
+  color: #000 !important;
+  background-color: #ffffff !important;
+}
+
+/* ------------------------------------------------------------ */
+/* 1) Fondo blanco para todo el contenido del ion-content       */
+/* ------------------------------------------------------------ */
+.content-white {
+  --background: #ffffff !important;
+  background-color: #ffffff !important;
+}
+
+
+
+/* ------------------------------------------------------------ */
+/* 3) Toolbar principal y colapsable con fondo blanco           */
+/* ------------------------------------------------------------ */
+ion-toolbar.toolbar-top {
+  --background: $header-default-bg !important;
+  --color: $header-default-color !important;
+}
+
+/* ------------------------------------------------------------ */
+/* 4) Formulario de estudiante                                  */
+/* ------------------------------------------------------------ */
+.formulario-estudiante {
+  padding: $form-padding;
+  margin-left: $form-margin-left;
+
+  ion-item {
+    background: #ffffff !important;
+    color: #000 !important;
+  }
+
+  ion-button {
+    margin-top: 0.5rem;
+    color: #000 !important;
+  }
+
+  ion-grid {
+    ion-row {
+      ion-col {
+        color: #000 !important;
+        background-color: #ffffff !important;
+      }
+    }
+  }
+
+  .header-row {
+    background-color: #f5f5f5 !important;
+
+    ion-col {
+      font-weight: 600;
+      padding: 0.5rem 0.75rem;
+      border-bottom: 2px solid #ccc;
+      color: #000 !important;
+    }
+  }
+
+  ion-grid {
+    margin-top: 1rem;
+  }
+
+  ion-row {
+    &:nth-child(odd) {
+      background-color: #ffffff !important;
+    }
+    &:nth-child(even) {
+      background-color: #f5f5f5 !important;
+    }
+  }
+
+  ion-col {
+    padding: 0.5rem 0.75rem;
+    border-bottom: 1px solid #ddd;
+    background-color: #ffffff !important;
+    color: #000 !important;
+  }
+
+  .clickable {
+    cursor: pointer;
+  }
+}
+
+/* ------------------------------------------------------------ */
+/* 5) Grid personalizado para campos del formulario             */
+/* ------------------------------------------------------------ */
+.grid-3cols {
+  margin-top: 1rem;
+
+  ion-row {
+    margin-bottom: 1rem;
+    background-color: #ffffff !important;
+
+    ion-col {
+      color: #000 !important;
+      background-color: #ffffff !important;
+    }
+  }
+}
+
+/* ------------------------------------------------------------ */
+/* 6) Inputs “casillas”: fondo blanco, texto y bordes negros    */
+/* ------------------------------------------------------------ */
+.black-item {
+  --background: #ffffff !important;
+  --background-hover: #ffffff !important;
+  --background-focused: #ffffff !important;
+  --background-activated: #ffffff !important;
+  --background-checked: #ffffff !important;
+  --background-pressed: #ffffff !important;
+  --border-color: transparent !important;
+  --highlight-height: 0 !important;
+  background-color: #ffffff !important;
+  color: #000 !important;
+
+  &:hover,
+  &:focus-within,
+  &:active,
+  &.ion-activated,
+  &.ion-pressed {
+    --background: #ffffff !important;
+    background-color: #ffffff !important;
+  }
+
+  ion-checkbox {
+    --background: #ffffff !important;
+    --background-hover: #ffffff !important;
+    --background-focused: #ffffff !important;
+    --background-checked: #ffffff !important;
+    --background-pressed: #ffffff !important;
+    --border-color: transparent !important;
+    --border-color-checked: transparent !important;
+    --checkmark-color: #000 !important;
+    --ripple-color: transparent !important;
+    background-color: #ffffff !important;
+    box-shadow: none !important;
+  }
+}
+
+/* 6.1) Ajustar posición de las labels “stacked” para que no queden tapadas */
+.black-item ion-label {
+  color: #000 !important;
+  margin-bottom: 0.25rem;
+  display: block;
+}
+
+/* 6.2) Incrementar padding superior en <ion-input> para no tapar la label */
+.black-item ion-input {
+  position: relative;
+  color: #000 !important;
+  --color: #000 !important;
+  --placeholder-color: #000 !important;
+  padding-top: 0.75rem;
+  padding-bottom: 0.25rem;
+  border: none;
+  background-color: #ffffff !important;
+}
+
+ion-input input,
+ion-input textarea {
+  color: #000 !important;
+}
+
+ion-input input::placeholder {
+  color: #000 !important;
+}
+
+.black-item ion-input::after {
+  content: "";
+  position: absolute;
+  bottom: 0.5rem;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: #e2e2e2;
+  pointer-events: none;
+}
+
+.black-item ion-input:focus {
+  padding-top: 0.75rem;
+  padding-bottom: 0.25rem;
+}
+
+/* ------------------------------------------------------------ */
+/* 7) Contenedor relativo para el input con error               */
+/* ------------------------------------------------------------ */
+.input-with-error {
+  position: relative;
+}
+
+/* ------------------------------------------------------------ */
+/* 8) Mensaje de error absolutamente posicionado                */
+/* ------------------------------------------------------------ */
+.error-text-above {
+  position: absolute;
+  top: calc(100% + -6px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.6rem;
+  color: var(--ion-color-danger);
+  line-height: 1.2;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+/* ------------------------------------------------------------ */
+/* 9) Casilla de búsqueda debajo de los botones                 */
+/* ------------------------------------------------------------ */
+.search-below {
+  margin: 1rem 0;
+  border-radius: 0;
+  --background: #ffffff !important;
+  --color: #000 !important;
+}
+
+.search-below ion-label {
+  color: #000 !important;
+  margin-bottom: 0.25rem;
+}
+
+.search-below ion-input {
+  padding-top: 0.75rem;
+  padding-bottom: 0.25rem;
+  background-color: #ffffff !important;
+}
+
+/* ------------------------------------------------------------ */
+/* 10) Ajustes responsivos                                      */
+/* ------------------------------------------------------------ */
+@media (max-width: 768px) {
+  ion-col[size-sm="12"] {
+    margin: 0;
+    padding: 0;
+  }
+
+  .formulario-estudiante {
+    margin-left: 0 !important;
+  }
+}
+
+/* ------------------------------------------------------------ */
+/* 11) Eliminar ripple, sombras y highlights de Ionic           */
+/* ------------------------------------------------------------ */
+ion-item,
+ion-checkbox,
+ion-button,
+ion-label,
+ion-input,
+ion-textarea {
+  --ripple-color: transparent !important;
+  --highlight-color-focused: transparent !important;
+  --highlight-color: transparent !important;
+  --box-shadow: none !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
+
+ion-checkbox::part(container) {
+  box-shadow: none !important;
+  background: rgb(141, 141, 141) !important;
+}
+
+ion-item::part(native),
+ion-item::part(container) {
+  box-shadow: none !important;
+  background-color: #ffffff !important;
+  --background: #ffffff !important;
+  --ripple-color: transparent !important;
+  --highlight-color: transparent !important;
+}
+
+ion-button::part(native) {
+  box-shadow: none !important;
+}
+
+.mini-sidebar ion-button:first-child {
+  --background: #FFD700 !important;
+  --color: #000 !important;
+}
+.grid-3cols {
+  ion-row:nth-child(1) ion-col,
+  ion-row:nth-child(2) ion-col {
+    border-bottom: none !important;
+  }
+
+}
+
+
+.mini-sidebar.toolbar-left {
+  background-color: $header-default-bg;
+  /* Sombra en el borde derecho de la mini‐sidebar */
+  box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1) !important;
+}
+
+/* ------------------------------------------------------------ */
+/* 2) Mini-sidebar (botones redondos) – fondo configurable       */
+/* ------------------------------------------------------------ */
+.mini-sidebar {
+  position: fixed;
+  top: 0;
+  bottom: 0;
+  left: 10px;
+  width: 65px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-top: 75px;            // baja los botones
+  z-index: 1000;
+  background: transparent;
+
+  &.toolbar-left {
+    background-color: $header-default-bg;
+    box-shadow: 2px 0 4px rgba(0, 0, 0, 0.1) !important;
+  }
+
+  /* 1) Botones D y F (y resto) en gris oscuro */
+  ion-button {
+    --background: $sidebar-bg !important;   // #2c2c2c
+    --color: $sidebar-color !important;     // #fff
+    width: 40px;
+    height: 40px;
+    font-size: 18px;
+    padding: 0;
+    border-radius: 50%;
+    transition: 0.3s ease;
+  }
+
+  /* 2) “E” completamente amarillo */
+  ion-button:nth-child(1) {
+    --background: $sidebar-active-bg !important;   // #FFD700
+    --color: $sidebar-active-color !important;     // #000
+  }
+}
+
+.mini-sidebar.toolbar-left {
+  /* Botón E (primero) */
+  ion-button:nth-child(1) {
+    --background: #FFD700 !important;
+    --background-hover: #FFD700 !important;
+    --background-focused: #FFD700 !important;
+    --background-activated: #FFD700 !important;
+    --background-pressed: #FFD700 !important;
+    --color: #000 !important;
+  }
+
+  /* Botones D y F (segundo y tercero) */
+  ion-button:nth-child(2),
+  ion-button:nth-child(3) {
+    --background: #c0c0c0 !important;
+    --background-hover: #c0c0c0 !important;
+    --background-focused: #c0c0c0 !important;
+    --background-activated: #c0c0c0 !important;
+    --background-pressed: #c0c0c0 !important;
+    --color: #fff !important;
+  }
+  ion-button:nth-child(4) {
+    --background: #ff8800 !important;
+    --background-hover: #ff8800 !important;
+    --background-focused: #ff8800 !important;
+    --background-activated: #ff8800 !important;
+    --background-pressed: #ff8800 !important;
+    --color: #000 !important;
+  }
+}
+
+.black-item ion-input::after {
+  content: "";
+  position: absolute;
+  bottom: 0.5rem;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: #e2e2e2;
+  pointer-events: none;
+}
+.formulario-estudiante .search-buttons-row ion-col {
+  border-bottom: none !important;
+}
+
+/* 2) Quitar borde debajo de cada ion-col dentro de .header-row */
+.formulario-estudiante .header-row ion-col {
+  border-bottom: none !important;
+}
+
+.search-buttons-row {
+  margin-top: -2rem !important;
+}
+:host ::ng-deep input,
+:host ::ng-deep textarea {
+  caret-color: #000 !important;
+}
+
+/* 3) Bordes verticales en cada celda (ion-col) */
+.tabla-estudiantes ion-row ion-col {
+  border-left: 2px solid #000;
+  border-top: 2px solid #000;
+}
+
+.tabla-estudiantes ion-row ion-col {
+  border-left-width: var(--hairline) !important;
+  border-top-width:  var(--hairline) !important;
+  border-left-style: solid !important;
+  border-top-style:  solid !important;
+  border-left-color: #000    !important;
+  border-top-color:  #000    !important;
+}
+
+.tabla-estudiantes ion-row:last-child {
+  border-bottom-width: var(--hairline) !important;
+  border-bottom-style: solid !important;
+  border-bottom-color: #000    !important;
+}
+.tabla-estudiantes ion-row ion-col:last-child {
+  border-right-width: var(--hairline) !important;
+  border-right-style: solid !important;
+  border-right-color: #000     !important;
+}
+
+
+
+/* 4) Ajustes para no duplicar bordes en los extremos */
+/*    - quitamos borde superior de la primera fila      */
+/*    - quitamos borde inferior de la última fila       */
+.tabla-estudiantes ion-row:first-child {
+  border-top: none;
+}
+.tabla-estudiantes ion-row:last-child {
+  border-bottom: none;
+}
+
+
+/* 5) Para la última fila, en lugar de usar border-top, aplicamos border-bottom de 2 px */
+.tabla-estudiantes ion-row:last-child {
+  border-bottom: 2px solid #000;
+}
+.tabla-estudiantes ion-row ion-col:last-child {
+  border-right: 2px solid #000;
+}
+
+
+/* ------------------------------------------------------------ */
+/* 12) Línea gris bajo la 2ª fila del formulario de estudiante  */
+/* ------------------------------------------------------------ */
+.formulario-estudiante .grid-3cols ion-row:nth-child(2) {
+  border-bottom-width: var(--hairline) !important;
+  border-bottom-style: solid !important;
+  border-bottom-color: #e2e2e2 !important;
+  background-color: #ffffff !important;  /* fuerza fondo blanco */
+}
+
+
+/* 1) Sobre el wrapper interno de Ionic Button */
+:host ::ng-deep ion-button .button-inner {
+  font-weight: bold !important;
+}
+
+/* 2) Directamente sobre el “native” part (shadow DOM) */
+:host ::ng-deep ion-button::part(native) {
+  font-weight: bold !important;
+}
+
+
+.tabla-estudiantes ion-row ion-col {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 1ª columna: ID */
+.tabla-estudiantes ion-row > ion-col:nth-child(1) {
+  flex: 0 0 60px !important;
+  max-width: 60px !important;
+}
+
+/* 2ª columna: Apellido y Nombres */
+.tabla-estudiantes ion-row > ion-col:nth-child(2) {
+  flex: 0 0 420px !important;
+  min-width: 420px !important;
+}
+
+/* 3ª columna: Fecha Nac. */
+.tabla-estudiantes ion-row > ion-col:nth-child(3) {
+  flex: 0 0 180px !important;
+  max-width: 180px !important;
+}
+
+/* 4ª columna: Edad */
+.tabla-estudiantes ion-row > ion-col:nth-child(4) {
+  flex: 0 0 70px !important;
+  max-width: 70px !important;
+}
+
+/* 5ª columna: DNI */
+.tabla-estudiantes ion-row > ion-col:nth-child(5) {
+  flex: 0 0 115px !important;
+  max-width: 115px !important;
+}
+
+/* 6ª columna: Grado/Sección */
+.tabla-estudiantes ion-row > ion-col:nth-child(6) {
+  flex: 0 0 120px !important;
+  max-width: 120px !important;
+}
+
+/* 7ª columna: Discapacidad */
+.tabla-estudiantes ion-row > ion-col:nth-child(7) {
+  flex: 0 0 270px !important;
+  max-width: 270px !important;
+}
+
+/* 8ª columna: Doc. Sust. */
+.tabla-estudiantes ion-row > ion-col:nth-child(8) {
+  flex: 0 0 130px !important;
+  max-width: 130px !important;
+}
+
+/* 9ª columna: Doc. Inc. */
+.tabla-estudiantes ion-row > ion-col:nth-child(9) {
+  flex: 0 0 130px !important;
+  max-width: 130px !important;
+}
+
+/* 10ª columna: IPP */
+.tabla-estudiantes ion-row > ion-col:nth-child(10) {
+  flex: 0 0 75px !important;
+  max-width: 75px !important;
+}
+
+/* 11ª columna: PEP */
+.tabla-estudiantes ion-row > ion-col:nth-child(11) {
+  flex: 0 0 75px !important;
+  max-width: 75px !important;
+}
+
+/* ——————————————————————————————————————————————————————————————
+   Wrapper ajustado + restaurar borde derecho
+   —————————————————————————————————————————————————————————————— */
+.tabla-container {
+  display: inline-block !important;       /* Ajusta el ancho al contenido */
+  background-color: #ffffff !important;   /* Fondo blanco */
+  overflow-x: hidden !important;          /* Oculta el gris sobrante */
+}
+
+.tabla-estudiantes {
+  width: auto !important;                 /* Que mida sólo lo que ocupan sus columnas */
+  justify-content: flex-start !important; /* Alinea al inicio */
+}
+
+/* Restaurar la línea negra en la última columna */
+.tabla-estudiantes ion-row ion-col:last-child {
+  border-right: 1px solid #000 !important;
+}
+
+.export-modal-wrapper .modal-wrapper {
+  --background: transparent;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+
+
+/* Overlay y caja de exportar */
+.export-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+}
+
+.export-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #ffffff;
+  width: 90%;
+  max-width: 340px;
+  border-radius: 1rem;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.2);
+  padding: 2rem 1rem; /* Espacio simétrico arriba y abajo */
+}
+
+/* Título */
+.export-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #000;
+  margin: 0;
+  margin-bottom: 1rem; /* REDUCIDO para juntar con los botones */
+}
+
+/* Contenedor de botones */
+.export-buttons {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+/* Estilo común para todos los botones */
+.export-buttons button {
+  flex: 1;
+  padding: 0.6rem 0;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+/* Botón PDF y Excel */
+.btn-export {
+  background-color: #4a90e2;
+  color: #fff;
+}
+.btn-export:hover {
+  background-color: #357ab8;
+}
+
+/* Botón Cancelar */
+.btn-cancel {
+  background-color: #c54e4e;
+  color: #fff;
+}
+.btn-cancel:hover {
+  background-color: #a03030;
+}
+
+
+
+
+
+
+
+
+/* Overlay de error – idéntico a export */
+.error-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+}
+
+.error-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #ffffff;
+  width: 90%;
+  max-width: 340px;
+  border-radius: 1rem;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.2);
+  padding: 2rem 1rem;
+}
+
+.error-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #000;
+  margin: 0;
+  margin-bottom: 1rem;
+}
+
+.error-message {
+  margin: 0 0 1rem;
+  color: #000;
+}
+
+.btn-ok {
+  display: block;   /* para que respete width en bloque */
+  width: 20%;      /* ocupa todo el ancho disponible */
+  padding: 0.7rem 0;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  background-color: #c54e4e;
+  color: #fff;
+  transition: background-color 0.2s ease;
+}
+
+.btn-ok:hover {
+  background-color: #a03030;
+}

@@ -1,0 +1,130 @@
+<!-- src/app/graficos/graficos.page.html -->
+<ion-header [translucent]="true">
+  <ion-toolbar class="header-graficos">
+    <ion-title class="titulo-graficos">GRAFICOS DE DATOS</ion-title>
+    <ion-buttons slot="end">
+      <ion-back-button
+        defaultHref="/seleccion-instituciones"
+        text="Regresar"
+        class="btn-regresar"
+      ></ion-back-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content [fullscreen]="true" class="contenido-graficos">
+  <ion-grid>
+    <!-- PRIMERA FILA: 3 gráficos -->
+    <ion-row>
+      <ion-col size="12" size-md="4">
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>Tipo de Discapacidad</ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            <canvas #chartDisc></canvas>
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+
+      <ion-col size="12" size-md="4">
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>IPP vs PEP</ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            <canvas #chartIppPep></canvas>
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+
+      <ion-col size="12" size-md="4">
+        <ion-card>
+          <ion-card-header>
+            <ion-card-title>Familias por Ocupación</ion-card-title>
+          </ion-card-header>
+          <ion-card-content>
+            <canvas #chartFam></canvas>
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+    </ion-row>
+
+    <!-- SEGUNDA FILA: Gráfico con leyenda externa y engranaje -->
+    <ion-row>
+      <ion-col size="12">
+        <ion-card>
+          <ion-card-header style="position: relative;">
+            <ion-card-title>Alumnos por Institución</ion-card-title>
+            <ion-button
+              fill="clear"
+              size="small"
+              shape="round"
+              style="position: absolute; top: 6px; right: 6px;"
+              (click)="toggleFiltrosInst()"
+            >
+              <ion-icon slot="icon-only" name="settings"></ion-icon>
+            </ion-button>
+          </ion-card-header>
+          <ion-card-content>
+            <div class="instituciones-grid">
+              <div id="legendInst" class="columna columns-2 chartjs-legend"></div>
+              <div class="columna">
+                <canvas #chartInst></canvas>
+              </div>
+            </div>
+          </ion-card-content>
+        </ion-card>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+</ion-content>
+
+<!-- OVERLAY DE FILTROS DE INSTITUCIONES -->
+<ng-container *ngIf="mostrarFiltrosInst">
+  <div class="filter-overlay">
+    <div class="filter-box">
+      <!-- Botón “X” para cerrar -->
+      <ion-button fill="clear" class="close-x" (click)="toggleFiltrosInst()">×</ion-button>
+      <!-- Título -->
+      <h2 class="filter-title">Filtrar Instituciones</h2>
+
+      <!-- Buscador (sin lupa) -->
+      <ion-item class="black-item search-below">
+        <ion-label position="stacked">Buscar Institución</ion-label>
+        <ion-input
+          type="text"
+          [(ngModel)]="nombreInstBusqueda"
+          (ionInput)="buscarInst()"
+          (keypress)="onlyLetters($event)"
+        ></ion-input>
+      </ion-item>
+
+      <!-- Lista de checkboxes -->
+      <ion-list class="list-instituciones">
+        <ion-item
+          *ngFor="let inst of institucionesFiltradas"
+          class="black-item"
+          lines="none"
+        >
+          <ion-checkbox
+            slot="start"
+            [(ngModel)]="inst.checked"
+            (ionChange)="updateInstitucionesChart()"
+          ></ion-checkbox>
+          <ion-label>{{ inst.label }}</ion-label>
+        </ion-item>
+      </ion-list>
+
+      <!-- Botones Selección -->
+      <div class="botones-seleccion">
+        <ion-button fill="clear" class="link-button" (click)="selectAll()">
+          Seleccionar todos
+        </ion-button>
+        <ion-button fill="clear" class="link-button" (click)="deselectAll()">
+          Desmarcar todos
+        </ion-button>
+      </div>
+    </div>
+  </div>
+</ng-container>

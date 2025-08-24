@@ -1,0 +1,220 @@
+/* src/app/graficos/graficos.page.scss */
+
+/* ==========================================================================
+   1) Estilos base de la página de Gráficos
+   ========================================================================== */
+
+ion-content.contenido-graficos {
+  --background: #ffffff;
+}
+
+ion-toolbar.header-graficos {
+  --background: #4a90e2 !important;
+  --color: #ffffff !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
+  border-bottom: none;
+}
+
+.titulo-graficos {
+  color: #ffffff;
+  text-transform: uppercase;
+  font-weight: bold;
+  font-size: 1.2rem;
+}
+
+ion-back-button.btn-regresar {
+  color: #000000 !important;
+  font-weight: bold;
+}
+
+ion-card {
+  background: #ffffff;
+  border: 2px solid #000000;
+  border-radius: 8px;
+}
+
+ion-card-title {
+  color: #000000;
+  font-weight: bold;
+  text-align: center;
+}
+
+ion-card-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+}
+
+.instituciones-grid {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: 10px;
+  gap: 20px;
+}
+
+.instituciones-grid .columna {
+  flex: 1;
+}
+
+.columns-2 {
+  column-count: 2;
+  column-gap: 1rem;
+}
+
+.chartjs-legend {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+
+/* ==========================================================================
+   2) Overlay Filtrar Instituciones
+   ========================================================================== */
+
+.filter-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0,0,0,0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+}
+
+.filter-box {
+  position: relative;
+  background: #fff !important;
+  width: 90%;
+  max-width: 660px;
+  min-width: 300px;
+  min-height: 350px;      /* nunca se encoge */
+  border-radius: 1rem;
+  padding: 1.5rem;
+  box-shadow: 0 6px 22px rgba(0,0,0,0.2);
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  color: #000 !important;
+}
+
+/* Botón “X” para cerrar */
+.close-x {
+  position: absolute;
+  top: 1rem;
+  right: 1rem;
+  font-size: 1.5rem;
+  background: transparent;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  color: #000 !important;
+  z-index: 10;
+}
+
+.filter-title {
+  margin: 0 0 0.5rem;
+  font-size: 1.2rem;
+  font-weight: 600;
+  text-align: center;
+  color: #000 !important;
+}
+
+/* Buscador — mismo estilo Estudiantes, sin icono */
+.black-item.search-below {
+  margin: 0 0 0.5rem 0;
+  border-radius: 0;
+  --background: #ffffff !important;
+  --color: #000 !important;
+}
+
+.black-item.search-below ion-input {
+  padding: 0.5rem 0 0.25rem 0;
+}
+
+/* Lista de instituciones — estilo tabla Estudiantes */
+.list-instituciones {
+  max-height: 250px;
+  overflow-y: auto;
+  margin: 0;
+  padding: 0;
+  background: #ffffff;     /* fondo blanco constante */
+  min-height: 150px;       /* bloque estático si está vacío */
+
+  /* Scroll personalizado */
+  &::-webkit-scrollbar {
+    width: 6px;
+  }
+  &::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  &::-webkit-scrollbar-thumb {
+    background-color: #e2e2e2;
+    border-radius: 3px;
+  }
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: #ccc;
+  }
+  scrollbar-width: thin;
+  scrollbar-color: #e2e2e2 transparent;
+}
+
+.list-instituciones ion-item.black-item {
+  --background: #ffffff !important;
+  background: #ffffff !important;
+  padding: 0.5rem 1rem !important;
+  margin: 0 !important;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #e2e2e2 !important;
+  color: #000 !important;
+}
+
+.list-instituciones ion-item.black-item:last-child {
+  border-bottom: none !important;
+}
+
+/* Forzar checkbox fondo blanco y checkmark negro */
+.list-instituciones ion-checkbox {
+  --background: #ffffff !important;
+  --background-checked: #ffffff !important;
+  --checkmark-color: #000 !important;
+}
+
+/* Botones Seleccionar/Desmarcar */
+.botones-seleccion {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 1rem;
+  margin: 0.5rem 0;
+}
+
+.link-button {
+  --color: #4a90e2 !important;
+  font-weight: bold !important;
+  text-transform: uppercase;
+  padding: 0 !important;
+  height: auto;
+  margin: 0 !important;
+}
+/* ==================================================================
+   Forzar texto negro en lista de instituciones incluso al pasar el cursor
+   ================================================================== */
+.filter-box .list-instituciones ion-item.black-item:hover,
+.filter-box .list-instituciones ion-item.black-item:hover ion-label,
+.filter-box .list-instituciones ion-item.black-item:hover ion-checkbox {
+  color: #000 !important;
+  --color: #000 !important;
+}
+
+/* Asegurar que el label no herede ningún estilo hover */
+.filter-box .list-instituciones ion-item.black-item ion-label {
+  color: #000 !important;
+}
+
+/* Y si quieres también bloquear cualquier cambio de fondo de texto */
+.filter-box .list-instituciones ion-item.black-item:hover {
+  background: #ffffff !important;
+}
