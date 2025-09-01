@@ -1,33 +1,33 @@
+ion-item,
+ion-checkbox,
+ion-button,
+ion-label,
+ion-input,
+ion-textarea {
+  --ripple-color: transparent !important;
+  --highlight-color-focused: transparent !important;
+  --highlight-color: transparent !important;
+  --box-shadow: none !important;
+  box-shadow: none !important;
+  filter: none !important;
+}
 
-.mini-sidebar.toolbar-left {
-  /* Botón E (primero) */
-  ion-button:nth-child(1) {
-    --background: #FFD700 !important;
-    --background-hover: #FFD700 !important;
-    --background-focused: #FFD700 !important;
-    --background-activated: #FFD700 !important;
-    --background-pressed: #FFD700 !important;
-    --color: #000 !important;
-  }
+ion-checkbox::part(container) {
+  box-shadow: none !important;
+  background: rgb(141, 141, 141) !important;
+}
 
-  /* Botones D y F (segundo y tercero) */
-  ion-button:nth-child(2),
-  ion-button:nth-child(3) {
-    --background: #c0c0c0 !important;
-    --background-hover: #c0c0c0 !important;
-    --background-focused: #c0c0c0 !important;
-    --background-activated: #c0c0c0 !important;
-    --background-pressed: #c0c0c0 !important;
-    --color: #fff !important;
-  }
-  ion-button:nth-child(4) {
-    --background: #ff8800 !important;
-    --background-hover: #ff8800 !important;
-    --background-focused: #ff8800 !important;
-    --background-activated: #ff8800 !important;
-    --background-pressed: #ff8800 !important;
-    --color: #000 !important;
-  }
+ion-item::part(native),
+ion-item::part(container) {
+  box-shadow: none !important;
+  background-color: #ffffff !important;
+  --background: #ffffff !important;
+  --ripple-color: transparent !important;
+  --highlight-color: transparent !important;
+}
+
+ion-button::part(native) {
+  box-shadow: none !important;
 }
 
 .black-item ion-input::after {
@@ -133,68 +133,142 @@
   text-overflow: ellipsis;
 }
 
-/* 1ª columna: ID */
-.tabla-estudiantes ion-row > ion-col:nth-child(1) {
-  flex: 0 0 60px !important;
-  max-width: 60px !important;
+
+
+
+
+
+.black-item {
+  --background: #ffffff !important;
+  --background-hover: #ffffff !important;
+  --background-focused: #ffffff !important;
+  --background-activated: #ffffff !important;
+  --background-checked: #ffffff !important;
+  --background-pressed: #ffffff !important;
+  --border-color: transparent !important;
+  --highlight-height: 0 !important;
+  background-color: #ffffff !important;
+  color: #000 !important;
+
+  &:hover,
+  &:focus-within,
+  &:active,
+  &.ion-activated,
+  &.ion-pressed {
+    --background: #ffffff !important;
+    background-color: #ffffff !important;
+  }
+
+  ion-checkbox {
+    --background: #ffffff !important;
+    --background-hover: #ffffff !important;
+    --background-focused: #ffffff !important;
+    --background-checked: #ffffff !important;
+    --background-pressed: #ffffff !important;
+    --border-color: transparent !important;
+    --border-color-checked: transparent !important;
+    --checkmark-color: #000 !important;
+    --ripple-color: transparent !important;
+    background-color: #ffffff !important;
+    box-shadow: none !important;
+  }
 }
 
-/* 2ª columna: Apellido y Nombres */
-.tabla-estudiantes ion-row > ion-col:nth-child(2) {
-  flex: 0 0 420px !important;
-  min-width: 420px !important;
+.black-item ion-label {
+  color: #000 !important;
+  margin-bottom: 0.25rem;
+  display: block;
 }
 
-/* 3ª columna: Fecha Nac. */
-.tabla-estudiantes ion-row > ion-col:nth-child(3) {
-  flex: 0 0 180px !important;
-  max-width: 180px !important;
+.black-item ion-input {
+  position: relative;
+  color: #000 !important;
+  --color: #000 !important;
+  --placeholder-color: #000 !important;
+  padding-top: 0.75rem;
+  padding-bottom: 0.25rem;
+  border: none;
+  background-color: #ffffff !important;
 }
 
-/* 4ª columna: Edad */
-.tabla-estudiantes ion-row > ion-col:nth-child(4) {
-  flex: 0 0 70px !important;
-  max-width: 70px !important;
+ion-input input,
+ion-input textarea {
+  color: #000 !important;
 }
 
-/* 5ª columna: DNI */
-.tabla-estudiantes ion-row > ion-col:nth-child(5) {
-  flex: 0 0 115px !important;
-  max-width: 115px !important;
+ion-input input::placeholder {
+  color: #000 !important;
 }
 
-/* 6ª columna: Grado/Sección */
-.tabla-estudiantes ion-row > ion-col:nth-child(6) {
-  flex: 0 0 120px !important;
-  max-width: 120px !important;
+.black-item ion-input::after {
+  content: "";
+  position: absolute;
+  bottom: 0.5rem;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: #e2e2e2;
+  pointer-events: none;
 }
 
-/* 7ª columna: Discapacidad */
-.tabla-estudiantes ion-row > ion-col:nth-child(7) {
-  flex: 0 0 270px !important;
-  max-width: 270px !important;
+.black-item ion-input:focus {
+  padding-top: 0.75rem;
+  padding-bottom: 0.25rem;
 }
 
-/* 8ª columna: Doc. Sust. */
-.tabla-estudiantes ion-row > ion-col:nth-child(8) {
-  flex: 0 0 130px !important;
-  max-width: 130px !important;
+.input-with-error {
+  position: relative;
 }
 
-/* 9ª columna: Doc. Inc. */
-.tabla-estudiantes ion-row > ion-col:nth-child(9) {
-  flex: 0 0 130px !important;
-  max-width: 130px !important;
+.error-text-above {
+  position: absolute;
+  top: calc(100% + -6px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.6rem;
+  color: var(--ion-color-danger);
+  line-height: 1.2;
+  white-space: nowrap;
+  pointer-events: none;
 }
 
-/* 10ª columna: IPP */
-.tabla-estudiantes ion-row > ion-col:nth-child(10) {
-  flex: 0 0 75px !important;
-  max-width: 75px !important;
+.search-below {
+  margin: 1rem 0;
+  border-radius: 0;
+  --background: #ffffff !important;
+  --color: #000 !important;
 }
 
-/* 11ª columna: PEP */
-.tabla-estudiantes ion-row > ion-col:nth-child(11) {
-  flex: 0 0 75px !important;
-  max-width: 75px !important;
+.search-below ion-label {
+  color: #000 !important;
+  margin-bottom: 0.25rem;
+}
+
+.search-below ion-input {
+  padding-top: 0.75rem;
+  padding-bottom: 0.25rem;
+  background-color: #ffffff !important;
+}
+
+@media (max-width: 768px) {
+  ion-col[size-sm="12"] {
+    margin: 0;
+    padding: 0;
+  }
+
+  .formulario-estudiante {
+    margin-left: 0 !important;
+  }
+}
+
+.mini-sidebar ion-button:first-child {
+  --background: #FFD700 !important;
+  --color: #000 !important;
+}
+.grid-3cols {
+  ion-row:nth-child(1) ion-col,
+  ion-row:nth-child(2) ion-col {
+    border-bottom: none !important;
+  }
+
 }

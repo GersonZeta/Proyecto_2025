@@ -1,6 +1,70 @@
-/* ——————————————————————————————————————————————————————————————
-   Wrapper ajustado + restaurar borde derecho
-   —————————————————————————————————————————————————————————————— */
+/* 1ª columna: ID */
+.tabla-estudiantes ion-row > ion-col:nth-child(1) {
+  flex: 0 0 60px !important;
+  max-width: 60px !important;
+}
+
+/* 2ª columna: Apellido y Nombres */
+.tabla-estudiantes ion-row > ion-col:nth-child(2) {
+  flex: 0 0 420px !important;
+  min-width: 420px !important;
+}
+
+/* 3ª columna: Fecha Nac. */
+.tabla-estudiantes ion-row > ion-col:nth-child(3) {
+  flex: 0 0 180px !important;
+  max-width: 180px !important;
+}
+
+/* 4ª columna: Edad */
+.tabla-estudiantes ion-row > ion-col:nth-child(4) {
+  flex: 0 0 70px !important;
+  max-width: 70px !important;
+}
+
+/* 5ª columna: DNI */
+.tabla-estudiantes ion-row > ion-col:nth-child(5) {
+  flex: 0 0 115px !important;
+  max-width: 115px !important;
+}
+
+/* 6ª columna: Grado/Sección */
+.tabla-estudiantes ion-row > ion-col:nth-child(6) {
+  flex: 0 0 120px !important;
+  max-width: 120px !important;
+}
+
+/* 7ª columna: Discapacidad */
+.tabla-estudiantes ion-row > ion-col:nth-child(7) {
+  flex: 0 0 270px !important;
+  max-width: 270px !important;
+}
+
+/* 8ª columna: Doc. Sust. */
+.tabla-estudiantes ion-row > ion-col:nth-child(8) {
+  flex: 0 0 130px !important;
+  max-width: 130px !important;
+}
+
+/* 9ª columna: Doc. Inc. */
+.tabla-estudiantes ion-row > ion-col:nth-child(9) {
+  flex: 0 0 130px !important;
+  max-width: 130px !important;
+}
+
+/* 10ª columna: IPP */
+.tabla-estudiantes ion-row > ion-col:nth-child(10) {
+  flex: 0 0 75px !important;
+  max-width: 75px !important;
+}
+
+/* 11ª columna: PEP */
+.tabla-estudiantes ion-row > ion-col:nth-child(11) {
+  flex: 0 0 75px !important;
+  max-width: 75px !important;
+}
+
+
 .tabla-container {
   display: inline-block !important;       /* Ajusta el ancho al contenido */
   background-color: #ffffff !important;   /* Fondo blanco */
