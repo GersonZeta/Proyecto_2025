@@ -1,0 +1,184 @@
+
+:host ::ng-deep ion-action-sheet.custom-export-sheet {
+  --background: #ffffff !important;
+  --backdrop-opacity: 0.4 !important;
+  --border-radius: 8px !important;
+}
+
+:host ::ng-deep ion-action-sheet.custom-export-sheet .action-sheet-group {
+  background-color: #ffffff !important;
+}
+
+:host ::ng-deep ion-action-sheet.custom-export-sheet .action-sheet-button {
+  --color: #000000 !important;
+  font-weight: 600;
+}
+
+:host ::ng-deep ion-action-sheet.custom-export-sheet .action-sheet-button:active {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+
+:host ::ng-deep ion-action-sheet.custom-export-sheet .action-sheet-button[role="cancel"] {
+  margin-top: 0.5rem;
+  border-top: 1px solid #e2e2e2;
+}
+
+:host ::ng-deep ion-button .button-inner {
+  font-weight: bold !important;
+}
+
+:host ::ng-deep ion-button::part(native) {
+  font-weight: bold !important;
+}
+
+.tabla-docente ion-row > ion-col:nth-child(1) {
+  flex: 0 0 60px !important;
+  max-width: 60px !important;
+}
+
+.tabla-docente ion-row > ion-col:nth-child(2) {
+  flex: 0 0 420px !important;
+  min-width: 420px !important;
+}
+
+.tabla-docente ion-row > ion-col:nth-child(3) {
+  flex: 0 0 420px !important;
+  min-width: 420px !important;
+}
+
+.tabla-docente ion-row > ion-col:nth-child(4) {
+  flex: 0 0 115px !important;
+  max-width: 115px !important;
+}
+
+.tabla-docente ion-row > ion-col:nth-child(5) {
+  flex: 0 0 285px !important;
+  max-width: 285px !important;
+}
+
+.tabla-docente ion-row > ion-col:nth-child(6) {
+  flex: 0 0 125px !important;
+  max-width: 125px !important;
+}
+
+/* 7ª columna: GyS */
+.tabla-docente ion-row > ion-col:nth-child(7) {
+  flex: 0 0 155px !important;
+  max-width: 155px !important;
+}
+
+
+.tabla-container-docente {
+  display: inline-block !important;
+  background-color: #ffffff !important;
+  overflow-x: hidden !important;
+}
+
+.tabla-docente {
+  width: auto !important;
+  justify-content: flex-start !important;
+}
+
+
+.modal-instituciones {
+  --width: 90%;
+  --max-width: 700px;
+  --border-radius: 8px;
+  --background: #ffffff;
+}
+
+.modal-toolbar {
+  --background: #cccccc !important; /* Gris claro */
+}
+
+.modal-title {
+  background-color: #f2f2f2 !important;
+  color: #000000;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.modal-close-icon {
+  color: #000000;
+  background-color: #f2f2f2 !important;
+}
+
+.modal-content-padding {
+  padding: 1rem 1rem 2rem;
+}
+
+.modal-searchbar {
+  margin: 0.5rem 0 1rem;
+  --background: #f2f2f2;
+  --border-radius: 8px;
+  --color: #000;
+  --placeholder-color: #888;
+}
+
+.cards-grid {
+  --ion-grid-padding: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.cards-grid ion-row {
+  margin: 0;
+  padding: 0;
+}
+
+.cards-grid ion-col {
+  padding: 0.5rem 0.5rem;
+}
+
+.card-institucion {
+  --border-radius: 8px;
+  --box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease-in-out;
+}
+
+.card-institucion:hover {
+  transform: translateY(-2px);
+}
+
+.align-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nombre-institucion {
+  font-size: 1rem;
+  color: #333;
+  white-space: normal;
+  word-break: break-word;
+  max-width: 100%;
+}
+
+.modal-footer-button {
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #ffffff;
+  --background: transparent;
+  --box-shadow: none;
+  --border-radius: 4px;
+  padding: 0 1rem;
+  width: 100%;
+}
+
+.cancel-button {
+  --background: #e74c3c; /* Rojo */
+  background-color: #f2f2f2 !important;
+}
+
+.cancel-button:hover {
+  --background: #c0392b;
+}
+
+.accept-button {
+  --background: #27ae60;
+  background-color: #f2f2f2 !important;
+}
+
+.accept-button:hover {
+  --background: #1e8449;
+}

@@ -1,0 +1,211 @@
+.tabla-docente ion-row > ion-col:nth-child(1) {
+  cursor: pointer !important;
+  transition: background-color 0.2s ease;
+}
+
+/* Feedback visual al pasar el ratón */
+.tabla-docente ion-row > ion-col:nth-child(1):hover {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}
+.disabled {
+  pointer-events: none !important;
+  opacity: 0.5;
+}
+.clickable {
+  cursor: pointer !important;
+}
+
+.modal-instituciones {
+
+  --backdrop-opacity: 0.4;
+}
+
+
+.modal-instituciones ion-header,
+.modal-instituciones ion-toolbar.modal-toolbar {
+  --background: #f2f2f2 !important;
+  background-color: #f2f2f2 !important;
+  color: #000 !important;
+}
+
+
+.modal-instituciones ion-searchbar {
+  --background: #f2f2f2 !important;
+  --border-radius: 8px;
+  --placeholder-color: #888;
+  color: #000 !important;
+}
+
+.modal-instituciones ion-content {
+  --background: #ffffff !important;
+  background-color: #ffffff !important;
+}
+
+.modal-instituciones .cards-grid ion-card.card-institucion {
+  --background: #ffffff !important;
+  background-color: #ffffff !important;
+  color: #000 !important;
+}
+
+.modal-instituciones ion-footer,
+.modal-instituciones ion-toolbar.modal-toolbar:last-of-type {
+  --background: #f2f2f2 !important;
+  background-color: #f2f2f2 !important;
+}
+
+.modal-instituciones ion-button[fill="clear"] {
+  --background: #f2f2f2 !important;
+  border-radius: 4px;
+}
+
+.modal-instituciones ion-button,
+.modal-instituciones ion-icon,
+.modal-instituciones ion-label {
+  color: #000 !important;
+}
+
+.modal-instituciones .modal-content-padding,
+.modal-instituciones .cards-grid {
+  background-color: #ffffff !important;
+}
+
+.modal-instituciones ion-header,
+.modal-instituciones ion-header ion-toolbar {
+  --background: #f2f2f2 !important;
+  background-color: #f2f2f2 !important;
+}
+
+.modal-instituciones ion-footer,
+.modal-instituciones ion-footer ion-toolbar {
+  --background: #f2f2f2 !important;
+  background-color: #f2f2f2 !important;
+}
+
+:host ::ng-deep .modal-instituciones ion-modal .modal-wrapper ion-header,
+:host ::ng-deep .modal-instituciones ion-modal .modal-wrapper ion-footer {
+  --background: #f2f2f2 !important;
+  background-color: #f2f2f2 !important;
+}
+
+:host ::ng-deep .modal-instituciones ion-modal .modal-wrapper ion-toolbar {
+  --background: #f2f2f2 !important;
+  background-color: #f2f2f2 !important;
+}
+
+.export-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+}
+
+.export-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #ffffff;
+  width: 90%;
+  max-width: 340px;
+  border-radius: 1rem;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.2);
+  padding: 2rem 1rem;
+}
+
+.export-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #000;
+  margin: 0;
+  margin-bottom: 1rem;
+}
+
+.export-buttons {
+  display: flex;
+  width: 100%;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.export-buttons button {
+  flex: 1;
+  padding: 0.6rem 0;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.btn-export {
+  background-color: #4a90e2;
+  color: #fff;
+}
+.btn-export:hover {
+  background-color: #357ab8;
+}
+
+/* Botón Cancelar */
+.btn-cancel {
+  background-color: #c54e4e;
+  color: #fff;
+}
+.btn-cancel:hover {
+  background-color: #a03030;
+}
+
+.error-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+}
+
+.error-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #ffffff;
+  width: 90%;
+  max-width: 340px;
+  border-radius: 1rem;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.2);
+  padding: 2rem 1rem;
+}
+
+.error-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #000;
+  margin: 0;
+  margin-bottom: 1rem;
+}
+
+.error-message {
+  margin: 0 0 1rem;
+  color: #000;
+}
+
+.btn-ok {
+  display: block;
+  width: 20%;
+  padding: 0.7rem 0;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  background-color: #c54e4e;
+  color: #fff;
+  transition: background-color 0.2s ease;
+}
+
+.btn-ok:hover {
+  background-color: #a03030;
+}

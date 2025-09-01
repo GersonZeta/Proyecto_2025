@@ -1,0 +1,170 @@
+
+.modal-instituciones {
+  --width: 90%;
+  --max-width: 700px;
+  --border-radius: 8px;
+  --background: #ffffff;
+}
+
+.modal-toolbar {
+  --background: #cccccc !important;
+}
+
+.modal-title {
+  color: #000000;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.modal-close-icon {
+  color: #000000;
+}
+
+.modal-content-padding {
+  padding: 1rem 1rem 2rem;
+}
+
+.modal-instituciones ion-searchbar.modal-searchbar {
+  margin: 0.5rem 0 1rem;
+  --background: #f2f2f2;
+  --border-radius: 8px;
+  --color: #000;
+  --placeholder-color: #888;
+}
+
+
+.modal-instituciones ion-checkbox[aria-checked="false"] {
+  --background: #f2f2f2;
+  --border-color: transparent;
+}
+
+.modal-instituciones ion-checkbox[aria-checked="true"] {
+  --background: #ffffff;
+  --border-color: transparent;
+}
+
+.modal-instituciones ion-checkbox {
+  --size: 20px;
+  --mark-color: #000000;
+  --mark-size: 12px;
+}
+
+.cards-grid {
+  --ion-grid-padding: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.cards-grid ion-row {
+  margin: 0;
+  padding: 0;
+}
+
+.cards-grid ion-col {
+  padding: 0.5rem 0.5rem;
+}
+
+.card-institucion {
+  --border-radius: 8px;
+  --box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease-in-out;
+}
+
+.card-institucion:hover {
+  transform: translateY(-2px);
+}
+
+.card-row {
+  align-items: center;
+  padding: 0.5rem;
+}
+
+.align-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nombre-institucion {
+  font-size: 1rem;
+  color: #333;
+  white-space: normal;
+  word-break: break-word;
+  max-width: 100%;
+}
+
+.input-edit {
+  font-size: 1rem;
+  color: #333;
+  padding: 0.25rem 0.5rem;
+}
+
+
+.add-institution-row {
+  margin: 1rem 0;
+  display: flex;
+  justify-content: center;
+}
+
+.add-item {
+  width: 100%;
+  --background: #ffffff;
+  --border-radius: 0;
+  --border-color: transparent;
+  --highlight-height: 0;
+}
+
+.modal-instituciones ion-button[slot="end"] {
+  margin-left: 0.5rem;
+}
+
+.modal-footer-button {
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #ffffff;
+  --background: transparent;
+  --box-shadow: none;
+  --border-radius: 4px;
+  padding: 0 1rem;
+  width: 100%;
+}
+
+.cancel-button {
+  --background: #e74c3c;
+  border: none;
+}
+
+.cancel-button:hover {
+  --background: #c0392b;
+}
+
+.accept-button {
+  --background: #27ae60;
+  border: none;
+}
+
+
+.accept-button:hover {
+  --background: #1e8449;
+}
+
+.single-line-button {
+  white-space: nowrap;
+  --padding-start: 0.75rem;
+  --padding-end: 0.75rem;
+}
+
+
+@media (max-width: 600px) {
+  .card-institucion {
+    --border-radius: 6px;
+  }
+  .modal-instituciones {
+    --width: 95%;
+  }
+}
+
+.cards-grid ion-col {
+  padding: 0.1rem 0.5rem;
+}
+

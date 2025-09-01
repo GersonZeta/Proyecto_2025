@@ -48,7 +48,10 @@ export interface DocenteView {
 @Component({
   selector: 'app-docentes',
   templateUrl: './docentes.page.html',
-  styleUrls: ['./docentes.page.scss'],
+  styleUrls: [
+    './docentes.page.scss',
+  './docentes.page2.scss',
+'./docentes.page3.scss'],
   standalone: false,
 })
 export class DocentesPage {

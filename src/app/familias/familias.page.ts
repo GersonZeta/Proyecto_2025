@@ -22,7 +22,10 @@ export interface Familia {
 @Component({
   selector: 'app-familias',
   templateUrl: './familias.page.html',
-  styleUrls: ['./familias.page.scss'],
+  styleUrls: [
+    './familias.page.scss',
+   './familias.page2.scss'
+  ],
   standalone: false,
 })
 export class FamiliasPage {

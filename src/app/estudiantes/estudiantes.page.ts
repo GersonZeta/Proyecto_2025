@@ -46,7 +46,11 @@ interface EstudianteLocal {
 @Component({
   selector: 'app-estudiantes',
   templateUrl: './estudiantes.page.html',
-  styleUrls: ['./estudiantes.page.scss'],
+  styleUrls: [
+    './estudiantes.page.scss',
+    './estudiantes.page2.scss',
+    './estudiantes.page3.scss'
+  ],
   standalone: false,
 })
 export class EstudiantesPage implements AfterViewInit, OnDestroy {

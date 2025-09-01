@@ -1,24 +1,32 @@
-/* ---------- Scroll y contenido ---------- */
 ion-content,
 ion-content .inner-scroll {
   --background: #ffffff;
   height: 100%;
   overflow: auto !important;
-  scrollbar-width: thin;
-  scrollbar-color: #4a90e2 #f1f1f1;
-  -ms-overflow-style: -ms-autohiding-scrollbar;
 
-  &::-webkit-scrollbar { width: 8px; height: 8px; }
-  &::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 4px; }
+  &::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+  &::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 4px;
+  }
   &::-webkit-scrollbar-thumb {
     background-color: #4a90e2;
     border-radius: 4px;
     border: 2px solid #f1f1f1;
-    &:hover { background-color: #357abd; }
   }
+  &::-webkit-scrollbar-thumb:hover {
+    background-color: #357abd;
+  }
+
+  scrollbar-width: thin;
+  scrollbar-color: #4a90e2 #f1f1f1;
+
+  -ms-overflow-style: -ms-autohiding-scrollbar;
 }
 
-/* ---------- Base / layout ---------- */
 html,
 body {
   height: 100%;
@@ -42,49 +50,55 @@ ion-page {
   padding: 0;
 }
 
-/* ---------- black-item (labels, inputs) ---------- */
 .black-item {
   --background: #ffffff;
   --background-focused: #ffffff;
   --border-radius: 0;
   --border-color: transparent;
   --highlight-height: 0;
-
-  ion-label { color: #000 !important; }
-
-  ion-input {
-    position: relative;
-    color: #000;
-    --color: #000;
-    --placeholder-color: #000;
-    padding-top: 0.25rem;
-    padding-bottom: 0.25rem;
-    border: none;
-
-    &::after {
-      content: "";
-      position: absolute;
-      bottom: 0.5rem;
-      left: 0;
-      width: 100%;
-      height: 2px;
-      background-color: #e2e2e2;
-      pointer-events: none;
-    }
-
-    &:focus {
-      padding-top: 0.25rem;
-      padding-bottom: 0.25rem;
-    }
-  }
 }
 
-/* ---------- Inputs con errores ---------- */
-.input-with-error { position: relative; }
+.black-item ion-label {
+  color: #000 !important;
+}
+
+.black-item ion-input {
+  position: relative;
+  color: #000;
+  --color: #000;
+  --placeholder-color: #000;
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+  border: none;
+}
+
+.black-item ion-input::after {
+  content: "";
+  position: absolute;
+  bottom: 0.5rem;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: #e2e2e2;
+  pointer-events: none;
+}
+
+.black-item ion-input:focus {
+  padding-top: 0.25rem;
+  padding-bottom: 0.25rem;
+}
+
+.input-with-error {
+  position: relative;
+}
+
+.input-with-error {
+  position: relative;
+}
 
 .error-text-above {
   position: absolute;
-  top: calc(100% + -6px); /* mantuve exactamente como estaba */
+  top: calc(100% + -6px);
   left: 50%;
   transform: translateX(-50%);
   font-size: 0.6rem;
@@ -92,6 +106,14 @@ ion-page {
   line-height: 1.2;
   white-space: nowrap;
   pointer-events: none;
+}
+
+.button-bold {
+  font-weight: 700;
+}
+
+.buttons-container {
+  position: relative;
 }
 
 .error-text {
@@ -106,25 +128,27 @@ ion-page {
   white-space: nowrap;
 }
 
-/* ---------- Botones / toolbar ---------- */
-.button-bold { font-weight: 700; }
-.buttons-container { position: relative; }
+.custom-toolbar {
+  --background:  #4a90e2 !important;
+}
 
-.custom-toolbar { --background: #4a90e2 !important; }
-.custom-toolbar .custom-title { color: #ffffff !important; font-weight: 600; }
+.custom-toolbar .custom-title {
+  color: #ffffff !important;
+  font-weight: 600;
+}
 
-/* ---------- Filas / columnas (ion-grid) ---------- */
-ion-grid ion-row:nth-child(odd)  { background-color: #ffffff !important; }
-ion-grid ion-row:nth-child(even) { background-color: #f5f5f5 !important; }
+ion-grid ion-row:nth-child(odd) {
+  background-color: #ffffff !important;
+}
+ion-grid ion-row:nth-child(even) {
+  background-color: #f5f5f5 !important;
+}
 
-/* Caso específico: ion-row con clase no-background */
-ion-grid ion-row.no-background { background-color: transparent !important; }
-
-/* ---------- Items y cols ---------- */
 ion-item,
-ion-col { background: transparent !important; }
+ion-col {
+  background: transparent !important;
+}
 
-/* ---------- grid-sin-capsula (estructura con bordes) ---------- */
 .grid-sin-capsula {
   --ion-grid-padding: 0;
   padding: 0 !important;
@@ -141,8 +165,9 @@ ion-col { background: transparent !important; }
   margin: 0;
   padding: 0;
 }
-
-.grid-sin-capsula ion-row:last-child { border-bottom: none; }
+.grid-sin-capsula ion-row:last-child {
+  border-bottom: none;
+}
 
 .grid-sin-capsula ion-row ion-col:first-child {
   border-right: none !important;
@@ -160,13 +185,17 @@ ion-col { background: transparent !important; }
   padding: 0.75rem 1rem;
   color: #000;
 }
+.grid-sin-capsula ion-col:last-child {
+  border-right: none;
+}
 
-.grid-sin-capsula ion-col:last-child { border-right: none; }
+.grid-sin-capsula ion-row:nth-child(odd) {
+  background-color: #ffffff !important;
+}
+.grid-sin-capsula ion-row:nth-child(even) {
+  background-color: #f5f5f5 !important;
+}
 
-.grid-sin-capsula ion-row:nth-child(odd)  { background-color: #ffffff !important; }
-.grid-sin-capsula ion-row:nth-child(even) { background-color: #f5f5f5 !important; }
-
-/* ---------- Responsive (general) ---------- */
 @media (max-width: 768px) {
   ion-col[size-sm="12"] {
     margin: 0;
@@ -179,108 +208,6 @@ ion-col { background: transparent !important; }
   }
 }
 
-@media (max-width: 600px) {
-  .card-institucion { --border-radius: 6px; }
-  .modal-instituciones { --width: 95%; }
+ion-grid ion-row.no-background {
+  background-color: transparent !important;
 }
-
-/* ---------- ion-grid hijo puntual (mantener selector exacto) ---------- */
-ion-grid ion-row.no-background { background-color: transparent !important; }
-
-/* ---------- Modal / Instituciones ---------- */
-.modal-instituciones {
-  --width: 90%;
-  --max-width: 700px;
-  --border-radius: 8px;
-  --background: #ffffff;
-
-  ion-searchbar.modal-searchbar {
-    margin: 0.5rem 0 1rem;
-    --background: #f2f2f2;
-    --border-radius: 8px;
-    --color: #000;
-    --placeholder-color: #888;
-  }
-
-  ion-checkbox[aria-checked="false"] { --background: #f2f2f2; --border-color: transparent; }
-  ion-checkbox[aria-checked="true"]  { --background: #ffffff; --border-color: transparent; }
-
-  ion-checkbox { --size: 20px; --mark-color: #000000; --mark-size: 12px; }
-
-  ion-button[slot="end"] { margin-left: 0.5rem; }
-
-  .modal-content-padding { padding: 1rem 1rem 2rem; }
-  .modal-title { color: #000000; font-weight: 700; text-transform: uppercase; }
-  .modal-close-icon { color: #000000; }
-  .modal-toolbar { --background: #cccccc !important; }
-}
-
-/* ---------- Cards / listas ---------- */
-.cards-grid {
-  --ion-grid-padding: 0;
-  margin: 0;
-  padding: 0;
-}
-
-.cards-grid ion-row { margin: 0; padding: 0; }
-
-/* Nota: en el original había dos reglas para .cards-grid ion-col
-   (primero padding: 0.5rem 0.5rem; luego padding: 0.1rem 0.5rem).
-   He dejado el valor final aplicado (0.1rem 0.5rem) para evitar
-   mantener duplicados; si prefieres que quede 0.5rem explícito,
-   dímelo y lo ajusto.
-*/
-.cards-grid ion-col { padding: 0.1rem 0.5rem; }
-
-.card-institucion {
-  --border-radius: 8px;
-  --box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s ease-in-out;
-}
-.card-institucion:hover { transform: translateY(-2px); }
-
-.card-row { align-items: center; padding: 0.5rem; }
-.align-center { display: flex; align-items: center; justify-content: center; }
-.nombre-institucion {
-  font-size: 1rem;
-  color: #333;
-  white-space: normal;
-  word-break: break-word;
-  max-width: 100%;
-}
-.input-edit { font-size: 1rem; color: #333; padding: 0.25rem 0.5rem; }
-
-.add-institution-row { margin: 1rem 0; display: flex; justify-content: center; }
-
-.add-item {
-  width: 100%;
-  --background: #ffffff;
-  --border-radius: 0;
-  --border-color: transparent;
-  --highlight-height: 0;
-}
-
-/* ---------- Modal footer buttons / acciones ---------- */
-.modal-footer-button {
-  font-weight: 700;
-  text-transform: uppercase;
-  color: #ffffff;
-  --background: transparent;
-  --box-shadow: none;
-  --border-radius: 4px;
-  padding: 0 1rem;
-  width: 100%;
-}
-
-.cancel-button { --background: #e74c3c; border: none; }
-.cancel-button:hover { --background: #c0392b; }
-
-.accept-button { --background: #27ae60; border: none; }
-.accept-button:hover { --background: #1e8449; }
-
-.single-line-button {
-  white-space: nowrap;
-  --padding-start: 0.75rem;
-  --padding-end: 0.75rem;
-}
-

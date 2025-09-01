@@ -1,0 +1,200 @@
+
+.mini-sidebar.toolbar-left {
+  /* Botón E (primero) */
+  ion-button:nth-child(1) {
+    --background: #FFD700 !important;
+    --background-hover: #FFD700 !important;
+    --background-focused: #FFD700 !important;
+    --background-activated: #FFD700 !important;
+    --background-pressed: #FFD700 !important;
+    --color: #000 !important;
+  }
+
+  /* Botones D y F (segundo y tercero) */
+  ion-button:nth-child(2),
+  ion-button:nth-child(3) {
+    --background: #c0c0c0 !important;
+    --background-hover: #c0c0c0 !important;
+    --background-focused: #c0c0c0 !important;
+    --background-activated: #c0c0c0 !important;
+    --background-pressed: #c0c0c0 !important;
+    --color: #fff !important;
+  }
+  ion-button:nth-child(4) {
+    --background: #ff8800 !important;
+    --background-hover: #ff8800 !important;
+    --background-focused: #ff8800 !important;
+    --background-activated: #ff8800 !important;
+    --background-pressed: #ff8800 !important;
+    --color: #000 !important;
+  }
+}
+
+.black-item ion-input::after {
+  content: "";
+  position: absolute;
+  bottom: 0.5rem;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: #e2e2e2;
+  pointer-events: none;
+}
+.formulario-estudiante .search-buttons-row ion-col {
+  border-bottom: none !important;
+}
+
+/* 2) Quitar borde debajo de cada ion-col dentro de .header-row */
+.formulario-estudiante .header-row ion-col {
+  border-bottom: none !important;
+}
+
+.search-buttons-row {
+  margin-top: -2rem !important;
+}
+:host ::ng-deep input,
+:host ::ng-deep textarea {
+  caret-color: #000 !important;
+}
+
+/* 3) Bordes verticales en cada celda (ion-col) */
+.tabla-estudiantes ion-row ion-col {
+  border-left: 2px solid #000;
+  border-top: 2px solid #000;
+}
+
+.tabla-estudiantes ion-row ion-col {
+  border-left-width: var(--hairline) !important;
+  border-top-width:  var(--hairline) !important;
+  border-left-style: solid !important;
+  border-top-style:  solid !important;
+  border-left-color: #000    !important;
+  border-top-color:  #000    !important;
+}
+
+.tabla-estudiantes ion-row:last-child {
+  border-bottom-width: var(--hairline) !important;
+  border-bottom-style: solid !important;
+  border-bottom-color: #000    !important;
+}
+.tabla-estudiantes ion-row ion-col:last-child {
+  border-right-width: var(--hairline) !important;
+  border-right-style: solid !important;
+  border-right-color: #000     !important;
+}
+
+
+
+/* 4) Ajustes para no duplicar bordes en los extremos */
+/*    - quitamos borde superior de la primera fila      */
+/*    - quitamos borde inferior de la última fila       */
+.tabla-estudiantes ion-row:first-child {
+  border-top: none;
+}
+.tabla-estudiantes ion-row:last-child {
+  border-bottom: none;
+}
+
+
+/* 5) Para la última fila, en lugar de usar border-top, aplicamos border-bottom de 2 px */
+.tabla-estudiantes ion-row:last-child {
+  border-bottom: 2px solid #000;
+}
+.tabla-estudiantes ion-row ion-col:last-child {
+  border-right: 2px solid #000;
+}
+
+
+/* ------------------------------------------------------------ */
+/* 12) Línea gris bajo la 2ª fila del formulario de estudiante  */
+/* ------------------------------------------------------------ */
+.formulario-estudiante .grid-3cols ion-row:nth-child(2) {
+  border-bottom-width: var(--hairline) !important;
+  border-bottom-style: solid !important;
+  border-bottom-color: #e2e2e2 !important;
+  background-color: #ffffff !important;  /* fuerza fondo blanco */
+}
+
+
+/* 1) Sobre el wrapper interno de Ionic Button */
+:host ::ng-deep ion-button .button-inner {
+  font-weight: bold !important;
+}
+
+/* 2) Directamente sobre el “native” part (shadow DOM) */
+:host ::ng-deep ion-button::part(native) {
+  font-weight: bold !important;
+}
+
+
+.tabla-estudiantes ion-row ion-col {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* 1ª columna: ID */
+.tabla-estudiantes ion-row > ion-col:nth-child(1) {
+  flex: 0 0 60px !important;
+  max-width: 60px !important;
+}
+
+/* 2ª columna: Apellido y Nombres */
+.tabla-estudiantes ion-row > ion-col:nth-child(2) {
+  flex: 0 0 420px !important;
+  min-width: 420px !important;
+}
+
+/* 3ª columna: Fecha Nac. */
+.tabla-estudiantes ion-row > ion-col:nth-child(3) {
+  flex: 0 0 180px !important;
+  max-width: 180px !important;
+}
+
+/* 4ª columna: Edad */
+.tabla-estudiantes ion-row > ion-col:nth-child(4) {
+  flex: 0 0 70px !important;
+  max-width: 70px !important;
+}
+
+/* 5ª columna: DNI */
+.tabla-estudiantes ion-row > ion-col:nth-child(5) {
+  flex: 0 0 115px !important;
+  max-width: 115px !important;
+}
+
+/* 6ª columna: Grado/Sección */
+.tabla-estudiantes ion-row > ion-col:nth-child(6) {
+  flex: 0 0 120px !important;
+  max-width: 120px !important;
+}
+
+/* 7ª columna: Discapacidad */
+.tabla-estudiantes ion-row > ion-col:nth-child(7) {
+  flex: 0 0 270px !important;
+  max-width: 270px !important;
+}
+
+/* 8ª columna: Doc. Sust. */
+.tabla-estudiantes ion-row > ion-col:nth-child(8) {
+  flex: 0 0 130px !important;
+  max-width: 130px !important;
+}
+
+/* 9ª columna: Doc. Inc. */
+.tabla-estudiantes ion-row > ion-col:nth-child(9) {
+  flex: 0 0 130px !important;
+  max-width: 130px !important;
+}
+
+/* 10ª columna: IPP */
+.tabla-estudiantes ion-row > ion-col:nth-child(10) {
+  flex: 0 0 75px !important;
+  max-width: 75px !important;
+}
+
+/* 11ª columna: PEP */
+.tabla-estudiantes ion-row > ion-col:nth-child(11) {
+  flex: 0 0 75px !important;
+  max-width: 75px !important;
+}

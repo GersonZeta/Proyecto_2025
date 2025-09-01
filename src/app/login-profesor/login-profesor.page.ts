@@ -25,7 +25,11 @@ interface Profesor {
 @Component({
   selector: 'app-login-profesor',
   templateUrl: './login-profesor.page.html',
-  styleUrls: ['./login-profesor.page.scss'],
+  styleUrls: [
+    './login-profesor.page.scss',
+    './login-profesor.page2.scss'
+  ],
+
   standalone: false,
 })
 export class LoginProfesorPage implements OnInit {
