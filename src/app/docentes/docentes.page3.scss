@@ -1,3 +1,161 @@
+.cards-grid {
+  --ion-grid-padding: 0;
+  margin: 0;
+  padding: 0;
+}
+
+.cards-grid ion-row {
+  margin: 0;
+  padding: 0;
+}
+
+.cards-grid ion-col {
+  padding: 0.5rem 0.5rem;
+}
+
+.card-institucion {
+  --border-radius: 8px;
+  --box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
+  transition: transform 0.2s ease-in-out;
+}
+
+.card-institucion:hover {
+  transform: translateY(-2px);
+}
+
+.align-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.nombre-institucion {
+  font-size: 1rem;
+  color: #333;
+  white-space: normal;
+  word-break: break-word;
+  max-width: 100%;
+}
+
+.modal-footer-button {
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #ffffff;
+  --background: transparent;
+  --box-shadow: none;
+  --border-radius: 4px;
+  padding: 0 1rem;
+  width: 100%;
+}
+
+.cancel-button {
+  --background: #e74c3c; /* Rojo */
+  background-color: #f2f2f2 !important;
+}
+
+.cancel-button:hover {
+  --background: #c0392b;
+}
+
+.accept-button {
+  --background: #27ae60;
+  background-color: #f2f2f2 !important;
+}
+
+.accept-button:hover {
+  --background: #1e8449;
+}
+
+
+ion-item,
+ion-checkbox,
+ion-button,
+ion-label,
+ion-input,
+ion-textarea,
+ion-select {
+  --ripple-color:             transparent !important;
+  --highlight-color-focused:  transparent !important;
+  --highlight-color:          transparent !important;
+  --box-shadow: none !important;
+  box-shadow:   none !important;
+  filter:      none !important;
+}
+
+ion-checkbox::part(container) {
+  box-shadow: none !important;
+
+}
+
+ion-item::part(native),
+ion-item::part(container) {
+  box-shadow: none !important;
+  background-color: #ffffff !important;
+  --background: #ffffff !important;
+  --ripple-color:    transparent !important;
+  --highlight-color: transparent !important;
+}
+
+ion-button::part(native) {
+  box-shadow: none !important;
+}
+
+.search-buttons-row {
+  margin-top: 1rem !important;
+  gap:        0.5rem;
+}
+
+.search-buttons-row ion-col {
+  padding: 0 !important;
+}
+
+.tabla-docente ion-row ion-col {
+  border-left:  1px solid #000;
+  border-top:   1px solid #000;
+  padding:      0.5rem 0.75rem;
+  background-color: #ffffff !important;
+  color:            #000 !important;
+}
+
+.tabla-docente ion-row:first-child {
+  border-top: none;
+  background-color: #f5f5f5 !important;
+}
+
+.tabla-docente ion-row:last-child {
+  border-bottom: 1px solid #000;
+}
+
+.tabla-docente ion-row ion-col:last-child {
+  border-right: 1px solid #000;
+}
+
+@media (max-width: 768px) {
+  ion-col[size-sm="12"] {
+    margin: 0;
+    padding: 0;
+  }
+
+  .formulario-estudiante {
+    margin-left: 0 !important;
+  }
+}
+.separator-line {
+  width:  100%;
+  height: 1px;
+  background-color: #ccc;
+  margin: 0.5rem 0;
+}
+
+.formulario-estudiante {
+  position: relative;
+
+  .buttons-row {
+    margin-bottom: 0;
+  }
+}
+
+
 .tabla-docente ion-row > ion-col:nth-child(1) {
   cursor: pointer !important;
   transition: background-color 0.2s ease;
@@ -47,165 +205,4 @@
   color: #000 !important;
 }
 
-.modal-instituciones ion-footer,
-.modal-instituciones ion-toolbar.modal-toolbar:last-of-type {
-  --background: #f2f2f2 !important;
-  background-color: #f2f2f2 !important;
-}
 
-.modal-instituciones ion-button[fill="clear"] {
-  --background: #f2f2f2 !important;
-  border-radius: 4px;
-}
-
-.modal-instituciones ion-button,
-.modal-instituciones ion-icon,
-.modal-instituciones ion-label {
-  color: #000 !important;
-}
-
-.modal-instituciones .modal-content-padding,
-.modal-instituciones .cards-grid {
-  background-color: #ffffff !important;
-}
-
-.modal-instituciones ion-header,
-.modal-instituciones ion-header ion-toolbar {
-  --background: #f2f2f2 !important;
-  background-color: #f2f2f2 !important;
-}
-
-.modal-instituciones ion-footer,
-.modal-instituciones ion-footer ion-toolbar {
-  --background: #f2f2f2 !important;
-  background-color: #f2f2f2 !important;
-}
-
-:host ::ng-deep .modal-instituciones ion-modal .modal-wrapper ion-header,
-:host ::ng-deep .modal-instituciones ion-modal .modal-wrapper ion-footer {
-  --background: #f2f2f2 !important;
-  background-color: #f2f2f2 !important;
-}
-
-:host ::ng-deep .modal-instituciones ion-modal .modal-wrapper ion-toolbar {
-  --background: #f2f2f2 !important;
-  background-color: #f2f2f2 !important;
-}
-
-.export-overlay {
-  position: fixed;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.4);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 10000;
-}
-
-.export-box {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background-color: #ffffff;
-  width: 90%;
-  max-width: 340px;
-  border-radius: 1rem;
-  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.2);
-  padding: 2rem 1rem;
-}
-
-.export-title {
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: #000;
-  margin: 0;
-  margin-bottom: 1rem;
-}
-
-.export-buttons {
-  display: flex;
-  width: 100%;
-  justify-content: space-between;
-  gap: 0.5rem;
-}
-
-.export-buttons button {
-  flex: 1;
-  padding: 0.6rem 0;
-  border: none;
-  border-radius: 0.5rem;
-  font-size: 1rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.btn-export {
-  background-color: #4a90e2;
-  color: #fff;
-}
-.btn-export:hover {
-  background-color: #357ab8;
-}
-
-/* Botón Cancelar */
-.btn-cancel {
-  background-color: #c54e4e;
-  color: #fff;
-}
-.btn-cancel:hover {
-  background-color: #a03030;
-}
-
-.error-overlay {
-  position: fixed;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.4);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 10000;
-}
-
-.error-box {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background-color: #ffffff;
-  width: 90%;
-  max-width: 340px;
-  border-radius: 1rem;
-  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.2);
-  padding: 2rem 1rem;
-}
-
-.error-title {
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: #000;
-  margin: 0;
-  margin-bottom: 1rem;
-}
-
-.error-message {
-  margin: 0 0 1rem;
-  color: #000;
-}
-
-.btn-ok {
-  display: block;
-  width: 20%;
-  padding: 0.7rem 0;
-  border: none;
-  border-radius: 0.5rem;
-  font-size: 1rem;
-  font-weight: bold;
-  cursor: pointer;
-  background-color: #c54e4e;
-  color: #fff;
-  transition: background-color 0.2s ease;
-}
-
-.btn-ok:hover {
-  background-color: #a03030;
-}

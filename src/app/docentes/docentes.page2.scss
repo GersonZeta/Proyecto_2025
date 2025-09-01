@@ -1,3 +1,90 @@
+.grid-3cols {
+  margin-top: 1rem;
+  ion-row {
+    margin-bottom: 1rem;
+    background-color: #ffffff !important;
+    ion-col {
+      color:            #000 !important;
+      background-color: #ffffff !important;
+    }
+  }
+}
+
+.black-item {
+  --background:   #ffffff !important;
+  --border-color: transparent !important;
+  background-color: #ffffff !important;
+  color:            #000 !important;
+  ion-input,
+  ion-select,
+  ion-checkbox {
+    background-color: #ffffff !important;
+    box-shadow: none !important;
+  }
+}
+
+.black-item ion-label {
+  color:         #000 !important;
+  margin-bottom: 0.25rem;
+  display:       block;
+}
+
+.black-item ion-input,
+.black-item ion-select {
+  position: relative;
+  color:      #000 !important;
+  --color:            #000 !important;
+  --placeholder-color: #000 !important;
+  padding-top:    0.75rem;
+  padding-bottom: 0.25rem;
+  border: none;
+}
+
+ion-input input,
+ion-input textarea,
+ion-select select {
+  color: #000 !important;
+}
+
+ion-input input::placeholder,
+ion-select select::placeholder {
+  color: #000 !important;
+}
+
+.black-item ion-input::after,
+black-item ion-select::after {
+  content: "";
+  position: absolute;
+  bottom:  0.5rem;
+  left:    0;
+  width:   100%;
+  height:  2px !important;
+  background-color: #e2e2e2;
+  pointer-events: none;
+}
+
+.black-item ion-input:focus,
+.black-item ion-select:focus {
+  padding-top:    0.75rem;
+  padding-bottom: 0.25rem;
+}
+.input-with-error {
+  position: relative;
+}
+
+.error-text-above {
+  position: absolute;
+  top:      calc(100% + -6px);
+  left:     50%;
+  transform: translateX(-50%);
+  font-size: 0.6rem;
+  color:      var(--ion-color-danger);
+  line-height: 1.2;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+
 
 :host ::ng-deep ion-action-sheet.custom-export-sheet {
   --background: #ffffff !important;
@@ -113,160 +200,4 @@
   --border-radius: 8px;
   --color: #000;
   --placeholder-color: #888;
-}
-
-.cards-grid {
-  --ion-grid-padding: 0;
-  margin: 0;
-  padding: 0;
-}
-
-.cards-grid ion-row {
-  margin: 0;
-  padding: 0;
-}
-
-.cards-grid ion-col {
-  padding: 0.5rem 0.5rem;
-}
-
-.card-institucion {
-  --border-radius: 8px;
-  --box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
-  transition: transform 0.2s ease-in-out;
-}
-
-.card-institucion:hover {
-  transform: translateY(-2px);
-}
-
-.align-center {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.nombre-institucion {
-  font-size: 1rem;
-  color: #333;
-  white-space: normal;
-  word-break: break-word;
-  max-width: 100%;
-}
-
-.modal-footer-button {
-  font-weight: 700;
-  text-transform: uppercase;
-  color: #ffffff;
-  --background: transparent;
-  --box-shadow: none;
-  --border-radius: 4px;
-  padding: 0 1rem;
-  width: 100%;
-}
-
-.cancel-button {
-  --background: #e74c3c; /* Rojo */
-  background-color: #f2f2f2 !important;
-}
-
-.cancel-button:hover {
-  --background: #c0392b;
-}
-
-.accept-button {
-  --background: #27ae60;
-  background-color: #f2f2f2 !important;
-}
-
-.accept-button:hover {
-  --background: #1e8449;
-}
-
-ion-item,
-ion-checkbox,
-ion-button,
-ion-label,
-ion-input,
-ion-textarea,
-ion-select {
-  --ripple-color:             transparent !important;
-  --highlight-color-focused:  transparent !important;
-  --highlight-color:          transparent !important;
-  --box-shadow: none !important;
-  box-shadow:   none !important;
-  filter:      none !important;
-}
-
-ion-checkbox::part(container) {
-  box-shadow: none !important;
-
-}
-
-ion-item::part(native),
-ion-item::part(container) {
-  box-shadow: none !important;
-  background-color: #ffffff !important;
-  --background: #ffffff !important;
-  --ripple-color:    transparent !important;
-  --highlight-color: transparent !important;
-}
-
-ion-button::part(native) {
-  box-shadow: none !important;
-}
-
-.search-buttons-row {
-  margin-top: 1rem !important;
-  gap:        0.5rem;
-}
-
-.search-buttons-row ion-col {
-  padding: 0 !important;
-}
-
-.tabla-docente ion-row ion-col {
-  border-left:  1px solid #000;
-  border-top:   1px solid #000;
-  padding:      0.5rem 0.75rem;
-  background-color: #ffffff !important;
-  color:            #000 !important;
-}
-
-.tabla-docente ion-row:first-child {
-  border-top: none;
-  background-color: #f5f5f5 !important;
-}
-
-.tabla-docente ion-row:last-child {
-  border-bottom: 1px solid #000;
-}
-
-.tabla-docente ion-row ion-col:last-child {
-  border-right: 1px solid #000;
-}
-
-@media (max-width: 768px) {
-  ion-col[size-sm="12"] {
-    margin: 0;
-    padding: 0;
-  }
-
-  .formulario-estudiante {
-    margin-left: 0 !important;
-  }
-}
-.separator-line {
-  width:  100%;
-  height: 1px;
-  background-color: #ccc;
-  margin: 0.5rem 0;
-}
-
-.formulario-estudiante {
-  position: relative;
-
-  .buttons-row {
-    margin-bottom: 0;
-  }
 }
