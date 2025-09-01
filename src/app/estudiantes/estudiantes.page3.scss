@@ -1,3 +1,76 @@
+.black-item ion-input::after {
+  content: "";
+  position: absolute;
+  bottom: 0.5rem;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: #e2e2e2;
+  pointer-events: none;
+}
+
+.black-item ion-input:focus {
+  padding-top: 0.75rem;
+  padding-bottom: 0.25rem;
+}
+
+.input-with-error {
+  position: relative;
+}
+
+.error-text-above {
+  position: absolute;
+  top: calc(100% + -6px);
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 0.6rem;
+  color: var(--ion-color-danger);
+  line-height: 1.2;
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.search-below {
+  margin: 1rem 0;
+  border-radius: 0;
+  --background: #ffffff !important;
+  --color: #000 !important;
+}
+
+.search-below ion-label {
+  color: #000 !important;
+  margin-bottom: 0.25rem;
+}
+
+.search-below ion-input {
+  padding-top: 0.75rem;
+  padding-bottom: 0.25rem;
+  background-color: #ffffff !important;
+}
+
+@media (max-width: 768px) {
+  ion-col[size-sm="12"] {
+    margin: 0;
+    padding: 0;
+  }
+
+  .formulario-estudiante {
+    margin-left: 0 !important;
+  }
+}
+
+.mini-sidebar ion-button:first-child {
+  --background: #FFD700 !important;
+  --color: #000 !important;
+}
+.grid-3cols {
+  ion-row:nth-child(1) ion-col,
+  ion-row:nth-child(2) ion-col {
+    border-bottom: none !important;
+  }
+
+}
+
 /* 1ª columna: ID */
 .tabla-estudiantes ion-row > ion-col:nth-child(1) {
   flex: 0 0 60px !important;
@@ -88,128 +161,3 @@
   justify-content: center;
 }
 
-
-
-/* Overlay y caja de exportar */
-.export-overlay {
-  position: fixed;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.4);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 10000;
-}
-
-.export-box {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background-color: #ffffff;
-  width: 90%;
-  max-width: 340px;
-  border-radius: 1rem;
-  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.2);
-  padding: 2rem 1rem; /* Espacio simétrico arriba y abajo */
-}
-
-/* Título */
-.export-title {
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: #000;
-  margin: 0;
-  margin-bottom: 1rem; /* REDUCIDO para juntar con los botones */
-}
-
-/* Contenedor de botones */
-.export-buttons {
-  display: flex;
-  width: 100%;
-  justify-content: space-between;
-  gap: 0.5rem;
-}
-
-/* Estilo común para todos los botones */
-.export-buttons button {
-  flex: 1;
-  padding: 0.6rem 0;
-  border: none;
-  border-radius: 0.5rem;
-  font-size: 1rem;
-  font-weight: bold;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-/* Botón PDF y Excel */
-.btn-export {
-  background-color: #4a90e2;
-  color: #fff;
-}
-.btn-export:hover {
-  background-color: #357ab8;
-}
-
-/* Botón Cancelar */
-.btn-cancel {
-  background-color: #c54e4e;
-  color: #fff;
-}
-.btn-cancel:hover {
-  background-color: #a03030;
-}
-
-/* Overlay de error – idéntico a export */
-.error-overlay {
-  position: fixed;
-  inset: 0;
-  background-color: rgba(0, 0, 0, 0.4);
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  z-index: 10000;
-}
-
-.error-box {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  background-color: #ffffff;
-  width: 90%;
-  max-width: 340px;
-  border-radius: 1rem;
-  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.2);
-  padding: 2rem 1rem;
-}
-
-.error-title {
-  font-size: 1.2rem;
-  font-weight: 600;
-  color: #000;
-  margin: 0;
-  margin-bottom: 1rem;
-}
-
-.error-message {
-  margin: 0 0 1rem;
-  color: #000;
-}
-
-.btn-ok {
-  display: block;   /* para que respete width en bloque */
-  width: 20%;      /* ocupa todo el ancho disponible */
-  padding: 0.7rem 0;
-  border: none;
-  border-radius: 0.5rem;
-  font-size: 1rem;
-  font-weight: bold;
-  cursor: pointer;
-  background-color: #c54e4e;
-  color: #fff;
-  transition: background-color 0.2s ease;
-}
-
-.btn-ok:hover {
-  background-color: #a03030;
-}

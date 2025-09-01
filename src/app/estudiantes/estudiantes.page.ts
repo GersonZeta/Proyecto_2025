@@ -49,7 +49,8 @@ interface EstudianteLocal {
   styleUrls: [
     './estudiantes.page.scss',
     './estudiantes.page2.scss',
-    './estudiantes.page3.scss'
+    './estudiantes.page3.scss',
+    './estudiantes.page4.scss'
   ],
   standalone: false,
 })
