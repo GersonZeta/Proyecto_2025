@@ -1,14 +1,9 @@
-/* ------------------------------------------------------------ */
-/* 0) GLOBAL: Custom Scrollbar para ion-content y inner-scroll  */
-/*    – Scroll sólo si es necesario; diseño elegante           */
-/* ------------------------------------------------------------ */
 ion-content,
 ion-content .inner-scroll {
   --background: #ffffff;
   height: 100%;
-  overflow: auto !important; /* Scroll sólo cuando haga falta */
+  overflow: auto !important;
 
-  /* WebKit Browsers */
   &::-webkit-scrollbar {
     width: 8px;
     height: 8px;
@@ -26,17 +21,12 @@ ion-content .inner-scroll {
     background-color: #357abd;
   }
 
-  /* Firefox */
   scrollbar-width: thin;
   scrollbar-color: #4a90e2 #f1f1f1;
 
-  /* IE / Edge */
   -ms-overflow-style: -ms-autohiding-scrollbar;
 }
 
-/* ------------------------------------------------------------ */
-/* 1) Evitar scroll en html/body para que nunca aparezca        */
-/* ------------------------------------------------------------ */
 html,
 body {
   height: 100%;
@@ -45,16 +35,12 @@ body {
   padding: 0;
 }
 
-/* Asegurar que ion-app/ion-router-outlet/ion-page ocupen toda la pantalla */
 ion-app,
 ion-router-outlet,
 ion-page {
   height: 100%;
 }
 
-/* ------------------------------------------------------------ */
-/* 2) Grilla para centrar la cápsula                            */
-/* ------------------------------------------------------------ */
 .grid-container {
   height: 100vh;
   display: flex;
@@ -64,9 +50,6 @@ ion-page {
   padding: 0;
 }
 
-/* ------------------------------------------------------------ */
-/* 3) Inputs “casillas”: fondo blanco, texto y bordes negros    */
-/* ------------------------------------------------------------ */
 .black-item {
   --background: #ffffff;
   --background-focused: #ffffff;
@@ -105,52 +88,37 @@ ion-page {
   padding-bottom: 0.25rem;
 }
 
-/* ------------------------------------------------------------ */
-/* 4) Contenedor relativo para el input con error               */
-/* ------------------------------------------------------------ */
 .input-with-error {
   position: relative;
 }
 
-/* ------------------------------------------------------------ */
-/* 5) Mensaje de error absolutamente posicionado                */
-/* ------------------------------------------------------------ */
 .input-with-error {
   position: relative;
 }
 
 .error-text-above {
   position: absolute;
-  top: calc(100% + -6px);    /* un poco debajo del input */
-  left: 50%;                /* comienza desde la mitad */
-  transform: translateX(-50%); /* lo centra horizontalmente */
+  top: calc(100% + -6px);
+  left: 50%;
+  transform: translateX(-50%);
   font-size: 0.6rem;
   color: var(--ion-color-danger);
   line-height: 1.2;
   white-space: nowrap;
-  pointer-events: none;     /* evita que interfiera al hacer clic */
+  pointer-events: none;
 }
 
-
-
-
-/* ------------------------------------------------------------ */
-/* 6) Texto de botones en negrita                              */
-/* ------------------------------------------------------------ */
 .button-bold {
   font-weight: 700;
 }
 
-/* ------------------------------------------------------------ */
-/* 7) Contenedor de botones + mensaje de error                 */
-/* ------------------------------------------------------------ */
 .buttons-container {
-  position: relative; /* Para posicionar .error-text */
+  position: relative;
 }
 
 .error-text {
   position: absolute;
-  bottom: 100%;          /* Aparece justo encima de los botones */
+  bottom: 100%;
   left: 0;
   right: 0;
   text-align: center;
@@ -160,11 +128,8 @@ ion-page {
   white-space: nowrap;
 }
 
-/* ------------------------------------------------------------ */
-/* 8) Toolbar personalizada                                     */
-/* ------------------------------------------------------------ */
 .custom-toolbar {
-  --background:  #4a90e2 !important;  /* Azul corporativo */
+  --background:  #4a90e2 !important;
 }
 
 .custom-toolbar .custom-title {
@@ -172,9 +137,6 @@ ion-page {
   font-weight: 600;
 }
 
-/* ------------------------------------------------------------ */
-/* 9) Filas alternadas en grids                                 */
-/* ------------------------------------------------------------ */
 ion-grid ion-row:nth-child(odd) {
   background-color: #ffffff !important;
 }
@@ -182,17 +144,11 @@ ion-grid ion-row:nth-child(even) {
   background-color: #f5f5f5 !important;
 }
 
-/* ------------------------------------------------------------ */
-/* 10) Eliminar cualquier background conflictivo                */
-/* ------------------------------------------------------------ */
 ion-item,
 ion-col {
   background: transparent !important;
 }
 
-/* ------------------------------------------------------------ */
-/* 11) Tabla sin cápsula                                         */
-/* ------------------------------------------------------------ */
 .grid-sin-capsula {
   --ion-grid-padding: 0;
   padding: 0 !important;
@@ -213,22 +169,17 @@ ion-col {
   border-bottom: none;
 }
 
-/* Primera columna (Profesor) sin borde derecho */
 .grid-sin-capsula ion-row ion-col:first-child {
   border-right: none !important;
   position: relative;
-  /* Espacio entre texto y línea */
   padding-right: 1rem;
 }
 
-/* Segunda columna (Instituciones) con borde izquierdo */
 .grid-sin-capsula ion-row ion-col:nth-child(2) {
   border-left: 3px solid #000;
-  /* Espacio entre línea y contenido */
   padding-left: 1rem;
 }
 
-/* Aumentar padding interior de cada celda */
 .grid-sin-capsula ion-col {
   margin: 0;
   padding: 0.75rem 1rem;
@@ -238,7 +189,6 @@ ion-col {
   border-right: none;
 }
 
-/* Filas alternadas: blanco / gris claro */
 .grid-sin-capsula ion-row:nth-child(odd) {
   background-color: #ffffff !important;
 }
@@ -246,9 +196,6 @@ ion-col {
   background-color: #f5f5f5 !important;
 }
 
-/* ------------------------------------------------------------ */
-/* 12) Ajustes responsivos                                      */
-/* ------------------------------------------------------------ */
 @media (max-width: 768px) {
   ion-col[size-sm="12"] {
     margin: 0;
@@ -265,9 +212,6 @@ ion-grid ion-row.no-background {
   background-color: transparent !important;
 }
 
-/* ------------------------------------------------------------ */
-/* Modal “Administrar Instituciones”                            */
-/* ------------------------------------------------------------ */
 .modal-instituciones {
   --width: 90%;
   --max-width: 700px;
@@ -275,63 +219,49 @@ ion-grid ion-row.no-background {
   --background: #ffffff;
 }
 
-/* Toolbar del modal (encabezado y footer) en gris claro */
 .modal-toolbar {
-  --background: #cccccc !important; /* Gris claro */
+  --background: #cccccc !important;
 }
 
-/* Título del modal en negro, negrita y mayúsculas */
 .modal-title {
   color: #000000;
   font-weight: 700;
   text-transform: uppercase;
 }
 
-/* Icono de cerrar modal (cruz) en negro */
 .modal-close-icon {
   color: #000000;
 }
 
-/* Padding interno para contenido del modal */
 .modal-content-padding {
   padding: 1rem 1rem 2rem;
 }
 
-/* Estilo para la barra de búsqueda dentro del modal */
-/* El texto que se escribe será negro */
 .modal-instituciones ion-searchbar.modal-searchbar {
   margin: 0.5rem 0 1rem;
   --background: #f2f2f2;
   --border-radius: 8px;
-  --color: #000;             /* texto en negro */
-  --placeholder-color: #888; /* placeholder en gris medio */
+  --color: #000;
+  --placeholder-color: #888;
 }
 
-/* ------------------------------------------------------------ */
-/* Estilos para la casilla (ion-checkbox) dentro del modal      */
-/* ------------------------------------------------------------ */
-/* Cuando NO esté marcada → fondo gris claro, sin borde */
+
 .modal-instituciones ion-checkbox[aria-checked="false"] {
-  --background: #f2f2f2;   /* gris claro */
+  --background: #f2f2f2;
   --border-color: transparent;
 }
 
-/* Cuando SÍ esté marcada → fondo blanco, checkmark negro */
 .modal-instituciones ion-checkbox[aria-checked="true"] {
-  --background: #ffffff; /* blanco */
+  --background: #ffffff;
   --border-color: transparent;
 }
 
-/* Ajuste para que la casilla sea cuadrada y consistente */
 .modal-instituciones ion-checkbox {
   --size: 20px;
-  --mark-color: #000000; /* checkmark en negro */
+  --mark-color: #000000;
   --mark-size: 12px;
 }
 
-/* ------------------------------------------------------------ */
-/* Grid de tarjetas: ajusta separación                           */
-/* ------------------------------------------------------------ */
 .cards-grid {
   --ion-grid-padding: 0;
   margin: 0;
@@ -347,7 +277,6 @@ ion-grid ion-row.no-background {
   padding: 0.5rem 0.5rem;
 }
 
-/* Tarjeta individual de institución */
 .card-institucion {
   --border-radius: 8px;
   --box-shadow: 0 1px 4px rgba(0, 0, 0, 0.1);
@@ -369,23 +298,21 @@ ion-grid ion-row.no-background {
   justify-content: center;
 }
 
-/* Nombre de la IE: wrap en segunda línea si excede ancho */
 .nombre-institucion {
   font-size: 1rem;
   color: #333;
-  white-space: normal;      /* permite salto de línea */
-  word-break: break-word;   /* corta palabras largas */
-  max-width: 100%;          /* quepa dentro de la tarjeta */
+  white-space: normal;
+  word-break: break-word;
+  max-width: 100%;
 }
 
-/* Input en modo edición */
 .input-edit {
   font-size: 1rem;
   color: #333;
   padding: 0.25rem 0.5rem;
 }
 
-/* Fila para añadir nueva institución */
+
 .add-institution-row {
   margin: 1rem 0;
   display: flex;
@@ -400,15 +327,10 @@ ion-grid ion-row.no-background {
   --highlight-height: 0;
 }
 
-/* Botón “Añadir” dentro del modal */
 .modal-instituciones ion-button[slot="end"] {
   margin-left: 0.5rem;
 }
 
-/* ------------------------------------------------------------ */
-/* Pie del modal: botones CANCELAR y ACEPTAR (rojo y verde)     */
-/* ------------------------------------------------------------ */
-/* Ambos botones en negrita y texto blanco */
 .modal-footer-button {
   font-weight: 700;
   text-transform: uppercase;
@@ -417,43 +339,35 @@ ion-grid ion-row.no-background {
   --box-shadow: none;
   --border-radius: 4px;
   padding: 0 1rem;
-  width: 100%; /* ocupar todo el ancho del ion-button */
+  width: 100%;
 }
 
-/* Estilo específico para CANCELAR: fondo rojo */
 .cancel-button {
-  --background: #e74c3c; /* rojo */
+  --background: #e74c3c;
   border: none;
 }
 
-/* Hover para CANCELAR: rojo más oscuro */
 .cancel-button:hover {
   --background: #c0392b;
 }
 
-/* Estilo específico para ACEPTAR: fondo verde */
 .accept-button {
-  --background: #27ae60; /* verde */
+  --background: #27ae60;
   border: none;
 }
 
-/* Hover para ACEPTAR: verde más oscuro */
+
 .accept-button:hover {
   --background: #1e8449;
 }
 
-/* ------------------------------------------------------------ */
-/* Botón "Seleccionar IE" en una sola línea con padding extra    */
-/* ------------------------------------------------------------ */
 .single-line-button {
   white-space: nowrap;
   --padding-start: 0.75rem;
   --padding-end: 0.75rem;
 }
 
-/* ------------------------------------------------------------ */
-/* Ajustes responsivos dentro del modal                          */
-/* ------------------------------------------------------------ */
+
 @media (max-width: 600px) {
   .card-institucion {
     --border-radius: 6px;
