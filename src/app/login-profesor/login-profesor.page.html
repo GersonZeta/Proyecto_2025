@@ -29,7 +29,6 @@
             (ionFocus)="clearEmailError()"
           ></ion-input>
         </ion-item>
-        <!-- Mensaje de error en rojo sin desplazar nada -->
         <div *ngIf="emailError" class="error-text-above">{{ emailError }}</div>
       </ion-col>
 
@@ -81,7 +80,7 @@
       <ion-col size="4" class="ion-align-self-end">
         <ion-grid>
           <ion-row>
-            <!-- Seleccionar IE: conserva expand="block" y padding igual a los demás -->
+            <!-- Seleccionar IE -->
             <ion-col size="3">
               <ion-button
                 class="single-line-button"
@@ -92,17 +91,19 @@
                 COLEGIOS
               </ion-button>
             </ion-col>
+
             <!-- Registrar Profesor -->
             <ion-col size="3">
               <ion-button
                 expand="block"
                 color="primary"
                 (click)="registrarProfesor()"
-                [disabled]="!isFormValid()"
+                [disabled]="!isFormValid() || datosCargados"
               >
                 Registrar
               </ion-button>
             </ion-col>
+
             <!-- Actualizar Profesor -->
             <ion-col size="3">
               <ion-button
@@ -114,6 +115,7 @@
                 Actualizar
               </ion-button>
             </ion-col>
+
             <!-- Cancelar -->
             <ion-col size="3">
               <ion-button
@@ -133,7 +135,6 @@
     <!-- 2) Segunda fila: Buscar Profesor con lupa a la derecha -->
     <!-- ------------------------------------------------------------ -->
     <ion-row class="row-spacing no-background" style="align-items: flex-end;">
-      <!-- Buscar Profesor (Nombre) -->
       <ion-col size="6">
         <ion-item class="black-item">
           <ion-label position="stacked">Buscar nombre del profesor</ion-label>
@@ -141,7 +142,6 @@
         </ion-item>
       </ion-col>
 
-      <!-- Botón Lupa -->
       <ion-col size="6" style="display: flex; justify-content: flex-start; align-items: flex-end;">
         <ion-button color="primary" (click)="buscarProfesor()">
           <ion-icon name="search-outline"></ion-icon>
@@ -160,7 +160,6 @@
     class="modal-instituciones"
   >
     <ng-template>
-      <!-- Encabezado del modal con fondo gris claro y texto negro -->
       <ion-header>
         <ion-toolbar class="modal-toolbar">
           <ion-title class="modal-title">ADMINISTRAR INSTITUCIONES</ion-title>
@@ -173,7 +172,6 @@
       </ion-header>
 
       <ion-content class="modal-content-padding">
-        <!-- Barra de búsqueda dentro del modal (texto en negro) -->
         <ion-searchbar
           class="modal-searchbar"
           [(ngModel)]="filterText"
@@ -182,7 +180,6 @@
           (ionInput)="filtrarInstituciones()"
         ></ion-searchbar>
 
-        <!-- Contenedor de tarjetas: 1 por fila (size="12") -->
         <ion-grid class="cards-grid">
           <ion-row>
             <ion-col
@@ -193,7 +190,6 @@
                 <ion-grid>
                   <ion-row class="card-row">
                     <ion-col size="auto" class="align-center">
-                      <!-- Checkbox con fondo gris claro o blanco -->
                       <ion-checkbox
                         [(ngModel)]="inst.selected"
                         color="dark"
@@ -236,7 +232,6 @@
           </ion-row>
         </ion-grid>
 
-        <!-- Input para añadir una nueva institución (maxlength 40) -->
         <div class="add-institution-row" *ngIf="!datosCargados">
           <ion-item class="black-item add-item">
             <ion-input
@@ -249,10 +244,7 @@
               size="small"
               fill="clear"
               (click)="addInstitutionModal()"
-              [disabled]="
-                !newInstitutionName.trim() ||
-                modalInstituciones.length >= 20
-              "
+              [disabled]="!newInstitutionName.trim() || modalInstituciones.length >= 20"
             >
               Añadir
             </ion-button>
@@ -260,7 +252,6 @@
         </div>
       </ion-content>
 
-      <!-- Pie del modal con fondo gris claro y botones “CANCELAR” rojo y “ACEPTAR” verde -->
       <ion-footer>
         <ion-toolbar class="modal-toolbar">
           <ion-buttons slot="start">
@@ -291,9 +282,9 @@
       </ion-row>
 
       <ion-row *ngFor="let prof of profesores" class="fila-dato">
-        <ion-col size="4">{{ prof.NombreProfesor }}</ion-col>
+        <ion-col size="4">{{ prof.nombreprofesorsaanee }}</ion-col>
         <ion-col size="8">
-          <ng-container *ngFor="let id of prof.Instituciones; let last = last">
+          <ng-container *ngFor="let id of prof.instituciones; let last = last">
             <span [style.color]="newInstituciones.includes(id) ? 'red' : '#000'">
               {{ obtenerNombreInstitucion(id) }}<span *ngIf="!last">, </span>
             </span>

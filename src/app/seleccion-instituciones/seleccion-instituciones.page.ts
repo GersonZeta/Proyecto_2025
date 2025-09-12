@@ -1,6 +1,3 @@
-// --------------------------------------------
-// seleccion-instituciones.page.ts (completo)
-// --------------------------------------------
 import { Component } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
@@ -28,11 +25,12 @@ interface Institucion {
 export class SeleccionInstitucionesPage {
   profesor: Profesor | null = null;
   instituciones: Institucion[] = [];
+
   private baseUrl = 'http://localhost:3000';
   correo: string = '';
 
-  // Para la ventana de “Confirmar Salir”
   mostrarAlertaSalir: boolean = false;
+  isLoading: boolean = false; // <- control de carga
 
   constructor(
     private http: HttpClient,
@@ -40,11 +38,11 @@ export class SeleccionInstitucionesPage {
     private alertCtrl: AlertController
   ) {}
 
+  // Se ejecuta cada vez que se entra en la vista
   ionViewWillEnter() {
-    // Restablecer la alerta de “Salir” cada vez que volvemos a esta página
     this.mostrarAlertaSalir = false;
-
     this.correo = localStorage.getItem('profesorCorreo') || '';
+
     if (this.correo) {
       this.buscarProfesor();
     } else {
@@ -54,30 +52,61 @@ export class SeleccionInstitucionesPage {
   }
 
   private buscarProfesor() {
+    // empezamos a cargar; evitamos el "parpadeo" mostrando spinner
+    this.isLoading = true;
+    this.profesor = null;
+    this.instituciones = [];
+
     this.http
       .get<Profesor>(`${this.baseUrl}/instituciones-profesor`, {
         params: { correo: this.correo }
       })
-      .subscribe(
-        data => {
+      .subscribe({
+        next: data => {
+          // Guardamos datos del profesor tal cual vienen del servidor
           this.profesor = data;
+          // Cargamos las instituciones asociadas (normalizando campos)
           this.cargarInstituciones();
         },
-        () => this.mostrarAlerta('Error', 'No se pudo obtener datos del profesor.')
-      );
+        error: err => {
+          this.isLoading = false;
+          this.profesor = null;
+          this.instituciones = [];
+          console.error('Error buscarProfesor:', err);
+          this.mostrarAlerta('Error', 'No se pudo obtener datos del profesor.');
+        }
+      });
   }
 
   private cargarInstituciones() {
-    if (!this.profesor) { return; }
-    this.http.get<Institucion[]>(`${this.baseUrl}/instituciones-all`)
-      .subscribe(
-        data => {
-          this.instituciones = data.filter(inst =>
+    if (!this.profesor) {
+      this.isLoading = false;
+      return;
+    }
+
+    this.http.get<any[]>(`${this.baseUrl}/instituciones-all`)
+      .subscribe({
+        next: data => {
+          // Normalizar campos del servidor (snake_case) a los que usa el cliente (camelCase)
+          const todas: Institucion[] = (data || []).map(d => ({
+            idInstitucionEducativa: d.idinstitucioneducativa ?? d.idInstitucionEducativa,
+            NombreInstitucion: d.nombreinstitucion ?? d.NombreInstitucion
+          }));
+
+          // Filtrar solo las instituciones que pertenecen al profesor
+          this.instituciones = todas.filter(inst =>
             this.profesor!.Instituciones.includes(inst.idInstitucionEducativa)
           );
+
+          this.isLoading = false;
         },
-        () => this.mostrarAlerta('Error', 'No se pudieron cargar instituciones.')
-      );
+        error: err => {
+          this.isLoading = false;
+          this.instituciones = [];
+          console.error('Error cargarInstituciones:', err);
+          this.mostrarAlerta('Error', 'No se pudieron cargar instituciones.');
+        }
+      });
   }
 
   irAEstudiantes(inst: Institucion) {
@@ -85,7 +114,7 @@ export class SeleccionInstitucionesPage {
     this.router.navigate(['/estudiantes']);
   }
 
-  // ALERTA PERSONALIZADA “SALIR”
+  // ALERTA PERSONALIZADA “SALIR” (overlay propio)
   abrirAlertaSalir() {
     this.mostrarAlertaSalir = true;
   }
@@ -100,7 +129,7 @@ export class SeleccionInstitucionesPage {
     this.router.navigate(['/home']);
   }
 
-  // PARA MOSTRAR ALERTAS NATIVAS (errores HTTP, etc.)
+  // Para usar alertas nativas de Ionic (por si prefieres)
   private async mostrarAlerta(header: string, message: string) {
     const a = await this.alertCtrl.create({
       header,

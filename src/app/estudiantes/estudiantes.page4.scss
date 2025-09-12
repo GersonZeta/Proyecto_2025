@@ -122,3 +122,20 @@
 .btn-ok:hover {
   background-color: #a03030;
 }
+
+/* ---------- POR DEFECTO: SIN SOMBRADO NUNCA (incluso en :hover) ---------- */
+.tabla-estudiantes:not(.hover-activo) ion-row:not(.header-row) ion-col:first-child,
+.tabla-estudiantes:not(.hover-activo) ion-row:not(.header-row) ion-col:first-child:hover {
+  cursor: default !important;
+  background-color: #ffffff !important;
+  transition: background-color 0.2s ease !important;
+}
+
+/* ---------- SOLO SI .hover-activo está presente (DESPUÉS DE BUSCAR) ---------- */
+.tabla-estudiantes.hover-activo ion-row:not(.header-row) ion-col:first-child {
+  cursor: pointer !important;
+}
+
+.tabla-estudiantes.hover-activo ion-row:not(.header-row) ion-col:first-child:hover {
+  background-color: rgba(0, 0, 0, 0.05) !important;
+}

@@ -156,18 +156,25 @@ ion-button::part(native) {
 }
 
 
-.tabla-docente ion-row > ion-col:nth-child(1) {
+/* 🚫 Desactivar hover y fondo en la cabecera "ID" */
+.tabla-docente .header-row ion-col:first-child {
+  background-color: #ffffff !important; /* mismo fondo que el resto del header */
+  cursor: default !important;
+  pointer-events: none !important; /* evita que sea clickeable */
+}
+
+/* ✅ Mantener hover SOLO en los IDs de las filas (no en header) */
+.tabla-docente ion-row:not(.header-row) ion-col:first-child {
   cursor: pointer !important;
   transition: background-color 0.2s ease;
 }
 
-/* Feedback visual al pasar el ratón */
-.tabla-docente ion-row > ion-col:nth-child(1):hover {
+.tabla-docente ion-row:not(.header-row) ion-col:first-child:hover {
   background-color: rgba(0, 0, 0, 0.05) !important;
 }
+
 .disabled {
   pointer-events: none !important;
-  opacity: 0.5;
 }
 .clickable {
   cursor: pointer !important;

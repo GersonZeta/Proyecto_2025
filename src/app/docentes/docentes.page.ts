@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { AlertController, ActionSheetController, NavController } from '@ionic/angular';
-import { forkJoin } from 'rxjs';
+import { forkJoin, Subscription } from 'rxjs';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import autoTable from 'jspdf-autotable';
@@ -43,6 +43,7 @@ export interface DocenteView {
   Telefono?: string;
   GradoSeccionLabora?: string;
   displayId: number;
+  index?: number;
 }
 
 @Component({
@@ -53,7 +54,7 @@ export interface DocenteView {
     './docentes.page2.scss',
     './docentes.page3.scss',
     './docentes.page4.scss'
-],
+  ],
   standalone: false,
 })
 export class DocentesPage {
@@ -73,7 +74,7 @@ export class DocentesPage {
 
   datosCargados = false;
   buscandoDocente = false;
-    mostrarAlertaExportar = false;
+  mostrarAlertaExportar = false;
   mostrarErrorCampos = false;
 
   nombreBusqueda = '';
@@ -90,12 +91,16 @@ export class DocentesPage {
   emailInvalid = false;
   private emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
+  private searchSub?: Subscription;
+  searchLoading = false;
+
   constructor(
     private http: HttpClient,
     private alertCtrl: AlertController,
     private actionSheetCtrl: ActionSheetController,
     private navCtrl: NavController
   ) {}
+
   cerrarAlertaExportar(): void {
     this.mostrarAlertaExportar = false;
   }
@@ -122,6 +127,7 @@ export class DocentesPage {
     const params = new HttpParams().set('idInstitucionEducativa', this.idInstitucionEducativa.toString());
     this.http.get<DocenteView[]>(`${this.baseUrl}/docentes-estudiante`, { params })
       .subscribe(list => {
+        // asigna displayId basándose en la posición original (útil para seleccionar una fila concreta)
         this.docentes = list.map((d, i) => ({ ...d, displayId: i + 1 }));
         this.docentesFiltrados = [...this.docentes];
       });
@@ -142,6 +148,8 @@ export class DocentesPage {
       });
   }
 
+  // ------------------ BÚSQUEDA ------------------
+
 buscarDocente(): void {
   const raw = this.nombreBusqueda.trim();
   if (!raw) {
@@ -149,36 +157,13 @@ buscarDocente(): void {
     return;
   }
 
-  // Normalizamos la búsqueda
   const normalizedRaw = raw
     .normalize('NFD')
     .replace(/[\u0300-\u036f]/g, '')
     .toLowerCase();
 
-  // 1) Buscamos coincidencia exacta NORMALIZADA
-  const exacto = this.docentes.find(d =>
-    d.NombreDocente
-      .normalize('NFD')
-      .replace(/[\u0300-\u036f]/g, '')
-      .toLowerCase() === normalizedRaw
-  );
-
-  if (exacto) {
-    // Si hay exacto, lo asignamos como único filtrado y lo cargamos
-    this.docentesFiltrados = [exacto];
-    this.buscandoDocente  = true;
-    this.datosCargados    = false;
-
-    const view: DocenteView & { index: number } = {
-      ...exacto,
-      index: exacto.displayId!
-    };
-    this.buscarPorId(view);
-    return;
-  }
-
-  // 2) Si no hay exacto, hacemos el filtrado por "includes"
-  this.docentesFiltrados = this.docentes.filter(d =>
+  // obtenemos todas las filas que contienen el texto buscado (igual que antes)
+  const matches = this.docentes.filter(d =>
     d.NombreDocente
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
@@ -186,23 +171,168 @@ buscarDocente(): void {
       .includes(normalizedRaw)
   );
 
-  if (!this.docentesFiltrados.length) {
+  if (!matches.length) {
     this.mostrarAlerta('Error', 'No hay docentes con ese nombre.');
     return;
   }
 
-  // Activamos modo búsqueda para que el usuario seleccione
+  // Si solo hay una fila, auto-seleccionamos
+  if (matches.length === 1) {
+    this.buscandoDocente = true;
+    this.datosCargados = false;
+    this.searchLoading = true;
+    this.buscarPorId(matches[0]);
+    return;
+  }
+
+  // Si hay varias filas, comprobamos si todas pertenecen al mismo docente
+  // 1) preferimos idDocente (si existe y no es 0)
+  const idSet = new Set(matches.map(m => m.idDocente ?? 0).filter(id => id && id !== 0));
+  if (idSet.size === 1) {
+    // todas las filas comparten el mismo idDocente -> auto-seleccionar
+    this.buscandoDocente = true;
+    this.datosCargados = false;
+    this.searchLoading = true;
+    this.buscarPorId(matches[0]);
+    return;
+  }
+
+  // 2) si no hay idDocente confiable, usamos DNIDocente
+  const dniSet = new Set(matches.map(m => (m.DNIDocente || '').toString().trim()));
+  // si todas tienen el mismo DNI y no está vacío, auto-seleccionar
+  if (dniSet.size === 1 && ![...dniSet][0]) {
+    // si el único valor es cadena vacía, no lo usamos; (se evita auto-select si DNI vacío)
+  } else if (dniSet.size === 1) {
+    this.buscandoDocente = true;
+    this.datosCargados = false;
+    this.searchLoading = true;
+    this.buscarPorId(matches[0]);
+    return;
+  }
+
+  // 3) fallback: comparar por Nombre+Email+Telefono
+  const keySet = new Set(matches.map(m =>
+    `${(m.NombreDocente || '').toString().trim()}||${(m.Email || '').toString().trim()}||${(m.Telefono || '').toString().trim()}`
+  ));
+  if (keySet.size === 1) {
+    this.buscandoDocente = true;
+    this.datosCargados = false;
+    this.searchLoading = true;
+    this.buscarPorId(matches[0]);
+    return;
+  }
+
+  // Si llegamos aquí, hay múltiples docentes distintos (mismo nombre pero diferentes identificadores)
+  // Mostramos las filas para que el usuario elija la ID exacta (comportamiento normal)
+  this.docentesFiltrados = matches;
   this.buscandoDocente = true;
-  this.datosCargados   = false;
+  this.datosCargados = false;
 }
 
-  buscarPorId(d: DocenteView & { index: number }): void {
-    const params = new HttpParams().set('nombreDocente', d.NombreDocente);
-    this.http.get<SearchResponse>(`${this.baseUrl}/buscar-docente`, { params })
-      .subscribe({
-        next: res => {
-          const views: DocenteView[] = res.idEstudiante.map((idEst, i) => ({
-            idDocente: res.idEstudiante[0] || 0,
+  // Esta función ahora resuelve la selección usando el displayId y busca todas las filas
+  // originales que pertenecen al mismo docente (usando DNIDocente como identificador
+  // principal; si no está, se usa Nombre+Email+Telefono como fallback).
+buscarPorId(d: DocenteView | (DocenteView & { index: number })): void {
+  if (this.searchSub) {
+    this.searchSub.unsubscribe();
+    this.searchSub = undefined;
+  }
+
+  this.searchLoading = true;
+  this.datosCargados = false;
+
+  const displayId = (d as DocenteView).displayId;
+  const originalRow = this.docentes.find(x => x.displayId === displayId);
+
+  if (originalRow) {
+    const teacherDNI = (originalRow.DNIDocente || '').toString().trim();
+
+    let relatedRows: DocenteView[] = [];
+
+    if (teacherDNI) {
+      relatedRows = this.docentes.filter(x => (x.DNIDocente || '').toString().trim() === teacherDNI);
+    } else {
+      const key = `${(originalRow.NombreDocente || '').toString().trim()}||${(originalRow.Email || '').toString().trim()}||${(originalRow.Telefono || '').toString().trim()}`;
+      relatedRows = this.docentes.filter(x => {
+        const k = `${(x.NombreDocente || '').toString().trim()}||${(x.Email || '').toString().trim()}||${(x.Telefono || '').toString().trim()}`;
+        return k === key;
+      });
+    }
+
+    // Consolidar estudiantes UNICOS y mantener displayId original de CADA fila
+    const seen = new Set<number>();
+    const views: DocenteView[] = [];
+
+    relatedRows.forEach(row => {
+      if (seen.has(row.idEstudiante)) return;
+      seen.add(row.idEstudiante);
+
+      views.push({
+        idDocente: originalRow.idDocente ?? 0,
+        idEstudiante: row.idEstudiante,
+        NombreEstudiante: this.getEstudianteNombre(row.idEstudiante),
+        NombreDocente: row.NombreDocente,
+        DNIDocente: row.DNIDocente,
+        Email: row.Email,
+        Telefono: row.Telefono,
+        GradoSeccionLabora: row.GradoSeccionLabora,
+        displayId: row.displayId // <-- usar la displayId de la fila, no la de originalRow
+      });
+    });
+
+    if (views.length) {
+      this.docentesFiltrados = views;
+
+      this.docente = {
+        idDocente: originalRow.idDocente,
+        DNIDocente: originalRow.DNIDocente,
+        NombreDocente: originalRow.NombreDocente,
+        Email: originalRow.Email,
+        Telefono: originalRow.Telefono,
+        GradoSeccionLabora: originalRow.GradoSeccionLabora,
+        idEstudiante: Array.from(seen)
+      };
+
+      this.datosCargados = true;
+      this.buscandoDocente = false;
+      this.searchLoading = false;
+
+      this.asignados = this.allAsignados.filter(id => !Array.from(seen).includes(id));
+      this.onEstudiantesChange();
+      return;
+    }
+    // si no hay views, dejamos que haga fallback al backend
+  }
+
+  // FALLBACK al backend: tratamos de recuperar displayId por cada idEstudiante si existe en this.docentes
+  let params = new HttpParams().set('nombreDocente', d.NombreDocente);
+  if ((d as DocenteView).idDocente != null && (d as DocenteView).idDocente !== 0) {
+    params = params.set('idDocente', String((d as DocenteView).idDocente));
+  }
+  params = params.set('displayId', String(displayId ?? 0));
+
+  this.searchSub = this.http.get<SearchResponse>(`${this.baseUrl}/buscar-docente`, { params })
+    .subscribe({
+      next: res => {
+        this.searchLoading = false;
+
+        const idDocenteVal = (d as DocenteView).idDocente ?? (res.idEstudiante?.[0] ?? 0);
+
+        const seen = new Set<number>();
+        const views: DocenteView[] = [];
+        res.idEstudiante.forEach(idEst => {
+          if (seen.has(idEst)) return;
+          seen.add(idEst);
+
+          // intentar encontrar la fila original para obtener su displayId
+          const match = this.docentes.find(x =>
+            x.idEstudiante === idEst &&
+            x.NombreDocente === res.NombreDocente &&
+            (x.DNIDocente || '') === (res.DNIDocente || '')
+          );
+
+          views.push({
+            idDocente: idDocenteVal,
             idEstudiante: idEst,
             NombreEstudiante: this.getEstudianteNombre(idEst),
             NombreDocente: res.NombreDocente,
@@ -210,26 +340,37 @@ buscarDocente(): void {
             Email: res.Email,
             Telefono: res.Telefono,
             GradoSeccionLabora: res.GradoSeccionLabora,
-            displayId: i + 1
-          }));
-          this.docentesFiltrados = views;
-          this.docente = {
-            idDocente: views[0].idDocente,
-            DNIDocente: res.DNIDocente,
-            NombreDocente: res.NombreDocente,
-            Email: res.Email,
-            Telefono: res.Telefono,
-            GradoSeccionLabora: res.GradoSeccionLabora,
-            idEstudiante: res.idEstudiante
-          };
-          this.datosCargados = true;
-          this.buscandoDocente = false;
-          this.asignados = this.allAsignados.filter(id => !res.idEstudiante.includes(id));
-          this.onEstudiantesChange();
-        },
-        error: () => this.mostrarAlerta('Error', 'No se pudo obtener los estudiantes del docente.')
-      });
-  }
+            displayId: match ? match.displayId : (d as DocenteView).displayId // usar displayId original si existe
+          });
+        });
+
+        this.docentesFiltrados = views;
+
+        this.docente = {
+          idDocente: views[0]?.idDocente,
+          DNIDocente: res.DNIDocente,
+          NombreDocente: res.NombreDocente,
+          Email: res.Email,
+          Telefono: res.Telefono,
+          GradoSeccionLabora: res.GradoSeccionLabora,
+          idEstudiante: Array.from(seen)
+        };
+
+        this.datosCargados = true;
+        this.buscandoDocente = false;
+
+        this.asignados = this.allAsignados.filter(id => !res.idEstudiante.includes(id));
+        this.onEstudiantesChange();
+      },
+      error: () => {
+        this.searchLoading = false;
+        this.mostrarAlerta('Error', 'No se pudo obtener los estudiantes del docente.');
+      }
+    });
+}
+
+
+  // ------------------ Helpers ------------------
 
   private getEstudianteNombre(id: number): string {
     const est = this.estudiantes.find(e => e.idEstudiante === id);
@@ -245,7 +386,7 @@ buscarDocente(): void {
   }
 
   formatTelefono(event: any): void {
-    let val = event.detail.value.replace(/\D/g, '').slice(0, 9);
+    let val = (event?.detail?.value ?? '').replace(/\D/g, '').slice(0, 9);
     const parts: string[] = [];
     for (let i = 0; i < val.length; i += 3) parts.push(val.substring(i, i + 3));
     this.docente.Telefono = parts.join('-');
@@ -255,69 +396,65 @@ buscarDocente(): void {
     this.emailInvalid = !!this.docente.Email && !this.emailPattern.test(this.docente.Email);
   }
 
-actualizarDocente(): void {
-  this.validarEmail();
+  actualizarDocente(): void {
+    this.validarEmail();
 
-  // Validación de campos requeridos
-  if (!this.docente.NombreDocente.trim() ||
-      !this.docente.DNIDocente.trim() ||
-      !this.docente.Email.trim() ||
-      this.emailInvalid) {
-    this.mostrarErrorCampos = true;
-    return;
-  }
+    if (!this.docente.NombreDocente.trim() ||
+        !this.docente.DNIDocente.trim() ||
+        !this.docente.Email.trim() ||
+        this.emailInvalid) {
+      this.mostrarErrorCampos = true;
+      return;
+    }
 
-  const payload = {
-    ...this.docente,
-    idInstitucionEducativa: this.idInstitucionEducativa
-  };
-
-  this.http.put(`${this.baseUrl}/actualizar-docente`, payload).subscribe({
-    next: () => {
-      this.mostrarAlerta('Éxito', 'Datos actualizados.');
-      this.cargarAsignadosGlobal();
-      this.resetForm();
-      this.cargarDocentes();
-    },
-    error: () => this.mostrarAlerta('Error', 'No fue posible actualizar')
-  });
-}
-
-
-registrarDocente(): void {
-  this.validarEmail();
-
-  // Validación de campos requeridos
-  if (!this.docente.NombreDocente.trim() ||
-      !this.docente.DNIDocente.trim() ||
-      !this.docente.Email.trim() ||
-      this.emailInvalid ||
-      this.docente.idEstudiante.length === 0) {
-    this.mostrarErrorCampos = true;
-    return;
-  }
-
-  const reqs = this.docente.idEstudiante.map(id => {
     const payload = {
-      idEstudiante: id,
-      NombreDocente: this.docente.NombreDocente,
-      DNIDocente: this.docente.DNIDocente,
-      Email: this.docente.Email,
-      Telefono: this.docente.Telefono,
-      GradoSeccionLabora: this.docente.GradoSeccionLabora,
+      ...this.docente,
       idInstitucionEducativa: this.idInstitucionEducativa
     };
-    return this.http.post<{ idDocente: number }>(`${this.baseUrl}/registrar-docente`, payload);
-  });
 
-  forkJoin(reqs).subscribe(() => {
-    this.allAsignados.push(...this.docente.idEstudiante);
-    this.asignados.push(...this.docente.idEstudiante);
-    this.resetForm();
-    this.cargarDocentes();
-  });
-}
+    this.http.put(`${this.baseUrl}/actualizar-docente`, payload).subscribe({
+      next: () => {
+        this.mostrarAlerta('Éxito', 'Datos actualizados.');
+        this.cargarAsignadosGlobal();
+        this.resetForm();
+        this.cargarDocentes();
+      },
+      error: () => this.mostrarAlerta('Error', 'No fue posible actualizar')
+    });
+  }
 
+  registrarDocente(): void {
+    this.validarEmail();
+
+    if (!this.docente.NombreDocente.trim() ||
+        !this.docente.DNIDocente.trim() ||
+        !this.docente.Email.trim() ||
+        this.emailInvalid ||
+        this.docente.idEstudiante.length === 0) {
+      this.mostrarErrorCampos = true;
+      return;
+    }
+
+    const reqs = this.docente.idEstudiante.map(id => {
+      const payload = {
+        idEstudiante: id,
+        NombreDocente: this.docente.NombreDocente,
+        DNIDocente: this.docente.DNIDocente,
+        Email: this.docente.Email,
+        Telefono: this.docente.Telefono,
+        GradoSeccionLabora: this.docente.GradoSeccionLabora,
+        idInstitucionEducativa: this.idInstitucionEducativa
+      };
+      return this.http.post<{ idDocente: number }>(`${this.baseUrl}/registrar-docente`, payload);
+    });
+
+    forkJoin(reqs).subscribe(() => {
+      this.allAsignados.push(...this.docente.idEstudiante);
+      this.asignados.push(...this.docente.idEstudiante);
+      this.resetForm();
+      this.cargarDocentes();
+    });
+  }
 
   eliminarDocente(): void {
     if (!this.docente.idDocente) {
@@ -408,50 +545,69 @@ registrarDocente(): void {
       .map(e => e.ApellidosNombres)
       .join(', ');
   }
-
 openStudentsModal(): void {
-  // 1) Los que ya tiene asignados ESTE docente (selected = true)
-  const asignadosAlDocente = this.estudiantes
-    .filter(e => this.docente.idEstudiante.includes(e.idEstudiante))
-    .map(e => ({ ...e, selected: true }));
+  this.studentFilter = '';
 
-  // 2) Sólo los que NO están en ningún docente (selected = false)
-  const sinAsignar = this.estudiantes
-    .filter(e => !this.allAsignados.includes(e.idEstudiante))
-    .map(e => ({ ...e, selected: false }));
+  const idsDocenteActual = new Set(
+    (this.docente.idEstudiante || []).map((n: any) => Number(n)).filter((x: number) => !isNaN(x))
+  );
 
-  // 3) Unimos ambos grupos (no habrá duplicados porque un estudiante no puede estar
-  //    simultáneamente en docente.idEstudiante y en allAsignados “global”)
-  this.allStudents = [...asignadosAlDocente, ...sinAsignar];
+  // Mostrar SOLO:
+  // - estudiantes que ya pertenecen a este docente (idsDocenteActual)
+  // - OR estudiantes que NO están asignados globalmente (no están en allAsignados)
+  this.allStudents = this.estudiantes
+    .filter(e => idsDocenteActual.has(e.idEstudiante) || !this.allAsignados.includes(e.idEstudiante))
+    .map(e => ({
+      ...e,
+      selected: idsDocenteActual.has(e.idEstudiante)
+    }));
 
-  // 4) Inicializamos el filtrado y abrimos el modal
   this.filteredStudents = [...this.allStudents];
-  this.studentFilter    = '';
   this.showStudentsModal = true;
 }
+
+
 
   closeStudentsModal(): void {
     this.showStudentsModal = false;
   }
 
-  filterStudents(): void {
-    const txt = this.studentFilter.trim().toLowerCase();
-    this.filteredStudents = this.allStudents.filter(s => s.ApellidosNombres.toLowerCase().includes(txt));
+filterStudents(): void {
+  const txt = (this.studentFilter || '').trim().toLowerCase();
+  if (!txt) {
+    this.filteredStudents = [...this.allStudents];
+    return;
   }
+  this.filteredStudents = this.allStudents.filter(s =>
+    (s.ApellidosNombres || '').toLowerCase().includes(txt)
+  );
+}
 
-  applyStudentsSelection(): void {
-    this.docente.idEstudiante = this.allStudents.filter(s => s.selected!).map(s => s.idEstudiante);
-    this.onEstudiantesChange();
-    this.closeStudentsModal();
-  }
+
+applyStudentsSelection(): void {
+  const seleccionados = this.allStudents
+    .filter(s => !!s.selected)
+    .map(s => Number(s.idEstudiante))
+    .filter(n => !isNaN(n));
+
+  const selNums = Array.from(new Set(seleccionados));
+
+  this.docente.idEstudiante = selNums;
+  this.onEstudiantesChange();
+
+  // recalcular asignados: quitar los que ahora pertenecen a este docente
+  this.asignados = this.allAsignados.filter(id => !this.docente.idEstudiante.includes(id));
+
+  this.closeStudentsModal();
+}
 
   goTo(page: string): void {
     this.navCtrl.navigateRoot(`/${page}`);
   }
 
-  // —————— Estos getters para el template ——————
 get estudiantesDisponibles(): Student[] {
-  return this.estudiantes.filter(e => !this.asignados.includes(e.idEstudiante));
+  const idsDocenteActual = this.docente.idEstudiante || [];
+  return this.estudiantes.filter(e => !this.asignados.includes(e.idEstudiante) || idsDocenteActual.includes(e.idEstudiante));
 }
   get docentesFiltradosIndexados(): Array<DocenteView & { index: number }> {
     return this.docentesFiltrados.map(d => ({ ...d, index: d.displayId! }));

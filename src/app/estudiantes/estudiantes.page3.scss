@@ -71,6 +71,24 @@
 
 }
 
+/* 🚫 Desactivar hover y fondo en la cabecera "ID" */
+.tabla-estudiantes .header-row ion-col:first-child {
+  background-color: #ffffff !important; /* mismo fondo que el resto del header */
+  cursor: default !important;
+  pointer-events: none !important; /* evita que sea clickeable */
+}
+
+/* ✅ Mantener hover SOLO en los IDs de las filas (no en header) */
+.tabla-estudiantes ion-row:not(.header-row) ion-col:first-child {
+  cursor: pointer !important;
+  transition: background-color 0.2s ease;
+}
+
+.tabla-estudiantes ion-row:not(.header-row) ion-col:first-child:hover {
+  background-color: rgba(0, 0, 0, 0.05) !important; /* 👈 efecto gris */
+}
+
+
 /* 1ª columna: ID */
 .tabla-estudiantes ion-row > ion-col:nth-child(1) {
   flex: 0 0 60px !important;

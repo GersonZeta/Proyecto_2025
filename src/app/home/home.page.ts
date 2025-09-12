@@ -81,17 +81,18 @@ export class HomePage {
     });
   }
 
-  verificarAdminAntesDeCrearCuenta() {
-    this.http.get<{ existe: boolean }>(
-      `${this.baseUrl}/existe-admin`
-    ).subscribe({
-      next: r =>
-        r.existe
-          ? this.mostrarAlertaLoginAdmin = true
-          : this.mostrarAlertaAdmin = true,
+verificarAdminAntesDeCrearCuenta() {
+  this.mostrarAlertaAdmin = false;
+  this.mostrarAlertaLoginAdmin = false;
+
+  this.http.get<{ existe: boolean }>(`${this.baseUrl}/existe-admin`)
+    .subscribe({
+      next: r => r.existe
+        ? this.mostrarAlertaLoginAdmin = true
+        : this.mostrarAlertaAdmin = true,
       error: () => this.errorMensaje = 'Error verificando administrador'
     });
-  }
+}
 
 registrarAdmin() {
   this.errorAdmin = '';

@@ -1,4 +1,3 @@
-<!-- src/app/familias/familias.component.html -->
 <ion-header [translucent]="true" class="toolbar-top">
   <ion-toolbar>
     <ion-title slot="start"><strong>FAMILIAS</strong></ion-title>
@@ -7,7 +6,6 @@
 </ion-header>
 
 <ion-content [fullscreen]="true" class="content-white">
-  <!-- Mini‑sidebar -->
   <div class="mini-sidebar toolbar-left">
     <ion-button fill="solid" shape="round" class="btn-estudiantes" routerLink="/estudiantes">E</ion-button>
     <ion-button fill="solid" shape="round" class="btn-docentes" routerLink="/docentes">D</ion-button>
@@ -22,7 +20,6 @@
   </ion-header>
 
   <ion-list class="formulario-estudiante" lines="none">
-    <!-- Formulario -->
     <ion-grid class="grid-3cols">
       <ion-row>
         <ion-col size="2.2" class="input-with-error">
@@ -30,8 +27,8 @@
             <ion-label position="stacked">Madre/Apoderado</ion-label>
             <ion-input
               type="text"
-              [(ngModel)]="familia.NombreMadreApoderado"
-              name="NombreMadreApoderado"
+              [(ngModel)]="familia.nombremadreapoderado"
+              name="nombremadreapoderado"
               required
               (keypress)="validateLetters($event)"
             ></ion-input>
@@ -44,8 +41,8 @@
             <ion-input
               type="text"
               maxlength="8"
-              [(ngModel)]="familia.DNI"
-              name="DNI"
+              [(ngModel)]="familia.dni"
+              name="dni"
               required
               (keypress)="validateNumber($event)"
             ></ion-input>
@@ -57,8 +54,8 @@
             <ion-label position="stacked">Dirección</ion-label>
             <ion-input
               type="text"
-              [(ngModel)]="familia.Direccion"
-              name="Direccion"
+              [(ngModel)]="familia.direccion"
+              name="direccion"
               (keypress)="validateLetters($event)"
             ></ion-input>
           </ion-item>
@@ -70,8 +67,8 @@
             <ion-input
               type="text"
               maxlength="11"
-              [(ngModel)]="familia.Telefono"
-              name="Telefono"
+              [(ngModel)]="familia.telefono"
+              name="telefono"
               (keypress)="validateNumber($event)"
               (ionInput)="formatTelefono($event)"
             ></ion-input>
@@ -83,26 +80,25 @@
             <ion-label position="stacked">Ocupación</ion-label>
             <ion-input
               type="text"
-              [(ngModel)]="familia.Ocupacion"
-              name="Ocupacion"
+              [(ngModel)]="familia.ocupacion"
+              name="ocupacion"
               (keypress)="validateLetters($event)"
             ></ion-input>
           </ion-item>
         </ion-col>
 
-        <!-- Botón Seleccionar Estudiantes -->
         <ion-col size="1.5" class="ion-text-center">
-          <ion-button
-            expand="block"
-            color="tertiary"
-            (click)="openStudentsModal()"
-            [disabled]="datosCargados || estudiantesDisponibles.length === 0"
-          >
-            Estudiantes
-          </ion-button>
-          <div class="selected-list" *ngIf="selectedStudentNames">
-            {{ selectedStudentNames }}
-          </div>
+<ion-button
+  expand="block"
+  color="tertiary"
+  (click)="openStudentsModal()"
+  [disabled]="datosCargados && (!familia.idestudiantes || familia.idestudiantes.length === 0) && estudiantesDisponibles.length === 0"
+>
+  Estudiantes
+</ion-button>
+
+
+
         </ion-col>
 
         <ion-col size="1">
@@ -120,21 +116,21 @@
 
     <div class="separator-line"></div>
 
-    <!-- Acciones Buscar/Actualizar/Descargar/Eliminar -->
     <ion-grid class="grid-acciones">
       <ion-row class="ion-align-items-center">
         <ion-col size="2" class="input-with-error">
-          <ion-item class="black-item">
-            <ion-label position="stacked">Buscar Madre/Apoderado</ion-label>
-            <ion-input
-              type="text"
-              [(ngModel)]="busquedaMadre"
-              name="busquedaMadre"
-              required
-              (keypress)="validateLetters($event)"
-            ></ion-input>
-            <ion-icon name="search-outline" slot="end" (click)="buscarFamilia()" style="cursor: pointer;"></ion-icon>
-          </ion-item>
+<ion-item class="black-item">
+  <ion-label position="stacked">Buscar Madre/Apoderado</ion-label>
+  <ion-input
+    type="text"
+    [(ngModel)]="busquedaMadre"
+    name="busquedaMadre"
+    required
+    (keypress)="validateLetters($event)"
+  ></ion-input>
+  <ion-icon name="search-outline" slot="end" (click)="buscarFamilia()" style="cursor: pointer;"></ion-icon>
+</ion-item>
+
         </ion-col>
         <ion-col size="1.5">
           <ion-button expand="block" color="tertiary" (click)="actualizarFamilia()" [disabled]="!datosCargados">
@@ -146,41 +142,47 @@
             Descargar
           </ion-button>
         </ion-col>
-        <ion-col size="1">
-          <ion-button expand="block" color="danger" (click)="confirmEliminar()" [disabled]="!datosCargados">
-            Eliminar
-          </ion-button>
-        </ion-col>
+<ion-col size="1">
+  <ion-button
+    expand="block"
+    color="danger"
+    (click)="confirmEliminar()"
+    [disabled]="!datosCargados">
+    Eliminar
+  </ion-button>
+</ion-col>
       </ion-row>
     </ion-grid>
 
-    <!-- Tabla de Familias -->
-    <ion-grid class="tabla-familias">
-      <ion-row class="header-row">
-        <ion-col><strong>ID</strong></ion-col>
-        <ion-col><strong>Estudiante</strong></ion-col>
-        <ion-col><strong>Madre/Apoderado</strong></ion-col>
-        <ion-col><strong>DNI</strong></ion-col>
-        <ion-col><strong>Dirección</strong></ion-col>
-        <ion-col><strong>Teléfono</strong></ion-col>
-        <ion-col><strong>Ocupación</strong></ion-col>
-      </ion-row>
-      <ion-row *ngFor="let f of familiasFiltradas">
-        <ion-col [class.clickable]="seleccionMultiple" (click)="seleccionarFamilia(f)">
-          {{ f.displayId }}
-        </ion-col>
-        <ion-col>{{ f.NombreEstudiante }}</ion-col>
-        <ion-col>{{ f.NombreMadreApoderado }}</ion-col>
-        <ion-col>{{ f.DNI }}</ion-col>
-        <ion-col>{{ f.Direccion || '-' }}</ion-col>
-        <ion-col>{{ f.Telefono || '-' }}</ion-col>
-        <ion-col>{{ f.Ocupacion || '-' }}</ion-col>
-      </ion-row>
-    </ion-grid>
+<ion-grid class="tabla-familias" [ngClass]="{ 'hover-activo': hoverActivo }">
+  <ion-row class="header-row">
+    <ion-col><strong>ID</strong></ion-col>
+    <ion-col><strong>Estudiante</strong></ion-col>
+    <ion-col><strong>Madre/Apoderado</strong></ion-col>
+    <ion-col><strong>DNI</strong></ion-col>
+    <ion-col><strong>Dirección</strong></ion-col>
+    <ion-col><strong>Teléfono</strong></ion-col>
+    <ion-col><strong>Ocupación</strong></ion-col>
+  </ion-row>
+<ion-row *ngFor="let f of familiasFiltradas"
+         (click)="busquedaRealizada ? seleccionarFamilia(f) : null"
+         [class.clickable]="busquedaRealizada">
+    <ion-col>{{ f.displayId }}</ion-col>
+    <ion-col>{{ f.NombreEstudiante }}</ion-col>
+    <ion-col>{{ f.nombremadreapoderado }}</ion-col>
+    <ion-col>{{ f.dni }}</ion-col>
+    <ion-col>{{ f.direccion || '-' }}</ion-col>
+    <ion-col>{{ f.telefono || '-' }}</ion-col>
+    <ion-col>{{ f.ocupacion || '-' }}</ion-col>
+  </ion-row>
+</ion-grid>
+
+
+
   </ion-list>
 </ion-content>
 
-<!-- Modal de Selección de Estudiantes -->
+<!-- Modal de Estudiantes -->
 <ion-modal
   [isOpen]="showStudentsModal"
   backdropDismiss="true"
@@ -240,7 +242,7 @@
   </ng-template>
 </ion-modal>
 
-<!-- Overlays Exportar y Error fuera de ion-content -->
+<!-- Export Overlay -->
 <div class="export-overlay" *ngIf="mostrarAlertaExportar">
   <div class="export-box">
     <h2 class="export-title">Exportar como</h2>
@@ -252,6 +254,7 @@
   </div>
 </div>
 
+<!-- Error Overlay -->
 <div class="error-overlay" *ngIf="mostrarErrorCampos">
   <div class="error-box">
     <h2 class="error-title">Error</h2>

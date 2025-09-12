@@ -1,29 +1,23 @@
-<!-- src/app/docentes/docentes.page.html -->
+
 <ion-header>
   <ion-toolbar class="toolbar-top">
-    <!-- Título a la izquierda en negrita -->
     <ion-title slot="start"><strong>DOCENTES POR ESTUDIANTE</strong></ion-title>
-    <!-- Botón “Salir” con ícono a la derecha -->
     <ion-buttons slot="end">
     </ion-buttons>
   </ion-toolbar>
 </ion-header>
 
-<!-- AGREGAR ESTE <style> JUSTO AQUÍ ABAJO -->
 <style>
-  /* 1) Nativos */
   input,
   textarea {
     caret-color: #000 !important;
   }
 
-  /* 2) Para ion-input con Shadow DOM */
   ion-input .native-input,
   ion-textarea .native-textarea {
     caret-color: #000 !important;
   }
 
-  /* 3) Angular ViewEncapsulation workaround */
   :host ::ng-deep input,
   :host ::ng-deep textarea,
   :host ::ng-deep ion-input .native-input,
@@ -33,7 +27,6 @@
 </style>
 
 <ion-content [fullscreen]="true" class="content-white">
-  <!-- Mini‑sidebar (botones redondos) en Docentes -->
   <div class="mini-sidebar toolbar-left">
     <ion-button fill="solid" shape="round" routerLink="/estudiantes">E</ion-button>
     <ion-button fill="solid" shape="round" class="active">D</ion-button>
@@ -41,17 +34,14 @@
     <ion-button fill="solid" shape="round" color="custom-orange" routerLink="/seleccion-instituciones">S</ion-button>
   </div>
 
-  <!-- Toolbar colapsable al hacer scroll -->
   <ion-header collapse="condense">
     <ion-toolbar>
       <ion-title size="large">Docentes por Estudiante</ion-title>
     </ion-toolbar>
   </ion-header>
 
-  <!-- Se quitan líneas entre items -->
   <ion-list class="formulario-estudiante" lines="none">
     <ion-grid class="grid-3cols">
-      <!-- 1ª fila: Nombre del Docente / DNI Docente / Email / Teléfono / GyS -->
       <ion-row>
         <ion-col size="2.5" class="input-with-error">
           <ion-item class="black-item">
@@ -121,7 +111,6 @@
           </ion-item>
         </ion-col>
 
-        <!-- Botón “Estudiantes” abre modal -->
 <ion-col size="1.5">
   <ion-button
     class="single-line-button"
@@ -154,10 +143,9 @@
     </ion-grid>
 
     <ion-grid>
-      <!-- LÍNEA SEPARADORA GRIS DEBAJO DE LOS BOTONES -->
+
       <div class="separator-line"></div>
 
-      <!-- 2ª fila: Buscar / Actualizar / Descargar / Eliminar -->
       <ion-row class="search-buttons-row ion-align-items-center">
         <ion-col size="2.5" class="input-with-error">
           <ion-item class="black-item">
@@ -207,7 +195,6 @@
       </ion-row>
     </ion-grid>
 
-    <!-- Tabla de Docentes CON BORDES -->
     <div class="tabla-container-docente">
       <ion-grid class="tabla-docente">
         <ion-row class="header-row">
@@ -220,28 +207,28 @@
           <ion-col><strong>Grado/Sección</strong></ion-col>
         </ion-row>
 
-        <ion-row *ngFor="let d of docentesFiltradosIndexados">
-<ion-col
-  [class.clickable]="buscandoDocente"
-  [class.disabled]="!buscandoDocente"
-  (click)="buscandoDocente && buscarPorId(d)"
->
-  {{ d.index }}
-</ion-col>
+<ion-row *ngFor="let d of docentesFiltrados">
+  <ion-col
+    [class.clickable]="buscandoDocente"
+    [class.disabled]="!buscandoDocente"
+    (click)="buscandoDocente && buscarPorId(d)"
+  >
+    {{ d.displayId }}
+  </ion-col>
+
+  <ion-col>{{ d.NombreDocente }}</ion-col>
+  <ion-col>{{ d.NombreEstudiante }}</ion-col>
+  <ion-col>{{ d.DNIDocente }}</ion-col>
+  <ion-col>{{ d.Email }}</ion-col>
+  <ion-col>{{ d.Telefono || '-' }}</ion-col>
+  <ion-col>{{ d.GradoSeccionLabora || '-' }}</ion-col>
+</ion-row>
 
 
-          <ion-col>{{ d.NombreDocente }}</ion-col>
-          <ion-col>{{ d.NombreEstudiante }}</ion-col>
-          <ion-col>{{ d.DNIDocente }}</ion-col>
-          <ion-col>{{ d.Email }}</ion-col>
-          <ion-col>{{ d.Telefono || '-' }}</ion-col>
-          <ion-col>{{ d.GradoSeccionLabora || '-' }}</ion-col>
-        </ion-row>
       </ion-grid>
     </div>
   </ion-list>
 
-  <!-- Modal personalizado de selección de Estudiantes -->
   <ion-modal
     [isOpen]="showStudentsModal"
     backdropDismiss="true"
@@ -307,7 +294,6 @@
   </ion-modal>
 </ion-content>
 
-  <!-- ==================== OVERLAY PERSONALIZADO “EXPORTAR” ==================== -->
   <div class="export-overlay" *ngIf="mostrarAlertaExportar">
     <div class="export-box">
       <h2 class="export-title">Exportar como</h2>
@@ -318,9 +304,9 @@
       </div>
     </div>
   </div>
-  <!-- ====================================================== -->
 
-  <!-- OVERLAY DE ERROR DE CAMPOS REQUERIDOS -->
+
+
   <div class="error-overlay" *ngIf="mostrarErrorCampos">
     <div class="error-box">
       <h2 class="error-title">Error</h2>

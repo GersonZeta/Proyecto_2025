@@ -1,8 +1,10 @@
 <ion-header [translucent]="true">
   <ion-toolbar class="header-profesor">
     <ion-title class="titulo-profesor">
-      Bienvenido, <span class="nombre-profesor">{{ profesor?.NombreProfesor }}</span>
+      Bienvenido,
+      <span class="nombre-profesor">{{ profesor?.NombreProfesor }}</span>
     </ion-title>
+
     <ion-buttons slot="end">
       <ion-button fill="clear" (click)="abrirAlertaSalir()">
         <ion-icon name="exit-outline"></ion-icon>
@@ -13,7 +15,8 @@
 </ion-header>
 
 <ion-content [fullscreen]="true" class="contenido-profesor">
-  <div *ngIf="profesor; else noProfesor">
+  <!-- Mostrar contenido solo cuando NO estamos cargando y sí hay profesor -->
+  <div *ngIf="!isLoading && profesor; else loadingOrNoProfesor">
     <p class="subtitulo">Selecciona alguno de las instituciones educativas:</p>
 
     <ion-grid class="grid-instituciones">
@@ -29,27 +32,26 @@
       </ion-row>
     </ion-grid>
 
-    <!-- Sólo si hay instituciones, mostramos el icono+botón centrados -->
-<ion-grid *ngIf="instituciones.length > 0">
-  <!-- Esta fila centra todo verticalmente -->
-  <ion-row class="ion-align-items-center">
-    <ion-col
-      size="12" size-md="6" offset-md="3"
-      class="col-graficos ion-text-center ion-align-self-center">
-      <ion-button
-        fill="solid"
-        expand="block"
-        class="btn-graficos"
-        routerLink="/graficos"
-        style="--btn-width: 800px; --btn-height: 80px;">
-        <ion-icon name="stats-chart-outline" class="icono-btn-graficos"></ion-icon>
-       <span class="texto-btn-graficos">GRAFICOS</span>
-      </ion-button>
-    </ion-col>
-  </ion-row>
-</ion-grid>
-
+    <ion-grid *ngIf="instituciones.length > 0">
+      <ion-row class="ion-align-items-center">
+        <ion-col size="12" size-md="6" offset-md="3" class="col-graficos ion-text-center ion-align-self-center">
+          <ion-button fill="solid" expand="block" class="btn-graficos" routerLink="/graficos" style="--btn-width: 800px; --btn-height: 80px;">
+            <ion-icon name="stats-chart-outline" class="icono-btn-graficos"></ion-icon>
+            <span class="texto-btn-graficos">GRAFICOS</span>
+          </ion-button>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
   </div>
+
+  <!-- TEMPLATE: si está cargando => spinner; si no está cargando y no hay profesor => mensaje -->
+  <ng-template #loadingOrNoProfesor>
+    <div *ngIf="isLoading; else noProfesor">
+      <div style="display:flex; justify-content:center; align-items:center; height:200px;">
+        <ion-spinner name="crescent"></ion-spinner>
+      </div>
+    </div>
+  </ng-template>
 
   <ng-template #noProfesor>
     <div class="mensaje-sin-profesor">
@@ -59,7 +61,7 @@
   </ng-template>
 </ion-content>
 
-<!-- ALERTA PERSONALIZADA “CONFIRMAR SALIR” -->
+<!-- ALERTA OVERLAY PERSONALIZADA "SALIR" (se muestra con la bandera mostrarAlertaSalir) -->
 <div class="alert-overlay" *ngIf="mostrarAlertaSalir">
   <div class="alert-box">
     <h2 class="alert-title">Confirmación</h2>

@@ -1,5 +1,4 @@
 // src/app/estudiantes/estudiantes.page.ts
-
 import {
   Component,
   AfterViewInit,
@@ -26,6 +25,7 @@ interface EstudianteResponse {
   IPP: 'Si' | 'No';
   PEP: 'Si' | 'No';
   idInstitucionEducativa: number;
+
 }
 
 interface EstudianteLocal {
@@ -60,6 +60,7 @@ export class EstudiantesPage implements AfterViewInit, OnDestroy {
   nombreBusqueda = '';
   datosCargados = false;
   seleccionMultiple = false;
+  hoverActivo = false;
   alumno: Partial<EstudianteLocal> = {};
   estudiantes: EstudianteLocal[] = [];
   estudiantesFiltrados: EstudianteLocal[] = [];
@@ -91,13 +92,14 @@ export class EstudiantesPage implements AfterViewInit, OnDestroy {
     if (!container) return;
     const zoomFactor = window.outerWidth / window.innerWidth;
     const scale = 1 / zoomFactor;
-    container.style.transformOrigin = '0 0';
-    container.style.transform = `scale(${scale})`;
-    container.style.width = `${zoomFactor * 100}%`;
-    container.style.height = `${zoomFactor * 100}%`;
+    (container.style as any).transformOrigin = '0 0';
+    (container.style as any).transform = `scale(${scale})`;
+    (container.style as any).width = `${zoomFactor * 100}%`;
+    (container.style as any).height = `${zoomFactor * 100}%`;
   }
 
   ionViewWillEnter(): void {
+    this.hoverActivo = false;
     const stored = localStorage.getItem('idInstitucionEducativa');
     this.idIE = stored ? +stored : 0;
     if (!this.idIE) {
@@ -108,58 +110,84 @@ export class EstudiantesPage implements AfterViewInit, OnDestroy {
     this.cargarEstudiantes();
   }
 
-  private cargarEstudiantes(): void {
-    const params = new HttpParams().set('idInstitucionEducativa', this.idIE.toString());
-    this.http.get<EstudianteResponse[]>(`${this.baseUrl}/estudiantes`, { params })
-      .subscribe(list => {
-        this.estudiantes = list.map((r, i) => ({
-          idEstudiante: r.idEstudiante,
-          fila: i + 1,
-          ApellidosNombres: r.ApellidosNombres,
-          FechaNacimiento: r.FechaNacimiento,
-          Edad: r.Edad,
-          DNI: r.DNI,
-          GradoSeccion: r.GradoSeccion,
-          TipoDiscapacidad: r.TipoDiscapacidad || '',
-          DocumentoSustentatorio: r.DocumentoSustentatorio || '',
-          DocumentoInclusiva: r.DocumentoInclusiva || '',
-          IPP: r.IPP === 'Si',
-          PEP: r.PEP === 'Si'
-        }));
-        this.estudiantesFiltrados = [...this.estudiantes];
-      }, () => this.mostrarAlerta('Error', 'Error cargando estudiantes'));
+private cargarEstudiantes(callback?: () => void): void {
+  const params = new HttpParams().set('idInstitucionEducativa', this.idIE.toString());
+  this.http.get<EstudianteResponse[]>(`${this.baseUrl}/estudiantes`, { params })
+    .subscribe(list => {
+      this.estudiantes = (list || []).map((r, i) => ({
+        idEstudiante: r.idEstudiante,
+        fila: i + 1,
+        ApellidosNombres: r.ApellidosNombres,
+        FechaNacimiento: r.FechaNacimiento,
+        Edad: r.Edad,
+        DNI: r.DNI,
+        GradoSeccion: r.GradoSeccion,
+        TipoDiscapacidad: r.TipoDiscapacidad || '',
+        DocumentoSustentatorio: r.DocumentoSustentatorio || '',
+        DocumentoInclusiva: r.DocumentoInclusiva || '',
+        IPP: r.IPP === 'Si',
+        PEP: r.PEP === 'Si'
+      }));
+      this.estudiantesFiltrados = [...this.estudiantes];
+      if (typeof callback === 'function') callback();
+    }, () => this.mostrarAlerta('Error', 'Error cargando estudiantes'));
+}
+
+
+buscarEstudiante(): void {
+  this.seleccionMultiple = false;
+  this.datosCargados = false;
+  this.hoverActivo = false; // 🔴 Lo apagamos por defecto
+
+  const raw = this.nombreBusqueda.trim();
+  if (!raw) {
+    this.mostrarAlerta('Error', 'Ingresa un nombre para buscar.');
+    return;
   }
 
-  buscarEstudiante(): void {
-    this.seleccionMultiple = false;
-    this.datosCargados = false;
-    const raw = this.nombreBusqueda.trim();
-    if (!raw) {
-      this.mostrarAlerta('Error', 'Ingresa un nombre para buscar.');
-      return;
-    }
-    const normalize = (s: string) =>
-      s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-    const matches = this.estudiantes.filter(e =>
-      normalize(e.ApellidosNombres).startsWith(normalize(raw))
-    );
-    if (!matches.length) {
-      this.mostrarAlerta('Error', 'No hay estudiantes con ese nombre.');
-      return;
-    }
-    this.estudiantesFiltrados = matches;
-    if (matches.length > 1) {
-      this.seleccionMultiple = true;
-      return;
-    }
+  const normalize = (s: string) =>
+    s ? s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase() : '';
+
+  const q = normalize(raw);
+
+  const matches = this.estudiantes.filter(e =>
+    normalize(e.ApellidosNombres).startsWith(q)
+  );
+
+  if (!matches.length) {
+    this.mostrarAlerta('Error', 'No hay estudiantes con ese nombre.');
+    this.estudiantesFiltrados = [];
+    return;
+  }
+
+  this.estudiantesFiltrados = matches;
+
+  if (matches.length > 1) {
+    // ✅ Solo si hay más de un resultado: hover y selección múltiple
+    this.seleccionMultiple = true;
+    this.hoverActivo = true; // Activamos hover solo si hay más de un resultado
+  } else {
+    // ❌ Si solo hay uno: cargar directo, sin hover
     this.alumno = { ...matches[0] };
     this.datosCargados = true;
+    this.hoverActivo = false; // Desactivamos hover
   }
+}
 
-  seleccionarEstudiante(est: EstudianteLocal): void {
-    this.alumno = { ...est };
-    this.datosCargados = true;
-  }
+
+
+seleccionarEstudiante(est: EstudianteLocal): void {
+  // Cargar datos al formulario
+  this.alumno = { ...est };
+  this.datosCargados = true;
+
+  // 🔥 Ahora filtramos la tabla para que SOLO se quede el estudiante elegido
+  this.estudiantesFiltrados = [est];
+
+  // Opcional: ya no necesitamos hover ni selección múltiple después de elegir
+  this.seleccionMultiple = false;
+  this.hoverActivo = false;
+}
 
   private async validarCampos(): Promise<boolean> {
     if (!this.alumno.ApellidosNombres || !this.alumno.FechaNacimiento || !this.alumno.DNI) {
@@ -178,12 +206,19 @@ export class EstudiantesPage implements AfterViewInit, OnDestroy {
       return;
     }
     const payload: any = {
-      ...this.alumno,
+      ApellidosNombres: this.alumno.ApellidosNombres,
+      FechaNacimiento: this.alumno.FechaNacimiento,
+      Edad: this.alumno.Edad,
+      DNI: this.alumno.DNI,
+      GradoSeccion: this.alumno.GradoSeccion,
+      TipoDiscapacidad: this.alumno.TipoDiscapacidad,
+      DocumentoSustentatorio: this.alumno.DocumentoSustentatorio,
+      DocumentoInclusiva: this.alumno.DocumentoInclusiva,
       IPP: this.alumno.IPP ? 'Si' : 'No',
       PEP: this.alumno.PEP ? 'Si' : 'No',
       idInstitucionEducativa: this.idIE
     };
-    this.http.post<{ idEstudiante: number }>(`${this.baseUrl}/registrar-estudiante`, payload)
+    this.http.post<{ idEstudiante?: number }>(`${this.baseUrl}/registrar-estudiante`, payload)
       .subscribe({
         next: () => {
           this.resetForm();
@@ -193,25 +228,49 @@ export class EstudiantesPage implements AfterViewInit, OnDestroy {
       });
   }
 
-  actualizarEstudiante(): void {
-    this.validarCampos().then(ok => {
-      if (!ok) return;
-      const payload: any = {
-        ...this.alumno,
-        IPP: this.alumno.IPP ? 'Si' : 'No',
-        PEP: this.alumno.PEP ? 'Si' : 'No'
-      };
-      this.http.put(`${this.baseUrl}/actualizar-estudiante`, payload).subscribe({
-        next: () => {
-          this.resetForm();
-          this.cargarEstudiantes();
-        },
-        error: e => this.mostrarAlerta('Error', e.error?.error || 'No fue posible actualizar')
-      });
+actualizarEstudiante(): void {
+  this.validarCampos().then(ok => {
+    if (!ok) return;
+    const payload: any = {
+      idEstudiante: this.alumno.idEstudiante,
+      ApellidosNombres: this.alumno.ApellidosNombres,
+      FechaNacimiento: this.alumno.FechaNacimiento,
+      Edad: this.alumno.Edad,
+      DNI: this.alumno.DNI,
+      GradoSeccion: this.alumno.GradoSeccion,
+      TipoDiscapacidad: this.alumno.TipoDiscapacidad,
+      DocumentoSustentatorio: this.alumno.DocumentoSustentatorio,
+      DocumentoInclusiva: this.alumno.DocumentoInclusiva,
+      IPP: this.alumno.IPP ? 'Si' : 'No',
+      PEP: this.alumno.PEP ? 'Si' : 'No'
+    };
+
+    this.http.put(`${this.baseUrl}/actualizar-estudiante`, payload).subscribe({
+      next: () => {
+        // Reiniciamos formulario (desactiva hover por defecto)
+        this.resetForm();
+
+        // Recargamos la tabla y desactivamos hover inmediatamente después de la actualización
+        this.cargarEstudiantes(() => {
+          // Aquí la tabla ya tiene los datos recargados: desactivamos el hover
+          this.hoverActivo = false;
+        });
+      },
+      error: e =>
+        this.mostrarAlerta('Error', e.error?.error || 'No fue posible actualizar')
     });
-  }
+  });
+}
+
+
 
   async confirmEliminar() {
+    const localFlag = localStorage.getItem('noMostrarEliminar');
+    if (localFlag === 'true') {
+      this.eliminarEstudiante();
+      return;
+    }
+
     const alert = await this.alertCtrl.create({
       header: 'Confirmación',
       message: '¿Estás seguro de eliminar este estudiante?',
@@ -227,8 +286,8 @@ export class EstudiantesPage implements AfterViewInit, OnDestroy {
         { text: 'No', role: 'cancel' },
         {
           text: 'Sí',
-          handler: data => {
-            if (data.includes('noMostrar')) {
+          handler: (data: any) => {
+            if (Array.isArray(data) ? data.includes('noMostrar') : (data?.noMostrar === 'noMostrar')) {
               localStorage.setItem('noMostrarEliminar', 'true');
             }
             this.eliminarEstudiante();
@@ -236,34 +295,30 @@ export class EstudiantesPage implements AfterViewInit, OnDestroy {
         }
       ]
     });
-    if (localStorage.getItem('noMostrarEliminar') === 'true') {
-      this.eliminarEstudiante();
-    } else {
-      await alert.present();
-    }
+    await alert.present();
   }
 
-private eliminarEstudiante() {
-  if (!this.alumno.idEstudiante) return;
-  this.http.delete(`${this.baseUrl}/eliminar-estudiante/${this.alumno.idEstudiante}`)
-    .subscribe({
-      next: () => {
-        // this.mostrarAlerta('Éxito', 'Estudiante eliminado'); // Línea removida
-        this.resetForm();
-        this.cargarEstudiantes();
-      },
-      error: () => this.mostrarAlerta('Error', 'No fue posible eliminar')
-    });
+  private eliminarEstudiante() {
+    if (!this.alumno.idEstudiante) return;
+    this.http.delete(`${this.baseUrl}/eliminar-estudiante/${this.alumno.idEstudiante}`)
+      .subscribe({
+        next: () => {
+          this.resetForm();
+          this.cargarEstudiantes();
+        },
+        error: () => this.mostrarAlerta('Error', 'No fue posible eliminar')
+      });
+  }
+
+resetForm(): void {
+  this.alumno = {};
+  this.nombreBusqueda = '';
+  this.datosCargados = false;
+  this.seleccionMultiple = false;
+  this.estudiantesFiltrados = [...this.estudiantes];
+  this.hoverActivo = false; // desactivar hover al reset
 }
 
-
-  resetForm(): void {
-    this.alumno = {};
-    this.nombreBusqueda = '';
-    this.datosCargados = false;
-    this.seleccionMultiple = false;
-    this.estudiantesFiltrados = [...this.estudiantes];
-  }
 
   private async mostrarAlerta(header: string, message: string): Promise<void> {
     const alert = await this.alertCtrl.create({ header, message, buttons: ['OK'] });
