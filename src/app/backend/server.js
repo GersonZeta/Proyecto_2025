@@ -19,6 +19,8 @@ const transporter = nodemailer.createTransport({
     pass: process.env.GMAIL_APP_PASS
   }
 });
+
+
 const ALLOWED_EMAILS = [
   process.env.GMAIL_USER,
   "gezetab@ucvvirtual.edu.pe",
