@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { environment } from 'src/environments/environment'; // <- ruta actualizada
 
 interface Institucion {
   idinstitucioneducativa: number;
@@ -54,7 +55,8 @@ export class LoginProfesorPage implements OnInit {
   searchName = '';
   profesores: Profesor[] = [];
 
-  private baseUrl = 'http://localhost:3000';
+  // usa environment.apiUrl para que funcione en local y en Vercel
+  private baseUrl = environment.apiUrl;
 
   constructor(private router: Router, private http: HttpClient) {}
 
