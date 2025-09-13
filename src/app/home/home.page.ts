@@ -5,12 +5,12 @@ import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
 
 interface Profesor {
-  idprofesorsaanee: number;
-  correo: string;
-  nombreprofesorsaanee: string;
-  clave: string;
-  telefonosaanee: string;
-  instituciones: number[];
+  idProfesor: number;
+  Correo: string;
+  NombreProfesor: string;
+  Clave: string;
+  TelefonoProf: string;
+  Instituciones: number[];
 }
 
 @Component({
@@ -70,21 +70,29 @@ export class HomePage {
             return;
           }
 
-          // Obtener profesores por correo
+          // Obtener profesor por correo desde tu API actual
           const params = new HttpParams().set('correo', correo);
-          this.http.get<Profesor[]>(`${this.baseUrl}/instituciones-profesor`, { params }).subscribe({
-            next: profArray => {
-              const prof = profArray.find(p => p.nombreprofesorsaanee === nombre && p.clave === clave);
-              if (prof) {
-                localStorage.setItem('profesorCorreo', correo);
-                this.limpiarCampos();
-                this.router.navigate(['/seleccion-instituciones']);
-              } else {
-                this.errorMensaje = 'Datos de profesor incorrectos';
-              }
-            },
-            error: () => this.errorMensaje = 'Datos de profesor incorrectos'
-          });
+          this.http.get<{ ok: boolean; data: Profesor }>(`${this.baseUrl}/instituciones-profesor`, { params })
+            .subscribe({
+              next: res => {
+                if (!res.ok || !res.data) {
+                  this.errorMensaje = 'Datos de profesor incorrectos';
+                  return;
+                }
+
+                const prof = res.data;
+
+                // Validar nombre y clave
+                if (prof.NombreProfesor === nombre && prof.Clave === clave) {
+                  localStorage.setItem('profesorCorreo', correo);
+                  this.limpiarCampos();
+                  this.router.navigate(['/seleccion-instituciones']);
+                } else {
+                  this.errorMensaje = 'Datos de profesor incorrectos';
+                }
+              },
+              error: () => this.errorMensaje = 'Datos de profesor incorrectos'
+            });
         }
       },
       error: () => this.errorMensaje = 'Error al conectar con el servidor'
