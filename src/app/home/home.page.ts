@@ -1,7 +1,7 @@
 // src/app/home/home.page.ts
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
 
 @Component({
@@ -46,14 +46,15 @@ export class HomePage {
 
     // Intentar login como ADMIN
     this.http.post<{ ok: boolean; mensaje?: string }>(
-      `${this.baseUrl}/login-admin`, { correo, clave }
+      `${this.baseUrl}/login-admin`,
+      { correo, clave }
     ).subscribe({
       next: r => {
         if (r.ok) {
           this.limpiarCampos();
           this.router.navigate(['/login-profesor']);
         } else {
-          // Si falla como admin, intentar como PROFESOR SAANEE
+          // Intentar como PROFESOR SAANEE
           if (!nombre) {
             this.errorMensaje = 'Falta nombre del profesor';
             return;
@@ -63,10 +64,7 @@ export class HomePage {
             { params: { correo } }
           ).subscribe({
             next: prof => {
-              if (
-                prof.NombreProfesor === nombre &&
-                prof.Clave === clave
-              ) {
+              if (prof.NombreProfesor === nombre && prof.Clave === clave) {
                 localStorage.setItem('profesorCorreo', correo);
                 this.limpiarCampos();
                 this.router.navigate(['/seleccion-instituciones']);
@@ -82,49 +80,46 @@ export class HomePage {
     });
   }
 
-verificarAdminAntesDeCrearCuenta() {
-  this.mostrarAlertaAdmin = false;
-  this.mostrarAlertaLoginAdmin = false;
+  verificarAdminAntesDeCrearCuenta() {
+    this.mostrarAlertaAdmin = false;
+    this.mostrarAlertaLoginAdmin = false;
 
-  this.http.get<{ existe: boolean }>(`${this.baseUrl}/existe-admin`)
-    .subscribe({
-      next: r => r.existe
-        ? this.mostrarAlertaLoginAdmin = true
-        : this.mostrarAlertaAdmin = true,
-      error: () => this.errorMensaje = 'Error verificando administrador'
+    this.http.get<{ existe: boolean }>(`${this.baseUrl}/existe-admin`)
+      .subscribe({
+        next: r => r.existe
+          ? this.mostrarAlertaLoginAdmin = true
+          : this.mostrarAlertaAdmin = true,
+        error: () => this.errorMensaje = 'Error verificando administrador'
+      });
+  }
+
+  registrarAdmin() {
+    this.errorAdmin = '';
+    const c = this.correoAdmin.trim(), k = this.claveAdmin.trim();
+    if (!c || !k) { this.errorAdmin = 'Completa ambos campos'; return; }
+
+    this.http.post<{ ok: boolean; mensaje?: string }>(
+      `${this.baseUrl}/registrar-admin`,
+      { correo: c, clave: k }
+    ).subscribe({
+      next: r => {
+        if (r.ok) {
+          this.cerrarAlertaAdmin();
+          this.correoAdmin = '';
+          this.claveAdmin = '';
+        } else {
+          this.errorAdmin = r.mensaje || 'No se pudo registrar';
+        }
+      },
+      error: () => this.errorAdmin = 'Error al conectar con el servidor'
     });
-}
-
-registrarAdmin() {
-  this.errorAdmin = '';
-  const c = this.correoAdmin.trim(), k = this.claveAdmin.trim();
-  if (!c || !k) { this.errorAdmin = 'Completa ambos campos'; return; }
-  this.http.post<{ ok: boolean; mensaje?: string }>(
-    `${this.baseUrl}/registrar-admin`,
-    { correo: c, clave: k }
-  ).subscribe({
-    next: r => {
-      if (r.ok) {
-        this.cerrarAlertaAdmin();
-        // Limpio los inputs del admin
-        this.correoAdmin = '';
-        this.claveAdmin = '';
-
-        // **Antes tenías esto y es la causa de que se copie en los inputs principales:**
-        // this.correo = c;
-        // this.clave  = k;
-      } else {
-        this.errorAdmin = r.mensaje || 'No se pudo registrar';
-      }
-    },
-    error: () => this.errorAdmin = 'Error al conectar con el servidor'
-  });
-}
+  }
 
   loginAdmin() {
     this.errorAdmin = '';
     const c = this.correoAdmin.trim(), k = this.claveAdmin;
     if (!c || !k) { this.errorAdmin = 'Falta correo o clave'; return; }
+
     this.http.post<{ ok: boolean; mensaje?: string }>(
       `${this.baseUrl}/login-admin`,
       { correo: c, clave: k }
@@ -158,18 +153,20 @@ registrarAdmin() {
     this.tokenReset = '';
     this.nuevaClave = '';
   }
-  cerrarAlertaReset() { this.mostrarAlertaReset = false; }
 
+  cerrarAlertaReset() { this.mostrarAlertaReset = false; }
   cerrarAlertaAdmin() { this.mostrarAlertaAdmin = false; }
   cerrarAlertaLoginAdmin() { this.mostrarAlertaLoginAdmin = false; }
 
+  // --- Reset: solicitar token
   enviarCorreoReset() {
     if (!this.correoReset.trim()) {
       this.errorReset = 'Ingresa tu correo';
       return;
     }
+
     this.http.post<{ ok: boolean; mensaje?: string }>(
-      `${this.baseUrl}/solicitar-reset`,
+      `${this.baseUrl}/admin/reset?action=solicitar-reset`,
       { correo: this.correoReset.trim() }
     ).subscribe({
       next: r => {
@@ -184,13 +181,15 @@ registrarAdmin() {
     });
   }
 
+  // --- Reset: confirmar token y nueva clave
   confirmarReset() {
     if (!this.tokenReset.trim() || !this.nuevaClave) {
       this.errorReset = 'Ingresa token y nueva clave';
       return;
     }
+
     this.http.post<{ ok: boolean; mensaje?: string }>(
-      `${this.baseUrl}/reset-security-code`,
+      `${this.baseUrl}/admin/reset?action=reset-security-code`,
       {
         correo: this.correoReset.trim(),
         token: this.tokenReset.trim(),
