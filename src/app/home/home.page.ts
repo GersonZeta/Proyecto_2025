@@ -1,4 +1,3 @@
-// src/app/home/home.page.ts
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
@@ -47,7 +46,7 @@ export class HomePage {
 
     // Intentar login como ADMIN
     this.http.post<{ ok: boolean; mensaje?: string }>(
-      `${this.baseUrl}/admin/login`,
+      `${this.baseUrl}/admin?action=login`,
       { correo, clave }
     ).subscribe({
       next: r => {
@@ -86,7 +85,7 @@ export class HomePage {
     this.mostrarAlertaAdmin = false;
     this.mostrarAlertaLoginAdmin = false;
 
-    this.http.get<{ existe: boolean }>(`${this.baseUrl}/admin/existe-admin`)
+    this.http.get<{ existe: boolean }>(`${this.baseUrl}/admin?action=existe`)
       .subscribe({
         next: r => r.existe
           ? this.mostrarAlertaLoginAdmin = true
@@ -102,7 +101,7 @@ export class HomePage {
     if (!c || !k) { this.errorAdmin = 'Completa ambos campos'; return; }
 
     this.http.post<{ ok: boolean; mensaje?: string }>(
-      `${this.baseUrl}/admin/registrar`,
+      `${this.baseUrl}/admin?action=registrar`,
       { correo: c, clave: k }
     ).subscribe({
       next: r => {
@@ -125,7 +124,7 @@ export class HomePage {
     if (!c || !k) { this.errorAdmin = 'Falta correo o clave'; return; }
 
     this.http.post<{ ok: boolean; mensaje?: string }>(
-      `${this.baseUrl}/admin/login`,
+      `${this.baseUrl}/admin?action=login`,
       { correo: c, clave: k }
     ).subscribe({
       next: r => {
@@ -170,7 +169,7 @@ export class HomePage {
     }
 
     this.http.post<{ ok: boolean; mensaje?: string }>(
-      `${this.baseUrl}/admin/reset?action=solicitar-reset`,
+      `${this.baseUrl}/admin?action=solicitar-reset`,
       { correo: this.correoReset.trim() }
     ).subscribe({
       next: r => {
@@ -193,7 +192,7 @@ export class HomePage {
     }
 
     this.http.post<{ ok: boolean; mensaje?: string }>(
-      `${this.baseUrl}/admin/reset?action=reset-security-code`,
+      `${this.baseUrl}/admin?action=reset-security-code`,
       {
         correo: this.correoReset.trim(),
         token: this.tokenReset.trim(),
