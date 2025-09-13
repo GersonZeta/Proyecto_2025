@@ -59,16 +59,24 @@ export class SeleccionInstitucionesPage {
     this.instituciones = [];
 
     this.http
-      .get<Profesor[]>(`${this.baseUrl}/instituciones-profesor`, { params: { correo: this.correo } })
+      .get<any>(`${this.baseUrl}/instituciones`, {
+        params: { action: 'profesor', correo: this.correo }
+      })
       .subscribe({
-        next: profs => {
-          const prof = profs[0]; // asumimos que correo es único
-          if (prof) {
-            this.profesor = prof;
+        next: resp => {
+          if (resp.ok && resp.data) {
+            this.profesor = {
+              idprofesorsaanee: resp.data.idProfesor,
+              correo: resp.data.Correo,
+              nombreprofesorsaanee: resp.data.NombreProfesor,
+              clave: resp.data.Clave,
+              telefonosaanee: resp.data.TelefonoProf,
+              Instituciones: resp.data.Instituciones
+            };
             this.cargarInstituciones();
           } else {
             this.isLoading = false;
-            this.mostrarAlerta('Error', 'No se encontró información del profesor.');
+            this.mostrarAlerta('Error', resp.mensaje || 'No se encontró información del profesor.');
           }
         },
         error: err => {
@@ -85,26 +93,29 @@ export class SeleccionInstitucionesPage {
       return;
     }
 
-    this.http.get<any[]>(`${this.baseUrl}/instituciones/all`).subscribe({
-      next: data => {
-        const todas: Institucion[] = (data || []).map(d => ({
-          idInstitucionEducativa: d.idinstitucioneducativa ?? d.idInstitucionEducativa,
-          NombreInstitucion: d.nombreinstitucion ?? d.NombreInstitucion
-        }));
+    this.http
+      .get<any>(`${this.baseUrl}/instituciones`, { params: { action: 'listar-todas' } })
+      .subscribe({
+        next: resp => {
+          if (resp.ok && resp.data) {
+            const todas: Institucion[] = (resp.data || []).map((d: any) => ({
+              idInstitucionEducativa: d.idinstitucioneducativa,
+              NombreInstitucion: d.nombreinstitucion
+            }));
 
-        const profesorInstIds = (this.profesor!.Instituciones || []).map(i => Number(i));
-        this.instituciones = todas.filter(inst =>
-          profesorInstIds.includes(Number(inst.idInstitucionEducativa))
-        );
-
-        this.isLoading = false;
-      },
-      error: err => {
-        this.isLoading = false;
-        console.error('Error cargarInstituciones:', err);
-        this.mostrarAlerta('Error', 'No se pudieron cargar instituciones.');
-      }
-    });
+            const profesorInstIds = (this.profesor!.Instituciones || []).map(i => Number(i));
+            this.instituciones = todas.filter(inst =>
+              profesorInstIds.includes(Number(inst.idInstitucionEducativa))
+            );
+          }
+          this.isLoading = false;
+        },
+        error: err => {
+          this.isLoading = false;
+          console.error('Error cargarInstituciones:', err);
+          this.mostrarAlerta('Error', 'No se pudieron cargar instituciones.');
+        }
+      });
   }
 
   irAEstudiantes(inst: Institucion) {
