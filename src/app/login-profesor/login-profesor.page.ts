@@ -1,6 +1,8 @@
+// src/app/login-profesor/login-profesor.page.ts
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { environment } from 'src/environments/environment';
 
 interface Institucion {
   idinstitucioneducativa: number;
@@ -54,7 +56,8 @@ export class LoginProfesorPage implements OnInit {
   searchName = '';
   profesores: Profesor[] = [];
 
-  private baseUrl = 'http://localhost:3000';
+  // usa environment.apiUrl (en prod debería ser '/api', en dev 'http://localhost:3000/api')
+  private baseUrl = environment.apiUrl;
 
   constructor(private router: Router, private http: HttpClient) {}
 
@@ -66,7 +69,7 @@ export class LoginProfesorPage implements OnInit {
   private loadAllInstituciones() {
     this.http.get<Institucion[]>(`${this.baseUrl}/instituciones-all`).subscribe(
       insts => {
-        this.allInstituciones = insts;
+        this.allInstituciones = insts || [];
         this.recomputeUsedInstitutions();
       },
       err => console.error('Error cargando instituciones:', err)
@@ -76,7 +79,7 @@ export class LoginProfesorPage implements OnInit {
   private loadAllProfesores() {
     this.http.get<Profesor[]>(`${this.baseUrl}/profesores`).subscribe(
       profs => {
-        this.profesores = profs;
+        this.profesores = profs || [];
         this.recomputeUsedInstitutions();
       },
       err => console.error('Error cargando profesores:', err)
@@ -86,7 +89,7 @@ export class LoginProfesorPage implements OnInit {
   private recomputeUsedInstitutions() {
     this.institucionUsadasGlobal.clear();
     this.profesores.forEach(p =>
-      p.instituciones.forEach(id => this.institucionUsadasGlobal.add(id))
+      (p.instituciones || []).forEach(id => this.institucionUsadasGlobal.add(id))
     );
   }
 
@@ -104,51 +107,47 @@ export class LoginProfesorPage implements OnInit {
     );
   }
 
-buscarProfesor() {
-  const nombre = this.searchName.trim();
-  if (!nombre) return;
+  buscarProfesor() {
+    const nombre = this.searchName.trim();
+    if (!nombre) return;
 
-  // bloquear Registrar desde que se inicia la búsqueda (evita estado ambiguo durante la petición)
-  this.datosCargados = true;
+    // bloquear Registrar mientras carga
+    this.datosCargados = true;
 
-  this.http
-    .get<Profesor>(`${this.baseUrl}/buscar-profesor`, { params: { nombreProfesor: nombre } })
-    .subscribe({
-      next: prof => {
-        this.idProfesor = prof.idprofesorsaanee;
-        this.correo = prof.correo;
-        this.nombreProfesor = prof.nombreprofesorsaanee;
-        this.clave = prof.clave;
-        this.telefonoProf = prof.telefonosaanee;
+    this.http
+      .get<Profesor>(`${this.baseUrl}/profesores/buscar`, { params: { nombreProfesor: nombre } })
+      .subscribe({
+        next: prof => {
+          this.idProfesor = prof.idprofesorsaanee;
+          this.correo = prof.correo;
+          this.nombreProfesor = prof.nombreprofesorsaanee;
+          this.clave = prof.clave;
+          this.telefonoProf = prof.telefonosaanee;
 
-        // ya estamos en modo edición (deshabilita Registrar, habilita Actualizar)
-        this.datosCargados = true;
+          this.datosCargados = true;
 
-        this.originalInstituciones = [...prof.instituciones];
-        this.institucionesSeleccionadas = [...prof.instituciones];
+          this.originalInstituciones = [...(prof.instituciones || [])];
+          this.institucionesSeleccionadas = [...(prof.instituciones || [])];
 
-        // Solo asignadas al profesor + instituciones libres
-        const asignadas = prof.instituciones.map(id => {
-          const inst = this.allInstituciones.find(i => i.idinstitucioneducativa === id)!;
-          return { ...inst, selected: true, editing: false, newName: inst.nombreinstitucion };
-        });
+          const asignadas = (prof.instituciones || []).map(id => {
+            const inst = this.allInstituciones.find(i => i.idinstitucioneducativa === id)!;
+            return { ...inst, selected: true, editing: false, newName: inst?.nombreinstitucion ?? '' };
+          });
 
-        const libres = this.allInstituciones
-          .filter(i => !this.institucionUsadasGlobal.has(i.idinstitucioneducativa))
-          .map(i => ({ ...i, selected: false, editing: false, newName: i.nombreinstitucion }));
+          const libres = this.allInstituciones
+            .filter(i => !this.institucionUsadasGlobal.has(i.idinstitucioneducativa))
+            .map(i => ({ ...i, selected: false, editing: false, newName: i.nombreinstitucion }));
 
-        this.modalInstituciones = [...asignadas, ...libres];
-        this.filterText = '';
-        this.actualizarFiltradas();
-      },
-      error: err => {
-        console.error('Error buscando profesor:', err);
-        // si hay error al buscar, regresamos al estado inicial (permitir registrar)
-        this.datosCargados = false;
-      }
-    });
-}
-
+          this.modalInstituciones = [...asignadas, ...libres];
+          this.filterText = '';
+          this.actualizarFiltradas();
+        },
+        error: err => {
+          console.error('Error buscando profesor:', err);
+          this.datosCargados = false;
+        }
+      });
+  }
 
   toggleModalEdit(inst: ModalInstitucion) {
     inst.editing = true;
@@ -162,7 +161,7 @@ buscarProfesor() {
       .subscribe({
         next: () => {
           const g = this.allInstituciones.find(i => i.idinstitucioneducativa === inst.idinstitucioneducativa)!;
-          g.nombreinstitucion = nombre;
+          if (g) g.nombreinstitucion = nombre;
           inst.editing = false;
           this.actualizarFiltradas();
         },
@@ -171,10 +170,6 @@ buscarProfesor() {
   }
 
   openModal() {
-    // Mantener solo las instituciones libres + las asignadas al profesor
-    const propiasIds = (nuevasIds: ModalInstitucion[]): number[] =>
-      nuevasIds.map((x: ModalInstitucion) => x.idinstitucioneducativa);
-
     const libres = this.allInstituciones
       .filter(i => !this.institucionUsadasGlobal.has(i.idinstitucioneducativa) || this.institucionesSeleccionadas.includes(i.idinstitucioneducativa))
       .map(i => ({
@@ -217,20 +212,17 @@ buscarProfesor() {
       return;
     }
 
-    // Guardamos las instituciones seleccionadas
     this.institucionesSeleccionadas = [...seleccion];
 
-    // Solo para edición: marcar nuevas instituciones
     if (this.datosCargados) {
       this.newInstituciones = seleccion.filter(id => !this.originalInstituciones.includes(id));
     }
 
-    // Sincronizamos el estado de checkboxes en el modal
     this.modalInstituciones.forEach(inst => {
       inst.selected = this.institucionesSeleccionadas.includes(inst.idinstitucioneducativa);
     });
 
-    this.showModal = false; // Cerramos el modal
+    this.showModal = false;
   }
 
   closeModal() {
@@ -257,7 +249,7 @@ buscarProfesor() {
       instituciones: this.institucionesSeleccionadas,
     };
 
-    this.http.post(`${this.baseUrl}/registrar-profesor`, data)
+    this.http.post(`${this.baseUrl}/profesores/registrar`, data)
       .subscribe({
         next: () => this.resetForm(),
         error: err => {
@@ -283,7 +275,7 @@ buscarProfesor() {
       instituciones: this.institucionesSeleccionadas,
     };
 
-    this.http.put(`${this.baseUrl}/actualizar-profesor`, data)
+    this.http.put(`${this.baseUrl}/profesores/actualizar`, data)
       .subscribe({
         next: () => this.resetForm(),
         error: err => {
@@ -293,22 +285,22 @@ buscarProfesor() {
       });
   }
 
-resetForm() {
-  this.idProfesor = null;
-  this.correo = '';
-  this.emailError = '';
-  this.nombreProfesor = '';
-  this.clave = '';
-  this.telefonoProf = '';
-  this.institucionesSeleccionadas = [];
-  this.modalInstituciones = [];
-  this.modalInstitucionesFiltradas = [];
-  this.originalInstituciones = [];
-  this.newInstituciones = [];
-  this.datosCargados = false; // <<--- importante: vuelve a modo registro
-  this.searchName = '';
-  this.loadAllProfesores();
-}
+  resetForm() {
+    this.idProfesor = null;
+    this.correo = '';
+    this.emailError = '';
+    this.nombreProfesor = '';
+    this.clave = '';
+    this.telefonoProf = '';
+    this.institucionesSeleccionadas = [];
+    this.modalInstituciones = [];
+    this.modalInstitucionesFiltradas = [];
+    this.originalInstituciones = [];
+    this.newInstituciones = [];
+    this.datosCargados = false;
+    this.searchName = '';
+    this.loadAllProfesores();
+  }
 
   obtenerNombreInstitucion(id: number): string {
     const inst = this.allInstituciones.find(i => i.idinstitucioneducativa === id);
@@ -326,7 +318,7 @@ resetForm() {
   }
 
   formatearTelefono(e: any) {
-    const d = e.target.value.replace(/\D/g, '').substring(0, 9);
+    const d = (e.target?.value || '').replace(/\D/g, '').substring(0, 9);
     const p = d.match(/.{1,3}/g);
     this.telefonoProf = p ? p.join('-') : d;
   }
