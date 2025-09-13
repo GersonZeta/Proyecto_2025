@@ -3,6 +3,7 @@ import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
+import { AlertController } from '@ionic/angular';
 
 @Component({
   selector: 'app-home',
@@ -16,22 +17,19 @@ export class HomePage {
   clave = '';
   errorMensaje = '';
 
-  correoAdmin = '';
-  claveAdmin = '';
-  errorAdmin = '';
-  mostrarAlertaAdmin = false;
-  mostrarAlertaLoginAdmin = false;
-
-  mostrarAlertaReset = false;
-  pasoReset = 1;
   correoReset = '';
   tokenReset = '';
   nuevaClave = '';
   errorReset = '';
+  pasoReset = 1;
 
   private baseUrl = environment.apiUrl;
 
-  constructor(private http: HttpClient, private router: Router) {}
+  constructor(
+    private http: HttpClient,
+    private router: Router,
+    private alertController: AlertController
+  ) {}
 
   // --- LOGIN PROFESOR / ADMIN
   ingresar() {
@@ -81,136 +79,171 @@ export class HomePage {
     });
   }
 
-  // --- VERIFICAR SI EXISTE ADMIN
-  verificarAdminAntesDeCrearCuenta() {
-    this.mostrarAlertaAdmin = false;
-    this.mostrarAlertaLoginAdmin = false;
-
-    this.http.get<{ existe: boolean }>(
-      `${this.baseUrl}/admin?action=existe`
-    ).subscribe({
-      next: r => r.existe
-        ? this.mostrarAlertaLoginAdmin = true
-        : this.mostrarAlertaAdmin = true,
-      error: () => this.errorMensaje = 'Error verificando administrador'
-    });
-  }
-
-  // --- REGISTRAR ADMIN
-  registrarAdmin() {
-    this.errorAdmin = '';
-    const c = this.correoAdmin.trim();
-    const k = this.claveAdmin.trim();
-    if (!c || !k) { this.errorAdmin = 'Completa ambos campos'; return; }
-
-    this.http.post<{ ok: boolean; mensaje?: string }>(
-      `${this.baseUrl}/admin?action=registrar`,
-      { correo: c, clave: k }
-    ).subscribe({
-      next: r => {
-        if (r.ok) {
-          this.cerrarAlertaAdmin();
-          this.correoAdmin = '';
-          this.claveAdmin = '';
-        } else {
-          this.errorAdmin = r.mensaje || 'No se pudo registrar';
-        }
-      },
-      error: () => this.errorAdmin = 'Error al conectar con el servidor'
-    });
-  }
-
-  // --- LOGIN ADMIN DESDE ALERTA
-  loginAdmin() {
-    this.errorAdmin = '';
-    const c = this.correoAdmin.trim();
-    const k = this.claveAdmin;
-    if (!c || !k) { this.errorAdmin = 'Falta correo o clave'; return; }
-
-    this.http.post<{ ok: boolean; mensaje?: string }>(
-      `${this.baseUrl}/admin?action=login`,
-      { correo: c, clave: k }
-    ).subscribe({
-      next: r => {
-        if (r.ok) {
-          this.cerrarAlertaLoginAdmin();
-          this.correoAdmin = '';
-          this.claveAdmin = '';
-          this.limpiarCampos();
-          this.router.navigate(['/login-profesor']);
-        } else {
-          this.errorAdmin = r.mensaje || 'Credenciales inválidas';
-        }
-      },
-      error: () => this.errorAdmin = 'Error al conectar con el servidor'
-    });
-  }
-
   limpiarCampos() {
     this.correo = '';
     this.nombreProfesor = '';
     this.clave = '';
   }
 
+  // --- ALERTA CREAR / LOGIN ADMIN
+  async verificarAdminAntesDeCrearCuenta() {
+    try {
+      const r = await this.http.get<{ existe: boolean }>(
+        `${this.baseUrl}/admin?action=existe`
+      ).toPromise();
+
+      if (r?.existe) {
+        await this.abrirLoginAdmin();
+      } else {
+        await this.abrirRegistrarAdmin();
+      }
+    } catch (e) {
+      this.errorMensaje = 'Error verificando administrador';
+      console.error(e);
+    }
+  }
+
+  async abrirRegistrarAdmin() {
+    const alert = await this.alertController.create({
+      header: 'Registrar Administrador',
+      inputs: [
+        { name: 'correo', type: 'email', placeholder: 'Correo' },
+        { name: 'clave', type: 'password', placeholder: 'Clave' }
+      ],
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        { text: 'Registrar', handler: data => this.registrarAdmin(data) }
+      ]
+    });
+    await alert.present();
+  }
+
+  async abrirLoginAdmin() {
+    const alert = await this.alertController.create({
+      header: 'Login Administrador',
+      inputs: [
+        { name: 'correo', type: 'email', placeholder: 'Correo' },
+        { name: 'clave', type: 'password', placeholder: 'Clave' }
+      ],
+      buttons: [
+        { text: 'Cancelar', role: 'cancel' },
+        { text: 'Ingresar', handler: data => this.loginAdmin(data) }
+      ]
+    });
+    await alert.present();
+  }
+
+  // --- REGISTRAR ADMIN
+  registrarAdmin(data: { correo: string; clave: string }) {
+    const correo = data.correo?.trim();
+    const clave = data.clave?.trim();
+    if (!correo || !clave) return;
+
+    this.http.post<{ ok: boolean; mensaje?: string }>(
+      `${this.baseUrl}/admin?action=registrar`,
+      { correo, clave }
+    ).subscribe({
+      next: r => {
+        if (r.ok) {
+          console.log('Admin registrado');
+        } else {
+          console.error(r.mensaje);
+        }
+      },
+      error: e => console.error('Error registrar admin', e)
+    });
+  }
+
+  // --- LOGIN ADMIN
+  loginAdmin(data: { correo: string; clave: string }) {
+    const correo = data.correo?.trim();
+    const clave = data.clave;
+    if (!correo || !clave) return;
+
+    this.http.post<{ ok: boolean; mensaje?: string }>(
+      `${this.baseUrl}/admin?action=login`,
+      { correo, clave }
+    ).subscribe({
+      next: r => {
+        if (r.ok) {
+          this.limpiarCampos();
+          this.router.navigate(['/login-profesor']);
+        } else {
+          console.error(r.mensaje);
+        }
+      },
+      error: e => console.error('Error login admin', e)
+    });
+  }
+
+  // --- RESET CLAVE
   abrirAlertaReset() {
-    this.mostrarAlertaReset = true;
     this.pasoReset = 1;
     this.errorReset = '';
     this.correoReset = '';
     this.tokenReset = '';
     this.nuevaClave = '';
+    this.mostrarResetPrompt();
   }
 
-  cerrarAlertaReset() { this.mostrarAlertaReset = false; }
-  cerrarAlertaAdmin() { this.mostrarAlertaAdmin = false; }
-  cerrarAlertaLoginAdmin() { this.mostrarAlertaLoginAdmin = false; }
-
-  // --- RESET: solicitar token
-  enviarCorreoReset() {
-    if (!this.correoReset.trim()) {
-      this.errorReset = 'Ingresa tu correo';
-      return;
+  async mostrarResetPrompt() {
+    if (this.pasoReset === 1) {
+      const alert = await this.alertController.create({
+        header: 'Resetear Clave - Paso 1',
+        inputs: [
+          { name: 'correo', type: 'email', placeholder: 'Correo' }
+        ],
+        buttons: [
+          { text: 'Cancelar', role: 'cancel' },
+          { text: 'Aceptar', handler: data => this.enviarCorreoReset(data.correo) }
+        ]
+      });
+      await alert.present();
+    } else if (this.pasoReset === 2) {
+      const alert = await this.alertController.create({
+        header: 'Resetear Clave - Paso 2',
+        inputs: [
+          { name: 'token', type: 'text', placeholder: 'Token' },
+          { name: 'nuevaClave', type: 'password', placeholder: 'Nueva clave' }
+        ],
+        buttons: [
+          { text: 'Cancelar', role: 'cancel' },
+          { text: 'Aceptar', handler: data => this.confirmarReset(data.token, data.nuevaClave) }
+        ]
+      });
+      await alert.present();
     }
+  }
 
+  enviarCorreoReset(correo: string) {
+    if (!correo?.trim()) return;
     this.http.post<{ ok: boolean; mensaje?: string }>(
       `${this.baseUrl}/admin?action=solicitar-reset`,
-      { correo: this.correoReset.trim() }
+      { correo: correo.trim() }
     ).subscribe({
       next: r => {
         if (r.ok) {
           this.pasoReset = 2;
-          this.errorReset = '';
+          this.mostrarResetPrompt();
         } else {
-          this.errorReset = r.mensaje || 'No se pudo generar token';
+          console.error(r.mensaje);
         }
       },
-      error: () => this.errorReset = 'Error al conectar con el servidor'
+      error: e => console.error(e)
     });
   }
 
-  // --- RESET: confirmar token y nueva clave
-  confirmarReset() {
-    if (!this.tokenReset.trim() || !this.nuevaClave) {
-      this.errorReset = 'Ingresa token y nueva clave';
-      return;
-    }
-
+  confirmarReset(token: string, nuevaClave: string) {
+    if (!token || !nuevaClave) return;
     this.http.post<{ ok: boolean; mensaje?: string }>(
       `${this.baseUrl}/admin?action=reset-security-code`,
-      {
-        correo: this.correoReset.trim(),
-        token: this.tokenReset.trim(),
-        nuevaClave: this.nuevaClave
-      }
+      { correo: this.correoReset.trim(), token, nuevaClave }
     ).subscribe({
       next: r => {
-        if (r.ok) {
-          this.cerrarAlertaReset();
-        } else {
-          this.errorReset = r.mensaje || 'Token inválido o expirado';
-        }
+        if (r.ok) console.log('Clave cambiada con éxito');
+        else console.error(r.mensaje);
       },
-      error: () => this.errorReset = 'Error al conectar con el servidor'
+      error: e => console.error(e)
     });
   }
 }
