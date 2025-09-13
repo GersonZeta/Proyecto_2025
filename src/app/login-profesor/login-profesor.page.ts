@@ -111,50 +111,57 @@ export class LoginProfesorPage implements OnInit {
     );
   }
 
-  buscarProfesor() {
-    const nombre = this.searchName.trim();
-    if (!nombre) return;
-    this.datosCargados = true;
+buscarProfesor() {
+  const nombre = this.searchName.trim();
+  if (!nombre) return;
 
-    const params = new HttpParams().set('action', 'buscar').set('nombreProfesor', nombre);
-    this.http.get<{ ok: boolean, data: Profesor }>(`${this.baseUrl}/profesores`, { params }).subscribe({
-      next: res => {
-        if (!res.ok || !res.data) {
-          alert('Profesor no encontrado');
-          this.datosCargados = false;
-          return;
-        }
+  this.datosCargados = true;
 
-        const prof = res.data;
-        this.idProfesor = prof.idprofesorsaanee;
-        this.correo = prof.correo;
-        this.nombreProfesor = prof.nombreprofesorsaanee;
-        this.clave = prof.clave;
-        this.telefonoProf = prof.telefonosaanee;
-        this.datosCargados = true;
-
-        this.originalInstituciones = [...(prof.instituciones || [])];
-        this.institucionesSeleccionadas = [...(prof.instituciones || [])];
-
-        const asignadas = (prof.instituciones || []).map(id => {
-          const inst = this.allInstituciones.find(i => i.idinstitucioneducativa === id)!;
-          return { ...inst, selected: true, editing: false, newName: inst?.nombreinstitucion ?? '' };
-        });
-
-        const libres = this.allInstituciones
-          .filter(i => !this.institucionUsadasGlobal.has(i.idinstitucioneducativa))
-          .map(i => ({ ...i, selected: false, editing: false, newName: i.nombreinstitucion }));
-
-        this.modalInstituciones = [...asignadas, ...libres];
-        this.filterText = '';
-        this.actualizarFiltradas();
-      },
-      error: err => {
-        console.error('Error buscando profesor:', err);
+  const params = new HttpParams().set('action', 'buscar').set('nombreProfesor', nombre);
+  this.http.get<{ ok: boolean, data: Profesor }>(`${this.baseUrl}/profesores`, { params }).subscribe({
+    next: res => {
+      if (!res.ok || !res.data) {
+        alert('Profesor no encontrado');
         this.datosCargados = false;
+        this.profesores = []; // Ocultar otros profesores
+        return;
       }
-    });
-  }
+
+      const prof = res.data;
+      this.idProfesor = prof.idprofesorsaanee;
+      this.correo = prof.correo;
+      this.nombreProfesor = prof.nombreprofesorsaanee;
+      this.clave = prof.clave;
+      this.telefonoProf = prof.telefonosaanee;
+      this.datosCargados = true;
+
+      this.originalInstituciones = [...(prof.instituciones || [])];
+      this.institucionesSeleccionadas = [...(prof.instituciones || [])];
+
+      const asignadas = (prof.instituciones || []).map(id => {
+        const inst = this.allInstituciones.find(i => i.idinstitucioneducativa === id)!;
+        return { ...inst, selected: true, editing: false, newName: inst?.nombreinstitucion ?? '' };
+      });
+
+      const libres = this.allInstituciones
+        .filter(i => !this.institucionUsadasGlobal.has(i.idinstitucioneducativa))
+        .map(i => ({ ...i, selected: false, editing: false, newName: i.nombreinstitucion }));
+
+      this.modalInstituciones = [...asignadas, ...libres];
+      this.filterText = '';
+      this.actualizarFiltradas();
+
+      // Mostrar solo el profesor buscado en la tabla
+      this.profesores = [prof];
+    },
+    error: err => {
+      console.error('Error buscando profesor:', err);
+      this.datosCargados = false;
+      this.profesores = [];
+    }
+  });
+}
+
 
   toggleModalEdit(inst: ModalInstitucion) { inst.editing = true; }
 
@@ -213,15 +220,31 @@ export class LoginProfesorPage implements OnInit {
       });
   }
 
-  applyModal() {
-    const seleccion = this.modalInstituciones.filter(i => i.selected).map(i => i.idinstitucioneducativa);
-    if (seleccion.length === 0) { alert('Debe seleccionar al menos una institución'); return; }
+applyModal() {
+  // Tomamos solo las seleccionadas
+  const seleccion = this.modalInstituciones.filter(i => i.selected).map(i => i.idinstitucioneducativa);
 
-    this.institucionesSeleccionadas = [...seleccion];
-    if (this.datosCargados) this.newInstituciones = seleccion.filter(id => !this.originalInstituciones.includes(id));
-    this.modalInstituciones.forEach(inst => inst.selected = this.institucionesSeleccionadas.includes(inst.idinstitucioneducativa));
-    this.showModal = false;
+  // Validar solo al ACEPTAR
+  if (seleccion.length === 0) {
+    alert('Debe seleccionar al menos una institución');
+    return;
   }
+
+  this.institucionesSeleccionadas = [...seleccion];
+
+  // Solo nuevas instituciones si estamos editando un profesor
+  if (this.datosCargados) {
+    this.newInstituciones = seleccion.filter(id => !this.originalInstituciones.includes(id));
+  }
+
+  // Actualizamos checkbox en el modal
+  this.modalInstituciones.forEach(inst =>
+    inst.selected = this.institucionesSeleccionadas.includes(inst.idinstitucioneducativa)
+  );
+
+  this.showModal = false;
+}
+
 
   closeModal() { this.showModal = false; this.filterText = ''; }
 

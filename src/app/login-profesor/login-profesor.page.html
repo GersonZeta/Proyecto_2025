@@ -281,16 +281,17 @@
         <ion-col size="8"><strong>Instituciones</strong></ion-col>
       </ion-row>
 
-      <ion-row *ngFor="let prof of profesores" class="fila-dato">
-        <ion-col size="4">{{ prof.nombreprofesorsaanee }}</ion-col>
-        <ion-col size="8">
-          <ng-container *ngFor="let id of prof.instituciones; let last = last">
-            <span [style.color]="newInstituciones.includes(id) ? 'red' : '#000'">
-              {{ obtenerNombreInstitucion(id) }}<span *ngIf="!last">, </span>
-            </span>
-          </ng-container>
-        </ion-col>
-      </ion-row>
+<ion-row *ngFor="let prof of profesores" class="fila-dato">
+  <ion-col size="4">{{ prof.nombreprofesorsaanee }}</ion-col>
+  <ion-col size="8">
+    <ng-container *ngFor="let id of prof.instituciones; let last = last">
+      <span [style.color]="newInstituciones.includes(id) ? 'red' : '#000'">
+        {{ obtenerNombreInstitucion(id) }}<span *ngIf="!last">, </span>
+      </span>
+    </ng-container>
+  </ion-col>
+</ion-row>
+
     </ion-grid>
   </ng-container>
 </ion-content>
