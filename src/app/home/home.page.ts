@@ -1,7 +1,17 @@
+// src/app/home/home.page.ts
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
+
+interface Profesor {
+  idprofesorsaanee: number;
+  correo: string;
+  nombreprofesorsaanee: string;
+  clave: string;
+  telefonosaanee: string;
+  instituciones: number[];
+}
 
 @Component({
   selector: 'app-home',
@@ -59,12 +69,13 @@ export class HomePage {
             this.errorMensaje = 'Falta nombre del profesor';
             return;
           }
-          this.http.get<any>(
-            `${this.baseUrl}/instituciones-profesor`,
-            { params: { correo } }
-          ).subscribe({
-            next: prof => {
-              if (prof.NombreProfesor === nombre && prof.Clave === clave) {
+
+          // Obtener profesores por correo
+          const params = new HttpParams().set('correo', correo);
+          this.http.get<Profesor[]>(`${this.baseUrl}/instituciones-profesor`, { params }).subscribe({
+            next: profArray => {
+              const prof = profArray.find(p => p.nombreprofesorsaanee === nombre && p.clave === clave);
+              if (prof) {
                 localStorage.setItem('profesorCorreo', correo);
                 this.limpiarCampos();
                 this.router.navigate(['/seleccion-instituciones']);
@@ -85,13 +96,12 @@ export class HomePage {
     this.mostrarAlertaAdmin = false;
     this.mostrarAlertaLoginAdmin = false;
 
-    this.http.get<{ existe: boolean }>(`${this.baseUrl}/admin?action=existe`)
-      .subscribe({
-        next: r => r.existe
-          ? this.mostrarAlertaLoginAdmin = true
-          : this.mostrarAlertaAdmin = true,
-        error: () => this.errorMensaje = 'Error verificando administrador'
-      });
+    this.http.get<{ existe: boolean }>(`${this.baseUrl}/admin?action=existe`).subscribe({
+      next: r => r.existe
+        ? this.mostrarAlertaLoginAdmin = true
+        : this.mostrarAlertaAdmin = true,
+      error: () => this.errorMensaje = 'Error verificando administrador'
+    });
   }
 
   // --- REGISTRAR ADMIN

@@ -6,10 +6,11 @@ import { AlertController } from '@ionic/angular';
 import { environment } from 'src/environments/environment';
 
 interface Profesor {
-  idProfesor: number;
-  Correo: string;
-  NombreProfesor: string;
-  TelefonoProf: string;
+  idprofesorsaanee: number;
+  correo: string;
+  nombreprofesorsaanee: string;
+  clave: string;
+  telefonosaanee: string;
   Instituciones: number[];
 }
 
@@ -28,7 +29,7 @@ export class SeleccionInstitucionesPage {
   profesor: Profesor | null = null;
   instituciones: Institucion[] = [];
 
-  private baseUrl = environment.apiUrl; // <-- usar environment
+  private baseUrl = environment.apiUrl;
   correo: string = '';
 
   mostrarAlertaSalir: boolean = false;
@@ -58,18 +59,20 @@ export class SeleccionInstitucionesPage {
     this.instituciones = [];
 
     this.http
-      .get<Profesor>(`${this.baseUrl}/instituciones/profesor`, {
-        params: { correo: this.correo }
-      })
+      .get<Profesor[]>(`${this.baseUrl}/instituciones-profesor`, { params: { correo: this.correo } })
       .subscribe({
-        next: data => {
-          this.profesor = data;
-          this.cargarInstituciones();
+        next: profs => {
+          const prof = profs[0]; // asumimos que correo es único
+          if (prof) {
+            this.profesor = prof;
+            this.cargarInstituciones();
+          } else {
+            this.isLoading = false;
+            this.mostrarAlerta('Error', 'No se encontró información del profesor.');
+          }
         },
         error: err => {
           this.isLoading = false;
-          this.profesor = null;
-          this.instituciones = [];
           console.error('Error buscarProfesor:', err);
           this.mostrarAlerta('Error', 'No se pudo obtener datos del profesor.');
         }
@@ -82,30 +85,26 @@ export class SeleccionInstitucionesPage {
       return;
     }
 
-    this.http.get<any[]>(`${this.baseUrl}/instituciones/all`)
-      .subscribe({
-        next: data => {
-          // Normalizar del servidor (snake_case) a client (camelCase)
-          const todas: Institucion[] = (data || []).map(d => ({
-            idInstitucionEducativa: (d.idinstitucioneducativa ?? d.idInstitucionEducativa) as number,
-            NombreInstitucion: (d.nombreinstitucion ?? d.NombreInstitucion) as string
-          }));
+    this.http.get<any[]>(`${this.baseUrl}/instituciones/all`).subscribe({
+      next: data => {
+        const todas: Institucion[] = (data || []).map(d => ({
+          idInstitucionEducativa: d.idinstitucioneducativa ?? d.idInstitucionEducativa,
+          NombreInstitucion: d.nombreinstitucion ?? d.NombreInstitucion
+        }));
 
-          // Filtrar solo las instituciones que pertenecen al profesor
-          const profesorInstIds = (this.profesor!.Instituciones || []).map(i => Number(i));
-          this.instituciones = todas.filter(inst =>
-            profesorInstIds.includes(Number(inst.idInstitucionEducativa))
-          );
+        const profesorInstIds = (this.profesor!.Instituciones || []).map(i => Number(i));
+        this.instituciones = todas.filter(inst =>
+          profesorInstIds.includes(Number(inst.idInstitucionEducativa))
+        );
 
-          this.isLoading = false;
-        },
-        error: err => {
-          this.isLoading = false;
-          this.instituciones = [];
-          console.error('Error cargarInstituciones:', err);
-          this.mostrarAlerta('Error', 'No se pudieron cargar instituciones.');
-        }
-      });
+        this.isLoading = false;
+      },
+      error: err => {
+        this.isLoading = false;
+        console.error('Error cargarInstituciones:', err);
+        this.mostrarAlerta('Error', 'No se pudieron cargar instituciones.');
+      }
+    });
   }
 
   irAEstudiantes(inst: Institucion) {
