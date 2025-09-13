@@ -86,13 +86,14 @@ export class HomePage {
     this.mostrarAlertaAdmin = false;
     this.mostrarAlertaLoginAdmin = false;
 
-    this.http.get<{ existe: boolean }>(`${this.baseUrl}/admin?action=existe`)
-      .subscribe({
-        next: r => r.existe
-          ? this.mostrarAlertaLoginAdmin = true
-          : this.mostrarAlertaAdmin = true,
-        error: () => this.errorMensaje = 'Error verificando administrador'
-      });
+    this.http.get<{ existe: boolean }>(
+      `${this.baseUrl}/admin?action=existe`
+    ).subscribe({
+      next: r => r.existe
+        ? this.mostrarAlertaLoginAdmin = true
+        : this.mostrarAlertaAdmin = true,
+      error: () => this.errorMensaje = 'Error verificando administrador'
+    });
   }
 
   // --- REGISTRAR ADMIN
