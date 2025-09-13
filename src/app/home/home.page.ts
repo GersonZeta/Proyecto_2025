@@ -99,7 +99,8 @@ export class HomePage {
   // --- REGISTRAR ADMIN
   registrarAdmin() {
     this.errorAdmin = '';
-    const c = this.correoAdmin.trim(), k = this.claveAdmin.trim();
+    const c = this.correoAdmin.trim();
+    const k = this.claveAdmin.trim();
     if (!c || !k) { this.errorAdmin = 'Completa ambos campos'; return; }
 
     this.http.post<{ ok: boolean; mensaje?: string }>(
@@ -122,7 +123,8 @@ export class HomePage {
   // --- LOGIN ADMIN DESDE ALERTA
   loginAdmin() {
     this.errorAdmin = '';
-    const c = this.correoAdmin.trim(), k = this.claveAdmin;
+    const c = this.correoAdmin.trim();
+    const k = this.claveAdmin;
     if (!c || !k) { this.errorAdmin = 'Falta correo o clave'; return; }
 
     this.http.post<{ ok: boolean; mensaje?: string }>(
