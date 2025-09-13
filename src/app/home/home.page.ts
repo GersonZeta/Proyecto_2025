@@ -1,7 +1,7 @@
 // src/app/home/home.page.ts
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
 
 interface Profesor {
@@ -54,52 +54,51 @@ export class HomePage {
       return;
     }
 
-    // Intentar login como ADMIN
+    // 1) intentar login ADMIN
     this.http.post<{ ok: boolean; mensaje?: string }>(
       `${this.baseUrl}/admin?action=login`,
       { correo, clave }
     ).subscribe({
-      next: r => {
-        if (r.ok) {
+      next: adminRes => {
+        if (adminRes.ok) {
           this.limpiarCampos();
           this.router.navigate(['/login-profesor']);
-        } else {
-          // Intentar como PROFESOR SAANEE
-          if (!nombre) {
-            this.errorMensaje = 'Falta nombre del profesor';
-            return;
-          }
-
-          const params = new HttpParams().set('correo', correo);
-          this.http.get<{ ok: boolean; data: Profesor }>(
-            `${this.baseUrl}/instituciones-profesor`,
-            { params }
-          ).subscribe({
-            next: res => {
-              if (!res.ok || !res.data) {
-                this.errorMensaje = 'Datos de profesor incorrectos';
-                return;
-              }
-
-              const prof = res.data;
-
-              if (
-                prof.Correo?.toLowerCase() === correo &&
-                prof.NombreProfesor?.toLowerCase() === nombre.toLowerCase() &&
-                prof.Clave === clave
-              ) {
-                localStorage.setItem('profesorCorreo', correo);
-                this.limpiarCampos();
-                this.router.navigate(['/seleccion-instituciones']);
-              } else {
-                this.errorMensaje = 'Datos de profesor incorrectos';
-              }
-            },
-            error: () => this.errorMensaje = 'Datos de profesor incorrectos'
-          });
+          return;
         }
+
+        // 2) si no es admin, intentar login PROFESOR SAANEE (POST a /profesores?action=login)
+        if (!nombre) {
+          this.errorMensaje = 'Falta nombre del profesor';
+          return;
+        }
+
+        const body = { correo, nombre, clave };
+        this.http.post<{ ok: boolean; data?: Profesor; mensaje?: string }>(
+          `${this.baseUrl}/profesores?action=login`,
+          body
+        ).subscribe({
+          next: profRes => {
+            if (profRes.ok && profRes.data) {
+              // login correcto
+              localStorage.setItem('profesorCorreo', correo);
+              this.limpiarCampos();
+              this.router.navigate(['/seleccion-instituciones']);
+            } else {
+              // usar mensaje del servidor si viene
+              this.errorMensaje = profRes.mensaje || 'Datos de profesor incorrectos';
+            }
+          },
+          error: err => {
+            console.error('Error login profesor:', err);
+            // si tu backend devuelve status 401 con mensaje, podrías parsearlo; por ahora:
+            this.errorMensaje = err?.error?.mensaje || 'Datos de profesor incorrectos';
+          }
+        });
       },
-      error: () => this.errorMensaje = 'Error al conectar con el servidor'
+      error: err => {
+        console.error('Error login admin:', err);
+        this.errorMensaje = 'Error al conectar con el servidor';
+      }
     });
   }
 
@@ -108,12 +107,8 @@ export class HomePage {
     this.mostrarAlertaAdmin = false;
     this.mostrarAlertaLoginAdmin = false;
 
-    this.http.get<{ existe: boolean }>(
-      `${this.baseUrl}/admin?action=existe`
-    ).subscribe({
-      next: r => r.existe
-        ? this.mostrarAlertaLoginAdmin = true
-        : this.mostrarAlertaAdmin = true,
+    this.http.get<{ existe: boolean }>(`${this.baseUrl}/admin?action=existe`).subscribe({
+      next: r => r.existe ? this.mostrarAlertaLoginAdmin = true : this.mostrarAlertaAdmin = true,
       error: () => this.errorMensaje = 'Error verificando administrador'
     });
   }
