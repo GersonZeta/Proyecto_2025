@@ -109,6 +109,58 @@ export default async function handler(req, res) {
       return res.json({ ok: true, mensaje: "Profesor actualizado" });
     }
 
+    // --- LOGIN PROFESOR SAANEE
+if (action === "login") {
+  if (req.method !== "POST") {
+    return res.status(405).json({ ok: false, mensaje: "Método no permitido" });
+  }
+
+  const { correo, nombre, clave } = req.body;
+  if (!correo || !nombre || !clave) {
+    return res.status(400).json({ ok: false, mensaje: "Faltan datos (correo, nombre o clave)" });
+  }
+
+  const { data: profs, error } = await supabase
+    .from("profesores_saanee")
+    .select("*")
+    .eq("correo", correo.trim().toLowerCase())
+    .eq("clave", clave.trim());
+
+  if (error) throw error;
+  if (!profs || profs.length === 0) {
+    return res.status(401).json({ ok: false, mensaje: "Correo o clave incorrectos" });
+  }
+
+  const prof = profs.find(
+    p => p.nombreprofesorsaanee.trim().toLowerCase() === nombre.trim().toLowerCase()
+  );
+
+  if (!prof) {
+    return res.status(401).json({ ok: false, mensaje: "Nombre incorrecto" });
+  }
+
+  // Traer sus instituciones
+  const { data: insts, error: instError } = await supabase
+    .from("profesores_saanee_institucion")
+    .select("idinstitucioneducativa")
+    .eq("idprofesorsaanee", prof.idprofesorsaanee);
+
+  if (instError) throw instError;
+
+  return res.json({
+    ok: true,
+    data: {
+      idProfesor: prof.idprofesorsaanee,
+      Correo: prof.correo,
+      NombreProfesor: prof.nombreprofesorsaanee,
+      Clave: prof.clave,
+      TelefonoProf: prof.telefonosaanee,
+      Instituciones: insts.map(i => i.idinstitucioneducativa)
+    }
+  });
+}
+
+
     return res.status(400).json({ ok: false, mensaje: "Acción inválida" });
 
   } catch (err) {

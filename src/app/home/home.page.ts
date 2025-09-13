@@ -70,33 +70,33 @@ export class HomePage {
             return;
           }
 
-          // Obtener profesor por correo desde la API
           const params = new HttpParams().set('correo', correo);
-          this.http.get<{ ok: boolean; data: Profesor }>(`${this.baseUrl}/instituciones-profesor`, { params })
-            .subscribe({
-              next: res => {
-                if (!res.ok || !res.data) {
-                  this.errorMensaje = 'Datos de profesor incorrectos';
-                  return;
-                }
+          this.http.get<{ ok: boolean; data: Profesor }>(
+            `${this.baseUrl}/instituciones-profesor`,
+            { params }
+          ).subscribe({
+            next: res => {
+              if (!res.ok || !res.data) {
+                this.errorMensaje = 'Datos de profesor incorrectos';
+                return;
+              }
 
-                const prof = res.data;
+              const prof = res.data;
 
-                // Validar correo, nombre y clave (ignora mayúsculas en correo y nombre)
-                if (
-                  prof.Correo?.toLowerCase() === correo &&
-                  prof.NombreProfesor?.toLowerCase() === nombre.toLowerCase() &&
-                  prof.Clave === clave
-                ) {
-                  localStorage.setItem('profesorCorreo', correo);
-                  this.limpiarCampos();
-                  this.router.navigate(['/seleccion-instituciones']);
-                } else {
-                  this.errorMensaje = 'Datos de profesor incorrectos';
-                }
-              },
-              error: () => this.errorMensaje = 'Datos de profesor incorrectos'
-            });
+              if (
+                prof.Correo?.toLowerCase() === correo &&
+                prof.NombreProfesor?.toLowerCase() === nombre.toLowerCase() &&
+                prof.Clave === clave
+              ) {
+                localStorage.setItem('profesorCorreo', correo);
+                this.limpiarCampos();
+                this.router.navigate(['/seleccion-instituciones']);
+              } else {
+                this.errorMensaje = 'Datos de profesor incorrectos';
+              }
+            },
+            error: () => this.errorMensaje = 'Datos de profesor incorrectos'
+          });
         }
       },
       error: () => this.errorMensaje = 'Error al conectar con el servidor'
@@ -108,7 +108,9 @@ export class HomePage {
     this.mostrarAlertaAdmin = false;
     this.mostrarAlertaLoginAdmin = false;
 
-    this.http.get<{ existe: boolean }>(`${this.baseUrl}/admin?action=existe`).subscribe({
+    this.http.get<{ existe: boolean }>(
+      `${this.baseUrl}/admin?action=existe`
+    ).subscribe({
       next: r => r.existe
         ? this.mostrarAlertaLoginAdmin = true
         : this.mostrarAlertaAdmin = true,
