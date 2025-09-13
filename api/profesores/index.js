@@ -1,28 +1,118 @@
-// /api/profesores/index.js
 import { supabase } from "../supabase.js";
 
 export default async function handler(req, res) {
-  if (req.method !== "GET") return res.status(405).json({ error: "Método no permitido" });
+  const { action } = req.query;
 
   try {
-    const { data: profesores, error } = await supabase.from("profesores_saanee").select("*");
-    if (error) throw error;
+    // --- OBTENER TODOS LOS PROFESORES
+    if (action === "listar") {
+      if (req.method !== "GET") return res.status(405).json({ ok: false, mensaje: "Método no permitido" });
 
-    const profesoresConInst = await Promise.all(
-      profesores.map(async (prof) => {
-        const { data: insts, error: instError } = await supabase
-          .from("profesores_saanee_institucion")
-          .select("idinstitucioneducativa")
-          .eq("idprofesorsaanee", prof.idprofesorsaanee);
+      const { data: profesores, error } = await supabase.from("profesores_saanee").select("*");
+      if (error) throw error;
+
+      const profesoresConInst = await Promise.all(
+        profesores.map(async (prof) => {
+          const { data: insts, error: instError } = await supabase
+            .from("profesores_saanee_institucion")
+            .select("idinstitucioneducativa")
+            .eq("idprofesorsaanee", prof.idprofesorsaanee);
+          if (instError) throw instError;
+          return { ...prof, instituciones: insts.map(i => i.idinstitucioneducativa) };
+        })
+      );
+
+      return res.json({ ok: true, data: profesoresConInst });
+    }
+
+    // --- BUSCAR PROFESOR POR NOMBRE
+    if (action === "buscar") {
+      if (req.method !== "GET") return res.status(405).json({ ok: false, mensaje: "Método no permitido" });
+      const nombre = req.query.nombreProfesor;
+      if (!nombre) return res.status(400).json({ ok: false, mensaje: "Falta nombreProfesor" });
+
+      const { data: profs, error } = await supabase
+        .from("profesores_saanee")
+        .select("*")
+        .ilike("nombreprofesorsaanee", `%${nombre}%`);
+      if (error) throw error;
+      if (!profs || profs.length === 0) return res.status(404).json({ ok: false, mensaje: "Profesor no encontrado" });
+
+      const prof = profs[0];
+      const { data: insts, error: instError } = await supabase
+        .from("profesores_saanee_institucion")
+        .select("idinstitucioneducativa")
+        .eq("idprofesorsaanee", prof.idprofesorsaanee);
+      if (instError) throw instError;
+
+      return res.json({ ok: true, data: { ...prof, instituciones: insts.map(i => i.idinstitucioneducativa) } });
+    }
+
+    // --- REGISTRAR PROFESOR
+    if (action === "registrar") {
+      if (req.method !== "POST") return res.status(405).json({ ok: false, mensaje: "Método no permitido" });
+
+      const { correo, nombreprofesorsaanee, clave, telefonosaanee, instituciones } = req.body;
+      if (!correo || !nombreprofesorsaanee || !clave) {
+        return res.status(400).json({ ok: false, mensaje: "Faltan datos obligatorios" });
+      }
+
+      const { data: prof, error } = await supabase
+        .from("profesores_saanee")
+        .insert([{ correo, nombreprofesorsaanee, clave, telefonosaanee }])
+        .select()
+        .single();
+      if (error) throw error;
+
+      if (instituciones && instituciones.length > 0) {
+        const instInsert = instituciones.map(id => ({
+          idprofesorsaanee: prof.idprofesorsaanee,
+          idinstitucioneducativa: id
+        }));
+        const { error: instError } = await supabase.from("profesores_saanee_institucion").insert(instInsert);
         if (instError) throw instError;
+      }
 
-        return { ...prof, instituciones: insts.map(i => i.idinstitucioneducativa) };
-      })
-    );
+      return res.json({ ok: true, mensaje: "Profesor registrado", data: prof });
+    }
 
-    return res.json(profesoresConInst);
+    // --- ACTUALIZAR PROFESOR
+    if (action === "actualizar") {
+      if (req.method !== "PUT") return res.status(405).json({ ok: false, mensaje: "Método no permitido" });
+
+      const { idprofesorsaanee, correo, nombreprofesorsaanee, clave, telefonosaanee, instituciones } = req.body;
+      if (!idprofesorsaanee) return res.status(400).json({ ok: false, mensaje: "Falta idprofesorsaanee" });
+
+      const { error } = await supabase
+        .from("profesores_saanee")
+        .update({ correo, nombreprofesorsaanee, clave, telefonosaanee })
+        .eq("idprofesorsaanee", idprofesorsaanee);
+      if (error) throw error;
+
+      // Eliminar antiguas instituciones
+      const { error: delError } = await supabase
+        .from("profesores_saanee_institucion")
+        .delete()
+        .eq("idprofesorsaanee", idprofesorsaanee);
+      if (delError) throw delError;
+
+      // Insertar nuevas instituciones
+      if (instituciones && instituciones.length > 0) {
+        const instInsert = instituciones.map(id => ({
+          idprofesorsaanee,
+          idinstitucioneducativa: id
+        }));
+        const { error: instError } = await supabase.from("profesores_saanee_institucion").insert(instInsert);
+        if (instError) throw instError;
+      }
+
+      return res.json({ ok: true, mensaje: "Profesor actualizado" });
+    }
+
+    return res.status(400).json({ ok: false, mensaje: "Acción inválida" });
+
   } catch (err) {
-    console.error("Error /profesores:", err);
-    return res.status(500).json({ error: "Error al obtener profesores" });
+    console.error("Error profesores:", err);
+    return res.status(500).json({ ok: false, mensaje: "Error interno" });
   }
 }

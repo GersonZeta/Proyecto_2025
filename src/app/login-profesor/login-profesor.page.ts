@@ -1,7 +1,7 @@
 // src/app/login-profesor/login-profesor.page.ts
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
 
 interface Institucion {
@@ -28,7 +28,6 @@ interface Profesor {
   selector: 'app-login-profesor',
   templateUrl: './login-profesor.page.html',
   styleUrls: ['./login-profesor.page.scss', './login-profesor.page2.scss'],
-  standalone: false,
 })
 export class LoginProfesorPage implements OnInit {
   idProfesor: number | null = null;
@@ -56,7 +55,6 @@ export class LoginProfesorPage implements OnInit {
   searchName = '';
   profesores: Profesor[] = [];
 
-  // usa environment.apiUrl (en prod debería ser '/api', en dev 'http://localhost:3000/api')
   private baseUrl = environment.apiUrl;
 
   constructor(private router: Router, private http: HttpClient) {}
@@ -67,20 +65,26 @@ export class LoginProfesorPage implements OnInit {
   }
 
   private loadAllInstituciones() {
-    this.http.get<Institucion[]>(`${this.baseUrl}/instituciones-all`).subscribe(
-      insts => {
-        this.allInstituciones = insts || [];
-        this.recomputeUsedInstitutions();
+    const params = new HttpParams().set('action', 'listar-todas');
+    this.http.get<{ ok: boolean, data: Institucion[] }>(`${this.baseUrl}/instituciones`, { params }).subscribe(
+      res => {
+        if (res.ok) {
+          this.allInstituciones = res.data || [];
+          this.recomputeUsedInstitutions();
+        }
       },
       err => console.error('Error cargando instituciones:', err)
     );
   }
 
   private loadAllProfesores() {
-    this.http.get<Profesor[]>(`${this.baseUrl}/profesores`).subscribe(
-      profs => {
-        this.profesores = profs || [];
-        this.recomputeUsedInstitutions();
+    const params = new HttpParams().set('action', 'listar');
+    this.http.get<{ ok: boolean, data: Profesor[] }>(`${this.baseUrl}/profesores`, { params }).subscribe(
+      res => {
+        if (res.ok) {
+          this.profesores = res.data || [];
+          this.recomputeUsedInstitutions();
+        }
       },
       err => console.error('Error cargando profesores:', err)
     );
@@ -93,16 +97,15 @@ export class LoginProfesorPage implements OnInit {
     );
   }
 
-  clearEmailError() {
-    this.emailError = '';
-  }
+  clearEmailError() { this.emailError = ''; }
 
+  // CORRECCIÓN: asegurar que retorne boolean
   isFormValid(): boolean {
-    return (
-      this.correo.trim() !== '' &&
-      this.nombreProfesor.trim() !== '' &&
-      this.clave.trim() !== '' &&
-      this.telefonoProf.trim() !== '' &&
+    return !!(
+      this.correo.trim() &&
+      this.nombreProfesor.trim() &&
+      this.clave.trim() &&
+      this.telefonoProf.trim() &&
       this.institucionesSeleccionadas.length > 0
     );
   }
@@ -110,54 +113,58 @@ export class LoginProfesorPage implements OnInit {
   buscarProfesor() {
     const nombre = this.searchName.trim();
     if (!nombre) return;
-
-    // bloquear Registrar mientras carga
     this.datosCargados = true;
 
-    this.http
-      .get<Profesor>(`${this.baseUrl}/profesores/buscar`, { params: { nombreProfesor: nombre } })
-      .subscribe({
-        next: prof => {
-          this.idProfesor = prof.idprofesorsaanee;
-          this.correo = prof.correo;
-          this.nombreProfesor = prof.nombreprofesorsaanee;
-          this.clave = prof.clave;
-          this.telefonoProf = prof.telefonosaanee;
-
-          this.datosCargados = true;
-
-          this.originalInstituciones = [...(prof.instituciones || [])];
-          this.institucionesSeleccionadas = [...(prof.instituciones || [])];
-
-          const asignadas = (prof.instituciones || []).map(id => {
-            const inst = this.allInstituciones.find(i => i.idinstitucioneducativa === id)!;
-            return { ...inst, selected: true, editing: false, newName: inst?.nombreinstitucion ?? '' };
-          });
-
-          const libres = this.allInstituciones
-            .filter(i => !this.institucionUsadasGlobal.has(i.idinstitucioneducativa))
-            .map(i => ({ ...i, selected: false, editing: false, newName: i.nombreinstitucion }));
-
-          this.modalInstituciones = [...asignadas, ...libres];
-          this.filterText = '';
-          this.actualizarFiltradas();
-        },
-        error: err => {
-          console.error('Error buscando profesor:', err);
+    const params = new HttpParams().set('action', 'buscar').set('nombreProfesor', nombre);
+    this.http.get<{ ok: boolean, data: Profesor }>(`${this.baseUrl}/profesores`, { params }).subscribe({
+      next: res => {
+        if (!res.ok || !res.data) {
+          alert('Profesor no encontrado');
           this.datosCargados = false;
+          return;
         }
-      });
+
+        const prof = res.data;
+        this.idProfesor = prof.idprofesorsaanee;
+        this.correo = prof.correo;
+        this.nombreProfesor = prof.nombreprofesorsaanee;
+        this.clave = prof.clave;
+        this.telefonoProf = prof.telefonosaanee;
+        this.datosCargados = true;
+
+        this.originalInstituciones = [...(prof.instituciones || [])];
+        this.institucionesSeleccionadas = [...(prof.instituciones || [])];
+
+        const asignadas = (prof.instituciones || []).map(id => {
+          const inst = this.allInstituciones.find(i => i.idinstitucioneducativa === id)!;
+          return { ...inst, selected: true, editing: false, newName: inst?.nombreinstitucion ?? '' };
+        });
+
+        const libres = this.allInstituciones
+          .filter(i => !this.institucionUsadasGlobal.has(i.idinstitucioneducativa))
+          .map(i => ({ ...i, selected: false, editing: false, newName: i.nombreinstitucion }));
+
+        this.modalInstituciones = [...asignadas, ...libres];
+        this.filterText = '';
+        this.actualizarFiltradas();
+      },
+      error: err => {
+        console.error('Error buscando profesor:', err);
+        this.datosCargados = false;
+      }
+    });
   }
 
-  toggleModalEdit(inst: ModalInstitucion) {
-    inst.editing = true;
-  }
+  toggleModalEdit(inst: ModalInstitucion) { inst.editing = true; }
 
   saveModalEdit(inst: ModalInstitucion) {
     const nombre = inst.newName.trim();
     if (!nombre) return;
 
-    this.http.put(`${this.baseUrl}/institucion/${inst.idinstitucioneducativa}`, { nombreinstitucion: nombre })
+    const body = { id: inst.idinstitucioneducativa, nombreinstitucion: nombre };
+    const params = new HttpParams().set('action', 'editar');
+
+    this.http.put<{ ok: boolean, mensaje: string }>(`${this.baseUrl}/instituciones`, body, { params })
       .subscribe({
         next: () => {
           const g = this.allInstituciones.find(i => i.idinstitucioneducativa === inst.idinstitucioneducativa)!;
@@ -190,9 +197,12 @@ export class LoginProfesorPage implements OnInit {
     const name = this.newInstitutionName.trim().substring(0, 40);
     if (!name) return;
 
-    this.http.post<Institucion>(`${this.baseUrl}/institucion`, { nombreinstitucion: name })
+    const params = new HttpParams().set('action', 'crear');
+    this.http.post<{ ok: boolean, data: Institucion }>(`${this.baseUrl}/instituciones`, { nombreinstitucion: name }, { params })
       .subscribe({
-        next: newInst => {
+        next: res => {
+          if (!res.ok || !res.data) return;
+          const newInst = res.data;
           this.allInstituciones.push(newInst);
           this.modalInstituciones.push({ ...newInst, selected: true, editing: false, newName: newInst.nombreinstitucion });
           this.newInstitutionName = '';
@@ -203,43 +213,20 @@ export class LoginProfesorPage implements OnInit {
   }
 
   applyModal() {
-    const seleccion = this.modalInstituciones
-      .filter(i => i.selected)
-      .map(i => i.idinstitucioneducativa);
-
-    if (seleccion.length === 0) {
-      alert('Debe seleccionar al menos una institución');
-      return;
-    }
+    const seleccion = this.modalInstituciones.filter(i => i.selected).map(i => i.idinstitucioneducativa);
+    if (seleccion.length === 0) { alert('Debe seleccionar al menos una institución'); return; }
 
     this.institucionesSeleccionadas = [...seleccion];
-
-    if (this.datosCargados) {
-      this.newInstituciones = seleccion.filter(id => !this.originalInstituciones.includes(id));
-    }
-
-    this.modalInstituciones.forEach(inst => {
-      inst.selected = this.institucionesSeleccionadas.includes(inst.idinstitucioneducativa);
-    });
-
+    if (this.datosCargados) this.newInstituciones = seleccion.filter(id => !this.originalInstituciones.includes(id));
+    this.modalInstituciones.forEach(inst => inst.selected = this.institucionesSeleccionadas.includes(inst.idinstitucioneducativa));
     this.showModal = false;
   }
 
-  closeModal() {
-    this.showModal = false;
-    this.filterText = '';
-  }
+  closeModal() { this.showModal = false; this.filterText = ''; }
 
   registrarProfesor() {
-    const emailRegex = /.+@.+\..+/;
-    if (!emailRegex.test(this.correo.trim())) {
-      this.emailError = 'Ingrese un correo válido con “@” y dominio.';
-      return;
-    }
-    if (!this.isFormValid()) {
-      alert('Complete todos los campos y seleccione al menos una institución');
-      return;
-    }
+    if (!/.+@.+\..+/.test(this.correo.trim())) { this.emailError = 'Ingrese un correo válido'; return; }
+    if (!this.isFormValid()) { alert('Complete todos los campos'); return; }
 
     const data = {
       correo: this.correo,
@@ -249,17 +236,11 @@ export class LoginProfesorPage implements OnInit {
       instituciones: this.institucionesSeleccionadas,
     };
 
-    this.http.post(`${this.baseUrl}/profesores/registrar`, data)
+    const params = new HttpParams().set('action', 'registrar');
+    this.http.post<{ ok: boolean, mensaje: string, data: Profesor }>(`${this.baseUrl}/profesores`, data, { params })
       .subscribe({
         next: () => this.resetForm(),
-        error: err => {
-          console.error('Error al registrar profesor:', err);
-          if (err.error?.detail?.includes('already exists')) {
-            alert('El correo ya está registrado');
-          } else {
-            alert('Error al registrar profesor. Revise la consola.');
-          }
-        }
+        error: err => console.error('Error al registrar profesor:', err)
       });
   }
 
@@ -275,30 +256,19 @@ export class LoginProfesorPage implements OnInit {
       instituciones: this.institucionesSeleccionadas,
     };
 
-    this.http.put(`${this.baseUrl}/profesores/actualizar`, data)
+    const params = new HttpParams().set('action', 'actualizar');
+    this.http.put<{ ok: boolean, mensaje: string }>(`${this.baseUrl}/profesores`, data, { params })
       .subscribe({
         next: () => this.resetForm(),
-        error: err => {
-          console.error('Error al actualizar profesor:', err);
-          alert('No se pudo actualizar el profesor');
-        }
+        error: err => console.error('Error al actualizar profesor:', err)
       });
   }
 
   resetForm() {
     this.idProfesor = null;
-    this.correo = '';
-    this.emailError = '';
-    this.nombreProfesor = '';
-    this.clave = '';
-    this.telefonoProf = '';
-    this.institucionesSeleccionadas = [];
-    this.modalInstituciones = [];
-    this.modalInstitucionesFiltradas = [];
-    this.originalInstituciones = [];
-    this.newInstituciones = [];
-    this.datosCargados = false;
-    this.searchName = '';
+    this.correo = ''; this.emailError = ''; this.nombreProfesor = ''; this.clave = ''; this.telefonoProf = '';
+    this.institucionesSeleccionadas = []; this.modalInstituciones = []; this.modalInstitucionesFiltradas = [];
+    this.originalInstituciones = []; this.newInstituciones = []; this.datosCargados = false; this.searchName = '';
     this.loadAllProfesores();
   }
 
@@ -307,14 +277,10 @@ export class LoginProfesorPage implements OnInit {
     return inst ? inst.nombreinstitucion : 'Institución desconocida';
   }
 
-  togglePasswordVisibility() {
-    this.showPassword = !this.showPassword;
-  }
+  togglePasswordVisibility() { this.showPassword = !this.showPassword; }
 
   onlyNumbers(e: KeyboardEvent) {
-    if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) {
-      e.preventDefault();
-    }
+    if (!/[0-9]/.test(e.key) && !['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'].includes(e.key)) e.preventDefault();
   }
 
   formatearTelefono(e: any) {
@@ -326,7 +292,7 @@ export class LoginProfesorPage implements OnInit {
   onlyLetters(event: KeyboardEvent) {
     const key = event.key;
     const lettersRegex = /^[a-zA-ZÀ-ÿ\s]$/;
-    const controlKeys = ['Backspace', 'Delete', 'ArrowLeft', 'ArrowRight', 'Tab'];
+    const controlKeys = ['Backspace','Delete', 'ArrowLeft', 'ArrowRight', 'Tab'];
     if (!lettersRegex.test(key) && !controlKeys.includes(key)) {
       event.preventDefault();
     }
