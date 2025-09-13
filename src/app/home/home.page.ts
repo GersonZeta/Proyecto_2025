@@ -45,7 +45,7 @@ export class HomePage {
   // --- LOGIN PROFESOR / ADMIN
   ingresar() {
     this.errorMensaje = '';
-    const correo = this.correo.trim();
+    const correo = this.correo.trim().toLowerCase();
     const clave = this.clave;
     const nombre = this.nombreProfesor.trim();
 
@@ -70,7 +70,7 @@ export class HomePage {
             return;
           }
 
-          // Obtener profesor por correo desde tu API actual
+          // Obtener profesor por correo desde la API
           const params = new HttpParams().set('correo', correo);
           this.http.get<{ ok: boolean; data: Profesor }>(`${this.baseUrl}/instituciones-profesor`, { params })
             .subscribe({
@@ -82,8 +82,12 @@ export class HomePage {
 
                 const prof = res.data;
 
-                // Validar nombre y clave
-                if (prof.NombreProfesor === nombre && prof.Clave === clave) {
+                // Validar correo, nombre y clave (ignora mayúsculas en correo y nombre)
+                if (
+                  prof.Correo?.toLowerCase() === correo &&
+                  prof.NombreProfesor?.toLowerCase() === nombre.toLowerCase() &&
+                  prof.Clave === clave
+                ) {
                   localStorage.setItem('profesorCorreo', correo);
                   this.limpiarCampos();
                   this.router.navigate(['/seleccion-instituciones']);
