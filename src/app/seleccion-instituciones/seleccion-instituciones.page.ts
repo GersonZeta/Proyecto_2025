@@ -1,7 +1,9 @@
+// src/app/seleccion-instituciones/seleccion-instituciones.page.ts
 import { Component } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { AlertController } from '@ionic/angular';
+import { environment } from 'src/environments/environment';
 
 interface Profesor {
   idProfesor: number;
@@ -26,11 +28,11 @@ export class SeleccionInstitucionesPage {
   profesor: Profesor | null = null;
   instituciones: Institucion[] = [];
 
-  private baseUrl = 'http://localhost:3000';
+  private baseUrl = environment.apiUrl; // <-- usar environment
   correo: string = '';
 
   mostrarAlertaSalir: boolean = false;
-  isLoading: boolean = false; // <- control de carga
+  isLoading: boolean = false;
 
   constructor(
     private http: HttpClient,
@@ -38,7 +40,6 @@ export class SeleccionInstitucionesPage {
     private alertCtrl: AlertController
   ) {}
 
-  // Se ejecuta cada vez que se entra en la vista
   ionViewWillEnter() {
     this.mostrarAlertaSalir = false;
     this.correo = localStorage.getItem('profesorCorreo') || '';
@@ -52,20 +53,17 @@ export class SeleccionInstitucionesPage {
   }
 
   private buscarProfesor() {
-    // empezamos a cargar; evitamos el "parpadeo" mostrando spinner
     this.isLoading = true;
     this.profesor = null;
     this.instituciones = [];
 
     this.http
-      .get<Profesor>(`${this.baseUrl}/instituciones-profesor`, {
+      .get<Profesor>(`${this.baseUrl}/instituciones/profesor`, {
         params: { correo: this.correo }
       })
       .subscribe({
         next: data => {
-          // Guardamos datos del profesor tal cual vienen del servidor
           this.profesor = data;
-          // Cargamos las instituciones asociadas (normalizando campos)
           this.cargarInstituciones();
         },
         error: err => {
@@ -84,18 +82,19 @@ export class SeleccionInstitucionesPage {
       return;
     }
 
-    this.http.get<any[]>(`${this.baseUrl}/instituciones-all`)
+    this.http.get<any[]>(`${this.baseUrl}/instituciones/all`)
       .subscribe({
         next: data => {
-          // Normalizar campos del servidor (snake_case) a los que usa el cliente (camelCase)
+          // Normalizar del servidor (snake_case) a client (camelCase)
           const todas: Institucion[] = (data || []).map(d => ({
-            idInstitucionEducativa: d.idinstitucioneducativa ?? d.idInstitucionEducativa,
-            NombreInstitucion: d.nombreinstitucion ?? d.NombreInstitucion
+            idInstitucionEducativa: (d.idinstitucioneducativa ?? d.idInstitucionEducativa) as number,
+            NombreInstitucion: (d.nombreinstitucion ?? d.NombreInstitucion) as string
           }));
 
           // Filtrar solo las instituciones que pertenecen al profesor
+          const profesorInstIds = (this.profesor!.Instituciones || []).map(i => Number(i));
           this.instituciones = todas.filter(inst =>
-            this.profesor!.Instituciones.includes(inst.idInstitucionEducativa)
+            profesorInstIds.includes(Number(inst.idInstitucionEducativa))
           );
 
           this.isLoading = false;
@@ -114,7 +113,6 @@ export class SeleccionInstitucionesPage {
     this.router.navigate(['/estudiantes']);
   }
 
-  // ALERTA PERSONALIZADA “SALIR” (overlay propio)
   abrirAlertaSalir() {
     this.mostrarAlertaSalir = true;
   }
@@ -129,7 +127,6 @@ export class SeleccionInstitucionesPage {
     this.router.navigate(['/home']);
   }
 
-  // Para usar alertas nativas de Ionic (por si prefieres)
   private async mostrarAlerta(header: string, message: string) {
     const a = await this.alertCtrl.create({
       header,
