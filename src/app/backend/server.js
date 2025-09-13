@@ -440,6 +440,11 @@ app.put("/institucion/:id", async (req, res) => {
 
 
 
+
+
+
+
+
 // /////////////////// ESTUDIANTES ///////////////////
 // Registrar estudiante
 app.post('/registrar-estudiante', async (req, res) => {

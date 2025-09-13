@@ -2,7 +2,7 @@
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
-import { environment } from 'src/environments/environment'; // <- import agregado
+import { environment } from 'src/environments/environment';
 
 @Component({
   selector: 'app-home',
@@ -29,7 +29,6 @@ export class HomePage {
   nuevaClave = '';
   errorReset = '';
 
-  // usa environment.apiUrl para que funcione en local y en Vercel
   private baseUrl = environment.apiUrl;
 
   constructor(private http: HttpClient, private router: Router) {}
@@ -83,44 +82,44 @@ export class HomePage {
     });
   }
 
-  verificarAdminAntesDeCrearCuenta() {
-    this.mostrarAlertaAdmin = false;
-    this.mostrarAlertaLoginAdmin = false;
+verificarAdminAntesDeCrearCuenta() {
+  this.mostrarAlertaAdmin = false;
+  this.mostrarAlertaLoginAdmin = false;
 
-    this.http.get<{ existe: boolean }>(`${this.baseUrl}/existe-admin`)
-      .subscribe({
-        next: r => r.existe
-          ? this.mostrarAlertaLoginAdmin = true
-          : this.mostrarAlertaAdmin = true,
-        error: () => this.errorMensaje = 'Error verificando administrador'
-      });
-  }
-
-  registrarAdmin() {
-    this.errorAdmin = '';
-    const c = this.correoAdmin.trim(), k = this.claveAdmin.trim();
-    if (!c || !k) { this.errorAdmin = 'Completa ambos campos'; return; }
-    this.http.post<{ ok: boolean; mensaje?: string }>(
-      `${this.baseUrl}/registrar-admin`,
-      { correo: c, clave: k }
-    ).subscribe({
-      next: r => {
-        if (r.ok) {
-          this.cerrarAlertaAdmin();
-          // Limpio los inputs del admin
-          this.correoAdmin = '';
-          this.claveAdmin = '';
-
-          // **Antes tenías esto y es la causa de que se copie en los inputs principales:**
-          // this.correo = c;
-          // this.clave  = k;
-        } else {
-          this.errorAdmin = r.mensaje || 'No se pudo registrar';
-        }
-      },
-      error: () => this.errorAdmin = 'Error al conectar con el servidor'
+  this.http.get<{ existe: boolean }>(`${this.baseUrl}/existe-admin`)
+    .subscribe({
+      next: r => r.existe
+        ? this.mostrarAlertaLoginAdmin = true
+        : this.mostrarAlertaAdmin = true,
+      error: () => this.errorMensaje = 'Error verificando administrador'
     });
-  }
+}
+
+registrarAdmin() {
+  this.errorAdmin = '';
+  const c = this.correoAdmin.trim(), k = this.claveAdmin.trim();
+  if (!c || !k) { this.errorAdmin = 'Completa ambos campos'; return; }
+  this.http.post<{ ok: boolean; mensaje?: string }>(
+    `${this.baseUrl}/registrar-admin`,
+    { correo: c, clave: k }
+  ).subscribe({
+    next: r => {
+      if (r.ok) {
+        this.cerrarAlertaAdmin();
+        // Limpio los inputs del admin
+        this.correoAdmin = '';
+        this.claveAdmin = '';
+
+        // **Antes tenías esto y es la causa de que se copie en los inputs principales:**
+        // this.correo = c;
+        // this.clave  = k;
+      } else {
+        this.errorAdmin = r.mensaje || 'No se pudo registrar';
+      }
+    },
+    error: () => this.errorAdmin = 'Error al conectar con el servidor'
+  });
+}
 
   loginAdmin() {
     this.errorAdmin = '';

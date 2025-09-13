@@ -1,9 +1,7 @@
-// src/app/seleccion-instituciones/seleccion-instituciones.page.ts
 import { Component } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { AlertController } from '@ionic/angular';
-import { environment } from 'src/environments/environment'; // <- import agregado
 
 interface Profesor {
   idProfesor: number;
@@ -28,12 +26,11 @@ export class SeleccionInstitucionesPage {
   profesor: Profesor | null = null;
   instituciones: Institucion[] = [];
 
-  // usa environment.apiUrl para que funcione en local y en Vercel
-  private baseUrl = environment.apiUrl;
-
+  private baseUrl = 'http://localhost:3000';
   correo: string = '';
+
   mostrarAlertaSalir: boolean = false;
-  isLoading: boolean = false; // control de carga
+  isLoading: boolean = false; // <- control de carga
 
   constructor(
     private http: HttpClient,
@@ -55,6 +52,7 @@ export class SeleccionInstitucionesPage {
   }
 
   private buscarProfesor() {
+    // empezamos a cargar; evitamos el "parpadeo" mostrando spinner
     this.isLoading = true;
     this.profesor = null;
     this.instituciones = [];
