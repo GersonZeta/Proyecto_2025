@@ -1,5 +1,5 @@
 import nodemailer from "nodemailer";
-import { supabase } from "../../supabase.js";
+import { supabase } from "../supabase.js";
 
 const ALLOWED_EMAILS = [
   process.env.GMAIL_USER,
