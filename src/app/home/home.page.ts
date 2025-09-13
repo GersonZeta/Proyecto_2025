@@ -1,7 +1,7 @@
 // src/app/home/home.page.ts
 import { Component } from '@angular/core';
 import { Router } from '@angular/router';
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { environment } from 'src/environments/environment';
 
 @Component({
@@ -33,6 +33,7 @@ export class HomePage {
 
   constructor(private http: HttpClient, private router: Router) {}
 
+  // --- LOGIN PROFESOR / ADMIN
   ingresar() {
     this.errorMensaje = '';
     const correo = this.correo.trim();
@@ -46,7 +47,7 @@ export class HomePage {
 
     // Intentar login como ADMIN
     this.http.post<{ ok: boolean; mensaje?: string }>(
-      `${this.baseUrl}/login-admin`,
+      `${this.baseUrl}/admin/login`,
       { correo, clave }
     ).subscribe({
       next: r => {
@@ -80,11 +81,12 @@ export class HomePage {
     });
   }
 
+  // --- VERIFICAR SI EXISTE ADMIN
   verificarAdminAntesDeCrearCuenta() {
     this.mostrarAlertaAdmin = false;
     this.mostrarAlertaLoginAdmin = false;
 
-    this.http.get<{ existe: boolean }>(`${this.baseUrl}/existe-admin`)
+    this.http.get<{ existe: boolean }>(`${this.baseUrl}/admin/existe-admin`)
       .subscribe({
         next: r => r.existe
           ? this.mostrarAlertaLoginAdmin = true
@@ -93,13 +95,14 @@ export class HomePage {
       });
   }
 
+  // --- REGISTRAR ADMIN
   registrarAdmin() {
     this.errorAdmin = '';
     const c = this.correoAdmin.trim(), k = this.claveAdmin.trim();
     if (!c || !k) { this.errorAdmin = 'Completa ambos campos'; return; }
 
     this.http.post<{ ok: boolean; mensaje?: string }>(
-      `${this.baseUrl}/registrar-admin`,
+      `${this.baseUrl}/admin/registrar`,
       { correo: c, clave: k }
     ).subscribe({
       next: r => {
@@ -115,13 +118,14 @@ export class HomePage {
     });
   }
 
+  // --- LOGIN ADMIN DESDE ALERTA
   loginAdmin() {
     this.errorAdmin = '';
     const c = this.correoAdmin.trim(), k = this.claveAdmin;
     if (!c || !k) { this.errorAdmin = 'Falta correo o clave'; return; }
 
     this.http.post<{ ok: boolean; mensaje?: string }>(
-      `${this.baseUrl}/login-admin`,
+      `${this.baseUrl}/admin/login`,
       { correo: c, clave: k }
     ).subscribe({
       next: r => {
@@ -158,7 +162,7 @@ export class HomePage {
   cerrarAlertaAdmin() { this.mostrarAlertaAdmin = false; }
   cerrarAlertaLoginAdmin() { this.mostrarAlertaLoginAdmin = false; }
 
-  // --- Reset: solicitar token
+  // --- RESET: solicitar token
   enviarCorreoReset() {
     if (!this.correoReset.trim()) {
       this.errorReset = 'Ingresa tu correo';
@@ -181,7 +185,7 @@ export class HomePage {
     });
   }
 
-  // --- Reset: confirmar token y nueva clave
+  // --- RESET: confirmar token y nueva clave
   confirmarReset() {
     if (!this.tokenReset.trim() || !this.nuevaClave) {
       this.errorReset = 'Ingresa token y nueva clave';
