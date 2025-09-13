@@ -1,4 +1,4 @@
 export const environment = {
   production: false,
-  apiUrl: 'https://proyecto-2025-nine.vercel.app/api'
+  apiUrl: 'http://localhost:3000/api'   // si pruebas local con backend local
 };
