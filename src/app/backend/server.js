@@ -447,285 +447,275 @@
 
 // /////////////////// ESTUDIANTES ///////////////////
 // Registrar estudiante
-app.post('/registrar-estudiante', async (req, res) => {
-  try {
-    const {
-      ApellidosNombres,
-      FechaNacimiento,  // "dd/mm/yyyy"
-      Edad,
-      DNI,
-      GradoSeccion,
-      TipoDiscapacidad,
-      DocumentoSustentatorio,
-      DocumentoInclusiva,
-      IPP,
-      PEP,
-      idInstitucionEducativa
-    } = req.body;
+// app.post('/registrar-estudiante', async (req, res) => {
+//   try {
+//     const {
+//       ApellidosNombres,
+//       FechaNacimiento,  // "dd/mm/yyyy"
+//       Edad,
+//       DNI,
+//       GradoSeccion,
+//       TipoDiscapacidad,
+//       DocumentoSustentatorio,
+//       DocumentoInclusiva,
+//       IPP,
+//       PEP,
+//       idInstitucionEducativa
+//     } = req.body;
 
-    if (!ApellidosNombres || !FechaNacimiento || !Edad || !DNI || !GradoSeccion || !idInstitucionEducativa) {
-      return res.status(400).json({ error: 'Faltan campos obligatorios o institución educativa' });
-    }
+//     if (!ApellidosNombres || !FechaNacimiento || !Edad || !DNI || !GradoSeccion || !idInstitucionEducativa) {
+//       return res.status(400).json({ error: 'Faltan campos obligatorios o institución educativa' });
+//     }
 
-    // convertir dd/mm/yyyy -> ISO (yyyy-mm-dd)
-    const parts = FechaNacimiento.split('/');
-    if (parts.length !== 3) return res.status(400).json({ error: 'Formato de Fecha de Nacimiento inválido' });
-    const fechaISO = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+//     // convertir dd/mm/yyyy -> ISO (yyyy-mm-dd)
+//     const parts = FechaNacimiento.split('/');
+//     if (parts.length !== 3) return res.status(400).json({ error: 'Formato de Fecha de Nacimiento inválido' });
+//     const fechaISO = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
 
-    const ippValue = (IPP === true || IPP === 'Si' || IPP === 'si' || IPP === 'SI') ? 'Si' : 'No';
-    const pepValue = (PEP === true || PEP === 'Si' || PEP === 'si' || PEP === 'SI') ? 'Si' : 'No';
+//     const ippValue = (IPP === true || IPP === 'Si' || IPP === 'si' || IPP === 'SI') ? 'Si' : 'No';
+//     const pepValue = (PEP === true || PEP === 'Si' || PEP === 'si' || PEP === 'SI') ? 'Si' : 'No';
 
-    const { data, error } = await supabase
-      .from('estudiantes')
-      .insert([{
-        apellidosnombres: ApellidosNombres,
-        fechanacimiento: fechaISO,
-        edad: Edad,
-        dni: DNI,
-        gradoseccion: GradoSeccion,
-        tipodiscapacidad: TipoDiscapacidad || null,
-        documentosustentatorio: DocumentoSustentatorio || null,
-        documentoinclusiva: DocumentoInclusiva || null,
-        ipp: ippValue,
-        pep: pepValue,
-        idinstitucioneducativa: idInstitucionEducativa
-      }])
-      .select()
-      .single();
+//     const { data, error } = await supabase
+//       .from('estudiantes')
+//       .insert([{
+//         apellidosnombres: ApellidosNombres,
+//         fechanacimiento: fechaISO,
+//         edad: Edad,
+//         dni: DNI,
+//         gradoseccion: GradoSeccion,
+//         tipodiscapacidad: TipoDiscapacidad || null,
+//         documentosustentatorio: DocumentoSustentatorio || null,
+//         documentoinclusiva: DocumentoInclusiva || null,
+//         ipp: ippValue,
+//         pep: pepValue,
+//         idinstitucioneducativa: idInstitucionEducativa
+//       }])
+//       .select()
+//       .single();
 
-    if (error) {
-      console.error('Error insertar estudiante:', error);
-      return res.status(500).json({ error: 'Error interno al registrar estudiante' });
-    }
+//     if (error) {
+//       console.error('Error insertar estudiante:', error);
+//       return res.status(500).json({ error: 'Error interno al registrar estudiante' });
+//     }
 
-    // Supabase retorna el registro insertado; su id dependerá de la columna (ej. idestudiante)
-    // Intentamos extraer el id (nombre de columna 'idestudiante' o 'id')
-    const idEstudiante = data.idestudiante ?? data.id ?? null;
+//     // Supabase retorna el registro insertado; su id dependerá de la columna (ej. idestudiante)
+//     // Intentamos extraer el id (nombre de columna 'idestudiante' o 'id')
+//     const idEstudiante = data.idestudiante ?? data.id ?? null;
 
-    return res.status(201).json({ message: 'Estudiante registrado', idEstudiante });
-  } catch (err) {
-    console.error('Excepción registrar-estudiante:', err);
-    return res.status(500).json({ error: 'Error interno al registrar estudiante' });
-  }
-});
+//     return res.status(201).json({ message: 'Estudiante registrado', idEstudiante });
+//   } catch (err) {
+//     console.error('Excepción registrar-estudiante:', err);
+//     return res.status(500).json({ error: 'Error interno al registrar estudiante' });
+//   }
+// });
 
-// Obtener estudiantes (puedes filtrar por idInstitucionEducativa)
-app.get('/estudiantes', async (req, res) => {
-  try {
-    const idInstitucion = req.query.idInstitucionEducativa;
-    let query = supabase
-      .from('estudiantes')
-      .select('*');
+// // Obtener estudiantes (puedes filtrar por idInstitucionEducativa)
+// app.get('/estudiantes', async (req, res) => {
+//   try {
+//     const idInstitucion = req.query.idInstitucionEducativa;
+//     let query = supabase
+//       .from('estudiantes')
+//       .select('*');
 
-    if (idInstitucion) {
-      query = query.eq('idinstitucioneducativa', idInstitucion);
-    }
+//     if (idInstitucion) {
+//       query = query.eq('idinstitucioneducativa', idInstitucion);
+//     }
 
-    // orden por id (dependiendo del nombre de columna en tu tabla)
-    const { data: results, error } = await query.order('idestudiante', { ascending: true });
+//     // orden por id (dependiendo del nombre de columna en tu tabla)
+//     const { data: results, error } = await query.order('idestudiante', { ascending: true });
 
-    if (error) {
-      console.error('Error obtener estudiantes:', error);
-      return res.status(500).json({ error: 'Error interno al obtener estudiantes' });
-    }
+//     if (error) {
+//       console.error('Error obtener estudiantes:', error);
+//       return res.status(500).json({ error: 'Error interno al obtener estudiantes' });
+//     }
 
-    // formatear FechaNacimiento a dd/mm/YYYY (si existe fechanacimiento)
-    const formatted = (results || []).map(r => {
-      const fechaRaw = r.fechanacimiento || r.fecha_nacimiento || r.fechaNacimiento;
-      let FechaNacimiento = null;
-      if (fechaRaw) {
-        const d = new Date(fechaRaw);
-        if (!Number.isNaN(d.getTime())) {
-          const dd = `${d.getDate()}`.padStart(2, '0');
-          const mm = `${d.getMonth() + 1}`.padStart(2, '0');
-          const yyyy = d.getFullYear();
-          FechaNacimiento = `${dd}/${mm}/${yyyy}`;
-        }
-      }
-      return {
-        idEstudiante: r.idestudiante ?? r.id ?? null,
-        ApellidosNombres: r.apellidosnombres ?? r.ApellidosNombres ?? null,
-        FechaNacimiento,
-        Edad: r.edad ?? null,
-        DNI: r.dni ?? null,
-        GradoSeccion: r.gradoseccion ?? r.GradoSeccion ?? null,
-        TipoDiscapacidad: r.tipodiscapacidad ?? null,
-        DocumentoSustentatorio: r.documentosustentatorio ?? null,
-        DocumentoInclusiva: r.documentoinclusiva ?? null,
-        IPP: r.ipp ?? null,
-        PEP: r.pep ?? null,
-        idInstitucionEducativa: r.idinstitucioneducativa ?? null
-      };
-    });
+//     // formatear FechaNacimiento a dd/mm/YYYY (si existe fechanacimiento)
+//     const formatted = (results || []).map(r => {
+//       const fechaRaw = r.fechanacimiento || r.fecha_nacimiento || r.fechaNacimiento;
+//       let FechaNacimiento = null;
+//       if (fechaRaw) {
+//         const d = new Date(fechaRaw);
+//         if (!Number.isNaN(d.getTime())) {
+//           const dd = `${d.getDate()}`.padStart(2, '0');
+//           const mm = `${d.getMonth() + 1}`.padStart(2, '0');
+//           const yyyy = d.getFullYear();
+//           FechaNacimiento = `${dd}/${mm}/${yyyy}`;
+//         }
+//       }
+//       return {
+//         idEstudiante: r.idestudiante ?? r.id ?? null,
+//         ApellidosNombres: r.apellidosnombres ?? r.ApellidosNombres ?? null,
+//         FechaNacimiento,
+//         Edad: r.edad ?? null,
+//         DNI: r.dni ?? null,
+//         GradoSeccion: r.gradoseccion ?? r.GradoSeccion ?? null,
+//         TipoDiscapacidad: r.tipodiscapacidad ?? null,
+//         DocumentoSustentatorio: r.documentosustentatorio ?? null,
+//         DocumentoInclusiva: r.documentoinclusiva ?? null,
+//         IPP: r.ipp ?? null,
+//         PEP: r.pep ?? null,
+//         idInstitucionEducativa: r.idinstitucioneducativa ?? null
+//       };
+//     });
 
-    return res.status(200).json(formatted);
-  } catch (err) {
-    console.error('Excepción obtener estudiantes:', err);
-    return res.status(500).json({ error: 'Error interno al obtener estudiantes' });
-  }
-});
+//     return res.status(200).json(formatted);
+//   } catch (err) {
+//     console.error('Excepción obtener estudiantes:', err);
+//     return res.status(500).json({ error: 'Error interno al obtener estudiantes' });
+//   }
+// });
 
-// Buscar estudiante por idEstudiante o por DNI
-app.get('/buscar-estudiante', async (req, res) => {
-  try {
-    const { idEstudiante, DNI } = req.query;
-    if (!idEstudiante && !DNI) {
-      return res.status(400).send('Se requiere idEstudiante o DNI');
-    }
+// // Buscar estudiante por idEstudiante o por DNI
+// app.get('/buscar-estudiante', async (req, res) => {
+//   try {
+//     const { idEstudiante, DNI } = req.query;
+//     if (!idEstudiante && !DNI) {
+//       return res.status(400).send('Se requiere idEstudiante o DNI');
+//     }
 
-    let filter;
-    if (idEstudiante) {
-      filter = supabase.from('estudiantes').select('*').eq('idestudiante', idEstudiante).maybeSingle();
-    } else {
-      filter = supabase.from('estudiantes').select('*').eq('dni', DNI).maybeSingle();
-    }
+//     let filter;
+//     if (idEstudiante) {
+//       filter = supabase.from('estudiantes').select('*').eq('idestudiante', idEstudiante).maybeSingle();
+//     } else {
+//       filter = supabase.from('estudiantes').select('*').eq('dni', DNI).maybeSingle();
+//     }
 
-    const { data: est, error } = await filter;
-    if (error) {
-      console.error('Error buscar estudiante:', error);
-      return res.status(500).json({ error: 'Error interno' });
-    }
-    if (!est) {
-      return res.status(404).send('Estudiante no encontrado');
-    }
+//     const { data: est, error } = await filter;
+//     if (error) {
+//       console.error('Error buscar estudiante:', error);
+//       return res.status(500).json({ error: 'Error interno' });
+//     }
+//     if (!est) {
+//       return res.status(404).send('Estudiante no encontrado');
+//     }
 
-    // Formatear fechas y campos devueltos
-    const fechaRaw = est.fechanacimiento || est.fecha_nacimiento || est.fechaNacimiento;
-    let FechaNacimiento = null;
-    if (fechaRaw) {
-      const d = new Date(fechaRaw);
-      if (!Number.isNaN(d.getTime())) {
-        const dd = `${d.getDate()}`.padStart(2, '0');
-        const mm = `${d.getMonth() + 1}`.padStart(2, '0');
-        const yyyy = d.getFullYear();
-        FechaNacimiento = `${dd}/${mm}/${yyyy}`;
-      }
-    }
+//     // Formatear fechas y campos devueltos
+//     const fechaRaw = est.fechanacimiento || est.fecha_nacimiento || est.fechaNacimiento;
+//     let FechaNacimiento = null;
+//     if (fechaRaw) {
+//       const d = new Date(fechaRaw);
+//       if (!Number.isNaN(d.getTime())) {
+//         const dd = `${d.getDate()}`.padStart(2, '0');
+//         const mm = `${d.getMonth() + 1}`.padStart(2, '0');
+//         const yyyy = d.getFullYear();
+//         FechaNacimiento = `${dd}/${mm}/${yyyy}`;
+//       }
+//     }
 
-    const result = {
-      idEstudiante: est.idestudiante ?? est.id ?? null,
-      ApellidosNombres: est.apellidosnombres ?? est.ApellidosNombres ?? null,
-      FechaNacimiento,
-      Edad: est.edad ?? null,
-      DNI: est.dni ?? null,
-      GradoSeccion: est.gradoseccion ?? est.GradoSeccion ?? null,
-      TipoDiscapacidad: est.tipodiscapacidad ?? null,
-      DocumentoSustentatorio: est.documentosustentatorio ?? null,
-      DocumentoInclusiva: est.documentoinclusiva ?? null,
-      IPP: est.ipp ?? null,
-      PEP: est.pep ?? null,
-      idInstitucionEducativa: est.idinstitucioneducativa ?? null
-    };
+//     const result = {
+//       idEstudiante: est.idestudiante ?? est.id ?? null,
+//       ApellidosNombres: est.apellidosnombres ?? est.ApellidosNombres ?? null,
+//       FechaNacimiento,
+//       Edad: est.edad ?? null,
+//       DNI: est.dni ?? null,
+//       GradoSeccion: est.gradoseccion ?? est.GradoSeccion ?? null,
+//       TipoDiscapacidad: est.tipodiscapacidad ?? null,
+//       DocumentoSustentatorio: est.documentosustentatorio ?? null,
+//       DocumentoInclusiva: est.documentoinclusiva ?? null,
+//       IPP: est.ipp ?? null,
+//       PEP: est.pep ?? null,
+//       idInstitucionEducativa: est.idinstitucioneducativa ?? null
+//     };
 
-    return res.json(result);
-  } catch (err) {
-    console.error('Excepción buscar-estudiante:', err);
-    return res.status(500).json({ error: 'Error interno' });
-  }
-});
+//     return res.json(result);
+//   } catch (err) {
+//     console.error('Excepción buscar-estudiante:', err);
+//     return res.status(500).json({ error: 'Error interno' });
+//   }
+// });
 
-// Actualizar estudiante
-app.put('/actualizar-estudiante', async (req, res) => {
-  try {
-    const {
-      idEstudiante,
-      ApellidosNombres,
-      FechaNacimiento,
-      Edad,
-      DNI,
-      GradoSeccion,
-      TipoDiscapacidad,
-      DocumentoSustentatorio,
-      DocumentoInclusiva,
-      IPP,
-      PEP
-    } = req.body;
+// // Actualizar estudiante
+// app.put('/actualizar-estudiante', async (req, res) => {
+//   try {
+//     const {
+//       idEstudiante,
+//       ApellidosNombres,
+//       FechaNacimiento,
+//       Edad,
+//       DNI,
+//       GradoSeccion,
+//       TipoDiscapacidad,
+//       DocumentoSustentatorio,
+//       DocumentoInclusiva,
+//       IPP,
+//       PEP
+//     } = req.body;
 
-    if (!idEstudiante || !ApellidosNombres || !FechaNacimiento || !Edad || !DNI || !GradoSeccion) {
-      return res.status(400).json({ error: 'Faltan campos obligatorios' });
-    }
+//     if (!idEstudiante || !ApellidosNombres || !FechaNacimiento || !Edad || !DNI || !GradoSeccion) {
+//       return res.status(400).json({ error: 'Faltan campos obligatorios' });
+//     }
 
-    // convertir dd/mm/yyyy -> ISO
-    const parts = FechaNacimiento.split('/');
-    if (parts.length !== 3) {
-      return res.status(400).json({ error: 'Formato de fecha inválido' });
-    }
-    const fechaISO = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
+//     // convertir dd/mm/yyyy -> ISO
+//     const parts = FechaNacimiento.split('/');
+//     if (parts.length !== 3) {
+//       return res.status(400).json({ error: 'Formato de fecha inválido' });
+//     }
+//     const fechaISO = `${parts[2]}-${parts[1].padStart(2, '0')}-${parts[0].padStart(2, '0')}`;
 
-    const ippValue = (IPP === 'Si' || IPP === true || IPP === 'si' || IPP === 'SI') ? 'Si' : 'No';
-    const pepValue = (PEP === 'Si' || PEP === true || PEP === 'si' || PEP === 'SI') ? 'Si' : 'No';
+//     const ippValue = (IPP === 'Si' || IPP === true || IPP === 'si' || IPP === 'SI') ? 'Si' : 'No';
+//     const pepValue = (PEP === 'Si' || PEP === true || PEP === 'si' || PEP === 'SI') ? 'Si' : 'No';
 
-    const { error } = await supabase
-      .from('estudiantes')
-      .update({
-        apellidosnombres: ApellidosNombres,
-        fechanacimiento: fechaISO,
-        edad: Edad,
-        dni: DNI,
-        gradoseccion: GradoSeccion,
-        tipodiscapacidad: TipoDiscapacidad || null,
-        documentosustentatorio: DocumentoSustentatorio || null,
-        documentoinclusiva: DocumentoInclusiva || null,
-        ipp: ippValue,
-        pep: pepValue
-      })
-      .eq('idestudiante', idEstudiante);
+//     const { error } = await supabase
+//       .from('estudiantes')
+//       .update({
+//         apellidosnombres: ApellidosNombres,
+//         fechanacimiento: fechaISO,
+//         edad: Edad,
+//         dni: DNI,
+//         gradoseccion: GradoSeccion,
+//         tipodiscapacidad: TipoDiscapacidad || null,
+//         documentosustentatorio: DocumentoSustentatorio || null,
+//         documentoinclusiva: DocumentoInclusiva || null,
+//         ipp: ippValue,
+//         pep: pepValue
+//       })
+//       .eq('idestudiante', idEstudiante);
 
-    if (error) {
-      console.error('Error actualizar estudiante:', error);
-      return res.status(500).json({ error: 'Error interno al actualizar' });
-    }
+//     if (error) {
+//       console.error('Error actualizar estudiante:', error);
+//       return res.status(500).json({ error: 'Error interno al actualizar' });
+//     }
 
-    return res.json({ message: 'Estudiante actualizado con éxito' });
-  } catch (err) {
-    console.error('Excepción actualizar-estudiante:', err);
-    return res.status(500).json({ error: 'Error interno al actualizar' });
-  }
-});
+//     return res.json({ message: 'Estudiante actualizado con éxito' });
+//   } catch (err) {
+//     console.error('Excepción actualizar-estudiante:', err);
+//     return res.status(500).json({ error: 'Error interno al actualizar' });
+//   }
+// });
 
-// Eliminar estudiante (usa cascade definido en la BD)
-// Elimina solo en `estudiantes` y deja que las FK con ON DELETE CASCADE borren las relaciones.
-app.delete('/eliminar-estudiante/:id', async (req, res) => {
-  try {
-    const id = Number(req.params.id);
-    if (!id || Number.isNaN(id)) {
-      return res.status(400).json({ error: 'ID inválido' });
-    }
+// // Eliminar estudiante (usa cascade definido en la BD)
+// // Elimina solo en `estudiantes` y deja que las FK con ON DELETE CASCADE borren las relaciones.
+// app.delete('/eliminar-estudiante/:id', async (req, res) => {
+//   try {
+//     const id = Number(req.params.id);
+//     if (!id || Number.isNaN(id)) {
+//       return res.status(400).json({ error: 'ID inválido' });
+//     }
 
-    // BORRAR en estudiantes; pedimos que nos devuelva las filas eliminadas con .select()
-    const { data: deletedRows, error } = await supabase
-      .from('estudiantes')
-      .delete()
-      .eq('idestudiante', id)
-      .select(); // importante: pedir la fila eliminada para respuesta consistente
+//     // BORRAR en estudiantes; pedimos que nos devuelva las filas eliminadas con .select()
+//     const { data: deletedRows, error } = await supabase
+//       .from('estudiantes')
+//       .delete()
+//       .eq('idestudiante', id)
+//       .select(); // importante: pedir la fila eliminada para respuesta consistente
 
-    if (error) {
-      // si hay un error de PostgREST (p.ej. PGRST205) lo registramos y devolvemos 500
-      console.error('Error eliminar estudiante (supabase):', error);
-      return res.status(500).json({ error: 'Error interno al eliminar estudiante', detail: error });
-    }
+//     if (error) {
+//       // si hay un error de PostgREST (p.ej. PGRST205) lo registramos y devolvemos 500
+//       console.error('Error eliminar estudiante (supabase):', error);
+//       return res.status(500).json({ error: 'Error interno al eliminar estudiante', detail: error });
+//     }
 
-    if (!deletedRows || deletedRows.length === 0) {
-      return res.status(404).json({ error: 'Estudiante no encontrado' });
-    }
+//     if (!deletedRows || deletedRows.length === 0) {
+//       return res.status(404).json({ error: 'Estudiante no encontrado' });
+//     }
 
-    // éxito
-    return res.json({ message: 'Estudiante eliminado con éxito', deleted: deletedRows[0] });
-  } catch (err) {
-    console.error('Excepción eliminar-estudiante:', err);
-    return res.status(500).json({ error: 'Error interno al eliminar estudiante' });
-  }
-});
-
-
-
-
-
-
-
-
-
-
+//     // éxito
+//     return res.json({ message: 'Estudiante eliminado con éxito', deleted: deletedRows[0] });
+//   } catch (err) {
+//     console.error('Excepción eliminar-estudiante:', err);
+//     return res.status(500).json({ error: 'Error interno al eliminar estudiante' });
+//   }
+// });
 
 
 /////////////////// DOCENTE-ESTUDIANTE ///////////////////
