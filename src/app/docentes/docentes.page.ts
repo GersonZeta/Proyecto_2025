@@ -124,11 +124,20 @@ export class DocentesPage {
   }
 
 private cargarDocentes(): void {
-  const params = new HttpParams().set('idInstitucionEducativa', this.idInstitucionEducativa.toString());
+  const params = new HttpParams()
+    .set('action', 'listar')
+    .set('idInstitucionEducativa', this.idInstitucionEducativa.toString());
+
   this.http.get<{ ok: boolean, data: DocenteView[] }>(`${this.baseUrl}/docentes-estudiante`, { params })
     .subscribe(res => {
       if (res.ok && Array.isArray(res.data)) {
-        this.docentes = res.data.map((d, i) => ({ ...d, displayId: i + 1 }));
+        // Ordenar primero por NombreDocente y luego por NombreEstudiante
+        const sorted = res.data.sort((a, b) => {
+          if (a.NombreDocente !== b.NombreDocente) return a.NombreDocente.localeCompare(b.NombreDocente);
+          return a.NombreEstudiante.localeCompare(b.NombreEstudiante);
+        });
+
+        this.docentes = sorted.map((d, i) => ({ ...d, displayId: i + 1 }));
         this.docentesFiltrados = [...this.docentes];
       } else {
         this.docentes = [];
@@ -140,6 +149,8 @@ private cargarDocentes(): void {
       this.docentesFiltrados = [];
     });
 }
+
+
 
 
   private cargarEstudiantes(): void {
@@ -533,8 +544,8 @@ resetForm(): void {
   this.datosCargados = false;
   this.buscandoDocente = false;
   this.emailInvalid = false;
-  // no reasignar aquí this.asignados
-  this.docentesFiltrados = [...this.docentes];
+  // NO reasignar docentesFiltrados aquí
+  // this.docentesFiltrados = [...this.docentes];
 }
 
   onEstudiantesChange(): void {
