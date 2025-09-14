@@ -433,37 +433,32 @@ this.http.put(`${this.baseUrl}/actualizar-docente`, payload).subscribe({
     });
   }
 
-  registrarDocente(): void {
-    this.validarEmail();
+registrarDocente(): void {
+  this.validarEmail();
 
-    if (!this.docente.NombreDocente.trim() ||
-        !this.docente.DNIDocente.trim() ||
-        !this.docente.Email.trim() ||
-        this.emailInvalid ||
-        this.docente.idEstudiante.length === 0) {
-      this.mostrarErrorCampos = true;
-      return;
-    }
-
-    const reqs = this.docente.idEstudiante.map(id => {
-      const payload = {
-        idEstudiante: id,
-        NombreDocente: this.docente.NombreDocente,
-        DNIDocente: this.docente.DNIDocente,
-        Email: this.docente.Email,
-        Telefono: this.docente.Telefono,
-        GradoSeccionLabora: this.docente.GradoSeccionLabora,
-        idInstitucionEducativa: this.idInstitucionEducativa
-      };
-      return this.http.post<{ idDocente: number }>(`${this.baseUrl}/registrar-docente`, payload);
-    });
-
-forkJoin(reqs).subscribe(() => {
-  this.resetForm();
-  this.cargarAsignadosGlobal(); // recarga asignados
-  this.cargarDocentes();
-});
+  if (!this.docente.NombreDocente.trim() ||
+      !this.docente.DNIDocente.trim() ||
+      !this.docente.Email.trim() ||
+      this.emailInvalid ||
+      this.docente.idEstudiante.length === 0) {
+    this.mostrarErrorCampos = true;
+    return;
   }
+
+  const payload = { ...this.docente };
+
+  this.http.post(`${this.baseUrl}/docentes-estudiante?action=registrar`, payload)
+    .subscribe({
+      next: () => {
+        this.resetForm();
+        this.cargarAsignadosGlobal(); // recarga asignados
+        this.cargarDocentes();
+        this.mostrarAlerta('Éxito', 'Docente registrado correctamente.');
+      },
+      error: () => this.mostrarAlerta('Error', 'No fue posible registrar el docente.')
+    });
+}
+
 
   eliminarDocente(): void {
     if (!this.docente.idDocente) {

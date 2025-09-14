@@ -6,54 +6,45 @@ export default async function handler(req, res) {
 
   try {
     // --- LISTAR DOCENTES
-if (action === "listar") {
-  if (req.method !== "GET")
-    return res.status(405).json({ ok: false, mensaje: "Método no permitido" });
+    if (action === "listar") {
+      if (req.method !== "GET")
+        return res.status(405).json({ ok: false, mensaje: "Método no permitido" });
 
-  const { idInstitucionEducativa, nombreDocente } = req.query;
+      const { idInstitucionEducativa, nombreDocente } = req.query;
 
-  console.log("idInstitucionEducativa recibido:", idInstitucionEducativa); // <- debug
+      let query = supabase.from("docentes_estudiante").select("*");
+      if (idInstitucionEducativa)
+        query = query.eq("idinstitucioneducativa", idInstitucionEducativa);
+      if (nombreDocente)
+        query = query.ilike("nombredocente", `%${nombreDocente}%`);
 
-  // ⚠️ Asegúrate de usar el nombre exacto de la columna en Supabase
-  let query = supabase.from("docentes_estudiante").select("*");
-  if (idInstitucionEducativa)
-    query = query.eq("id_institucion_educativa", idInstitucionEducativa); // <- Cambiado
-  if (nombreDocente)
-    query = query.ilike("nombredocente", `%${nombreDocente}%`);
+      const { data: docs, error } = await query
+        .order("dnidocente", { ascending: true })
+        .order("idestudiante", { ascending: true });
 
-  const { data: docs, error } = await query
-    .order("dnidocente", { ascending: true })
-    .order("idestudiante", { ascending: true });
+      if (error) throw error;
 
-  if (error) throw error;
-  const docsList = docs || [];
+      // agrupar estudiantes por docente (DNIDocente)
+      const grouped = {};
+      (docs || []).forEach(d => {
+        const key = d.dnidocente;
+        if (!grouped[key]) {
+          grouped[key] = {
+            idDocente: d.iddocente,
+            DNIDocente: d.dnidocente,
+            NombreDocente: d.nombredocente,
+            Email: d.email,
+            Telefono: d.telefono,
+            GradoSeccionLabora: d.gradoseccionlabora,
+            idEstudiante: [],
+            NombreEstudiantes: []
+          };
+        }
+        grouped[key].idEstudiante.push(d.idestudiante);
+        grouped[key].NombreEstudiantes.push(d.idestudiante.toString()); // si quieres nombres reales, se debe join con tabla estudiantes
+      });
 
-
-      // obtener nombres de estudiantes
-      const studentIds = Array.from(new Set(docsList.map(d => d.idestudiante).filter(Boolean)));
-      let studentsMap = new Map();
-      if (studentIds.length) {
-        const { data: studs, error: errStuds } = await supabase
-          .from("estudiantes")
-          .select("idestudiante, apellidosnombres")
-          .in("idestudiante", studentIds);
-        if (errStuds) throw errStuds;
-        (studs || []).forEach(s => studentsMap.set(s.idestudiante, s.apellidosnombres));
-      }
-
-      const result = docsList.map(d => ({
-        idDocente: d.iddocente,
-        idEstudiante: d.idestudiante,
-        NombreEstudiante: studentsMap.get(d.idestudiante) ?? null,
-        NombreDocente: d.nombredocente,
-        DNIDocente: d.dnidocente,
-        Email: d.email,
-        Telefono: d.telefono,
-        GradoSeccionLabora: d.gradoseccionlabora,
-        idInstitucionEducativa: d.idinstitucioneducativa,
-      }));
-
-      return res.json({ ok: true, data: result });
+      return res.json({ ok: true, data: Object.values(grouped) });
     }
 
     // --- REGISTRAR DOCENTE
@@ -65,7 +56,6 @@ if (action === "listar") {
       if (!idEstudiante || !NombreDocente || !DNIDocente || !Email)
         return res.status(400).json({ ok: false, mensaje: "Faltan campos obligatorios" });
 
-      // obtener institución del estudiante
       const { data: stud, error: errStud } = await supabase
         .from("estudiantes")
         .select("idinstitucioneducativa")
@@ -83,7 +73,7 @@ if (action === "listar") {
           email: Email,
           telefono: Telefono || null,
           gradoseccionlabora: GradoSeccionLabora || null,
-          idinstitucioneducativa: stud.idinstitucioneducativa,
+          idinstitucioneducativa: stud.idinstitucioneducativa
         }])
         .select()
         .single();
@@ -108,6 +98,7 @@ if (action === "listar") {
         .select("idestudiante, idinstitucioneducativa")
         .in("idestudiante", idEstudiante);
       if (errInsts) throw errInsts;
+
       const instMap = new Map((instRows || []).map(r => [r.idestudiante, r.idinstitucioneducativa]));
 
       // asignaciones actuales
@@ -116,6 +107,7 @@ if (action === "listar") {
         .select("iddocente, idestudiante")
         .eq("dnidocente", DNIDocente);
       if (errCurrent) throw errCurrent;
+
       const currentMap = new Map((currentRows || []).map(r => [r.idestudiante, r.iddocente]));
 
       const toDelete = (currentRows || []).filter(r => !idEstudiante.includes(r.idestudiante)).map(r => r.iddocente);
@@ -128,7 +120,7 @@ if (action === "listar") {
           nombredocente: NombreDocente,
           email: Email,
           telefono: Telefono || null,
-          gradoseccionlabora: GradoSeccionLabora || null,
+          gradoseccionlabora: GradoSeccionLabora || null
         })
         .eq("dnidocente", DNIDocente);
       if (errUpdate) throw errUpdate;
@@ -151,7 +143,7 @@ if (action === "listar") {
           email: Email,
           telefono: Telefono || null,
           gradoseccionlabora: GradoSeccionLabora || null,
-          idinstitucioneducativa: instMap.get(idEst) ?? null,
+          idinstitucioneducativa: instMap.get(idEst) ?? null
         }));
         const { error: errIns } = await supabase.from("docentes_estudiante").insert(values);
         if (errIns) throw errIns;
@@ -215,17 +207,16 @@ if (action === "listar") {
       if (!rows || rows.length === 0)
         return res.status(404).json({ ok: false, mensaje: "Docente no encontrado" });
 
-      const any = rows[0];
       return res.json({
         ok: true,
         data: {
-          DNIDocente: any.dnidocente,
-          NombreDocente: any.nombredocente,
-          Email: any.email,
-          Telefono: any.telefono,
-          GradoSeccionLabora: any.gradoseccionlabora,
-          idEstudiante: rows.map(r => r.idestudiante),
-        },
+          DNIDocente: rows[0].dnidocente,
+          NombreDocente: rows[0].nombredocente,
+          Email: rows[0].email,
+          Telefono: rows[0].telefono,
+          GradoSeccionLabora: rows[0].gradoseccionlabora,
+          idEstudiante: rows.map(r => r.idestudiante)
+        }
       });
     }
 
