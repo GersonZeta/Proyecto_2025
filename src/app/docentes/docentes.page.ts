@@ -123,14 +123,24 @@ export class DocentesPage {
     this.cargarDocentes();
   }
 
-  private cargarDocentes(): void {
-    const params = new HttpParams().set('idInstitucionEducativa', this.idInstitucionEducativa.toString());
-    this.http.get<DocenteView[]>(`${this.baseUrl}/docentes-estudiante`, { params })
-      .subscribe(list => {
-        this.docentes = list.map((d, i) => ({ ...d, displayId: i + 1 }));
+private cargarDocentes(): void {
+  const params = new HttpParams().set('idInstitucionEducativa', this.idInstitucionEducativa.toString());
+  this.http.get<{ ok: boolean, data: DocenteView[] }>(`${this.baseUrl}/docentes-estudiante`, { params })
+    .subscribe(res => {
+      if (res.ok && Array.isArray(res.data)) {
+        this.docentes = res.data.map((d, i) => ({ ...d, displayId: i + 1 }));
         this.docentesFiltrados = [...this.docentes];
-      });
-  }
+      } else {
+        this.docentes = [];
+        this.docentesFiltrados = [];
+      }
+    }, err => {
+      console.error('Error cargando docentes:', err);
+      this.docentes = [];
+      this.docentesFiltrados = [];
+    });
+}
+
 
   private cargarEstudiantes(): void {
     const params = new HttpParams().set('idInstitucionEducativa', this.idInstitucionEducativa.toString());
@@ -140,11 +150,21 @@ export class DocentesPage {
 
   private cargarAsignadosGlobal(): void {
     const params = new HttpParams().set('idInstitucionEducativa', this.idInstitucionEducativa.toString());
-    this.http.get<number[]>(`${this.baseUrl}/estudiantes-con-docente`, { params })
-      .subscribe(ids => {
-        this.allAsignados = ids;
-        this.asignados = [...ids];
-      });
+this.http.get<{ ok: boolean, data: number[] }>(`${this.baseUrl}/estudiantes-con-docente`, { params })
+  .subscribe(res => {
+    if (res.ok && Array.isArray(res.data)) {
+      this.allAsignados = res.data;
+      this.asignados = [...res.data];
+    } else {
+      this.allAsignados = [];
+      this.asignados = [];
+    }
+  }, err => {
+    console.error('Error cargando asignados:', err);
+    this.allAsignados = [];
+    this.asignados = [];
+  });
+
   }
 
   // ------------------ BÚSQUEDA ------------------
