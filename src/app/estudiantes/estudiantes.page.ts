@@ -14,22 +14,22 @@ import jsPDF from 'jspdf';
 import { environment } from 'src/environments/environment';
 
 interface EstudianteResponse {
-  idEstudiante: number;
-  ApellidosNombres: string;
-  FechaNacimiento: string;
-  Edad: number;
-  DNI: string;
-  GradoSeccion: string;
-  TipoDiscapacidad?: string;
-  DocumentoSustentatorio?: string;
-  DocumentoInclusiva?: string;
-  IPP: 'Si' | 'No';
-  PEP: 'Si' | 'No';
-  idInstitucionEducativa: number;
+  id: number;
+  apellidosnombres: string;
+  fechanacimiento: string;
+  edad: number;
+  dni: string;
+  gradoseccion: string;
+  tipodiscapacidad?: string;
+  documentosustentatorio?: string;
+  documentoinclusiva?: string;
+  ipp: 'Si' | 'No';
+  pep: 'Si' | 'No';
+  idinstitucioneducativa: number;
 }
 
 interface EstudianteLocal {
-  idEstudiante: number;
+  id: number;
   fila: number;
   ApellidosNombres: string;
   FechaNacimiento: string;
@@ -117,22 +117,26 @@ export class EstudiantesPage implements AfterViewInit, OnDestroy {
       this.idIE.toString()
     );
     this.http
-      .get<EstudianteResponse[]>(`${this.baseUrl}?action=listar`, { params })
+      .get<{ ok: boolean; data: EstudianteResponse[] }>(
+        `${this.baseUrl}?action=listar`,
+        { params }
+      )
       .subscribe(
-        (list) => {
-          this.estudiantes = (list || []).map((r, i) => ({
-            idEstudiante: r.idEstudiante,
+        (res) => {
+          const list = res?.data || [];
+          this.estudiantes = list.map((r, i) => ({
+            id: r.id,
             fila: i + 1,
-            ApellidosNombres: r.ApellidosNombres,
-            FechaNacimiento: r.FechaNacimiento,
-            Edad: r.Edad,
-            DNI: r.DNI,
-            GradoSeccion: r.GradoSeccion,
-            TipoDiscapacidad: r.TipoDiscapacidad || '',
-            DocumentoSustentatorio: r.DocumentoSustentatorio || '',
-            DocumentoInclusiva: r.DocumentoInclusiva || '',
-            IPP: r.IPP === 'Si',
-            PEP: r.PEP === 'Si',
+            ApellidosNombres: r.apellidosnombres,
+            FechaNacimiento: r.fechanacimiento,
+            Edad: r.edad,
+            DNI: r.dni,
+            GradoSeccion: r.gradoseccion,
+            TipoDiscapacidad: r.tipodiscapacidad || '',
+            DocumentoSustentatorio: r.documentosustentatorio || '',
+            DocumentoInclusiva: r.documentoinclusiva || '',
+            IPP: r.ipp === 'Si',
+            PEP: r.pep === 'Si',
           }));
           this.estudiantesFiltrados = [...this.estudiantes];
           if (typeof callback === 'function') callback();
@@ -210,20 +214,20 @@ export class EstudiantesPage implements AfterViewInit, OnDestroy {
       return;
     }
     const payload: any = {
-      ApellidosNombres: this.alumno.ApellidosNombres,
-      FechaNacimiento: this.alumno.FechaNacimiento,
-      Edad: this.alumno.Edad,
-      DNI: this.alumno.DNI,
-      GradoSeccion: this.alumno.GradoSeccion,
-      TipoDiscapacidad: this.alumno.TipoDiscapacidad,
-      DocumentoSustentatorio: this.alumno.DocumentoSustentatorio,
-      DocumentoInclusiva: this.alumno.DocumentoInclusiva,
-      IPP: this.alumno.IPP ? 'Si' : 'No',
-      PEP: this.alumno.PEP ? 'Si' : 'No',
-      idInstitucionEducativa: this.idIE,
+      apellidosnombres: this.alumno.ApellidosNombres,
+      fechanacimiento: this.alumno.FechaNacimiento,
+      edad: this.alumno.Edad,
+      dni: this.alumno.DNI,
+      gradoseccion: this.alumno.GradoSeccion,
+      tipodiscapacidad: this.alumno.TipoDiscapacidad,
+      documentosustentatorio: this.alumno.DocumentoSustentatorio,
+      documentoinclusiva: this.alumno.DocumentoInclusiva,
+      ipp: this.alumno.IPP ? 'Si' : 'No',
+      pep: this.alumno.PEP ? 'Si' : 'No',
+      idinstitucioneducativa: this.idIE,
     };
     this.http
-      .post<{ idEstudiante?: number }>(
+      .post<{ ok: boolean; data?: any }>(
         `${this.baseUrl}?action=registrar`,
         payload
       )
@@ -235,7 +239,7 @@ export class EstudiantesPage implements AfterViewInit, OnDestroy {
         error: (e) =>
           this.mostrarAlerta(
             'Error',
-            e.error?.error || 'No fue posible registrar'
+            e.error?.mensaje || 'No fue posible registrar'
           ),
       });
   }
@@ -244,17 +248,17 @@ export class EstudiantesPage implements AfterViewInit, OnDestroy {
     this.validarCampos().then((ok) => {
       if (!ok) return;
       const payload: any = {
-        idEstudiante: this.alumno.idEstudiante,
-        ApellidosNombres: this.alumno.ApellidosNombres,
-        FechaNacimiento: this.alumno.FechaNacimiento,
-        Edad: this.alumno.Edad,
-        DNI: this.alumno.DNI,
-        GradoSeccion: this.alumno.GradoSeccion,
-        TipoDiscapacidad: this.alumno.TipoDiscapacidad,
-        DocumentoSustentatorio: this.alumno.DocumentoSustentatorio,
-        DocumentoInclusiva: this.alumno.DocumentoInclusiva,
-        IPP: this.alumno.IPP ? 'Si' : 'No',
-        PEP: this.alumno.PEP ? 'Si' : 'No',
+        id: this.alumno.id,
+        apellidosnombres: this.alumno.ApellidosNombres,
+        fechanacimiento: this.alumno.FechaNacimiento,
+        edad: this.alumno.Edad,
+        dni: this.alumno.DNI,
+        gradoseccion: this.alumno.GradoSeccion,
+        tipodiscapacidad: this.alumno.TipoDiscapacidad,
+        documentosustentatorio: this.alumno.DocumentoSustentatorio,
+        documentoinclusiva: this.alumno.DocumentoInclusiva,
+        ipp: this.alumno.IPP ? 'Si' : 'No',
+        pep: this.alumno.PEP ? 'Si' : 'No',
       };
 
       this.http
@@ -269,7 +273,7 @@ export class EstudiantesPage implements AfterViewInit, OnDestroy {
           error: (e) =>
             this.mostrarAlerta(
               'Error',
-              e.error?.error || 'No fue posible actualizar'
+              e.error?.mensaje || 'No fue posible actualizar'
             ),
         });
     });
@@ -314,11 +318,9 @@ export class EstudiantesPage implements AfterViewInit, OnDestroy {
   }
 
   private eliminarEstudiante() {
-    if (!this.alumno.idEstudiante) return;
+    if (!this.alumno.id) return;
     this.http
-      .delete(
-        `${this.baseUrl}?action=eliminar&idEstudiante=${this.alumno.idEstudiante}`
-      )
+      .delete(`${this.baseUrl}?action=eliminar&id=${this.alumno.id}`)
       .subscribe({
         next: () => {
           this.resetForm();
