@@ -5,7 +5,7 @@ export default async function handler(req, res) {
   const { action } = req.query;
 
   try {
-    // --- LISTAR DOCENTES
+    // --- LISTAR DOCENTES (una fila por relación: iddocente + idestudiante + NombreEstudiante)
     if (action === "listar") {
       if (req.method !== "GET")
         return res.status(405).json({ ok: false, mensaje: "Método no permitido" });
@@ -13,77 +13,103 @@ export default async function handler(req, res) {
       const { idInstitucionEducativa, nombreDocente } = req.query;
 
       let query = supabase.from("docentes_estudiante").select("*");
-      if (idInstitucionEducativa)
-        query = query.eq("idinstitucioneducativa", idInstitucionEducativa);
-      if (nombreDocente)
-        query = query.ilike("nombredocente", `%${nombreDocente}%`);
+      if (idInstitucionEducativa) query = query.eq("idinstitucioneducativa", idInstitucionEducativa);
+      if (nombreDocente) query = query.ilike("nombredocente", `%${nombreDocente}%`);
 
       const { data: docs, error } = await query
         .order("dnidocente", { ascending: true })
         .order("idestudiante", { ascending: true });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase error listar docentes:", error);
+        throw error;
+      }
 
-      // agrupar estudiantes por docente (DNIDocente)
-      const grouped = {};
-      (docs || []).forEach(d => {
-        const key = d.dnidocente;
-        if (!grouped[key]) {
-          grouped[key] = {
-            idDocente: d.iddocente,
-            DNIDocente: d.dnidocente,
-            NombreDocente: d.nombredocente,
-            Email: d.email,
-            Telefono: d.telefono,
-            GradoSeccionLabora: d.gradoseccionlabora,
-            idEstudiante: [],
-            NombreEstudiantes: []
-          };
+      const docsList = docs || [];
+      if (!docsList.length) return res.json({ ok: true, data: [] });
+
+      const studentIds = Array.from(new Set(docsList.map(d => d.idestudiante).filter(Boolean)));
+      let studentsMap = new Map();
+      if (studentIds.length) {
+        const { data: studs, error: errStuds } = await supabase
+          .from("estudiantes")
+          .select("idestudiante, apellidosnombres")
+          .in("idestudiante", studentIds);
+        if (errStuds) {
+          console.error("Supabase error obtener estudiantes:", errStuds);
+          throw errStuds;
         }
-        grouped[key].idEstudiante.push(d.idestudiante);
-        grouped[key].NombreEstudiantes.push(d.idestudiante.toString()); // si quieres nombres reales, se debe join con tabla estudiantes
-      });
+        (studs || []).forEach(s => studentsMap.set(s.idestudiante, s.apellidosnombres));
+      }
 
-      return res.json({ ok: true, data: Object.values(grouped) });
+      const mapped = docsList.map(d => ({
+        idDocente: d.iddocente,
+        idEstudiante: d.idestudiante,
+        NombreEstudiante: studentsMap.get(d.idestudiante) ?? null,
+        NombreDocente: d.nombredocente,
+        DNIDocente: d.dnidocente,
+        Email: d.email,
+        Telefono: d.telefono || null,
+        GradoSeccionLabora: d.gradoseccionlabora || null,
+        idInstitucionEducativa: d.idinstitucioneducativa
+      }));
+
+      return res.json({ ok: true, data: mapped });
     }
 
-    // --- REGISTRAR DOCENTE
+    // --- REGISTRAR DOCENTE (acepta idEstudiante número o array)
     if (action === "registrar") {
       if (req.method !== "POST")
         return res.status(405).json({ ok: false, mensaje: "Método no permitido" });
 
-      const { idEstudiante, NombreDocente, DNIDocente, Email, Telefono, GradoSeccionLabora } = req.body;
+      let { idEstudiante, NombreDocente, DNIDocente, Email, Telefono, GradoSeccionLabora } = req.body;
       if (!idEstudiante || !NombreDocente || !DNIDocente || !Email)
         return res.status(400).json({ ok: false, mensaje: "Faltan campos obligatorios" });
 
-      const { data: stud, error: errStud } = await supabase
+      const ids = Array.isArray(idEstudiante) ? idEstudiante.map(Number).filter(n => !isNaN(n)) : [Number(idEstudiante)];
+      if (!ids.length) return res.status(400).json({ ok: false, mensaje: "idEstudiante inválido" });
+
+      // VALIDAR: obtener instituciones de todos los estudiantes y exigir que sean iguales
+      const { data: instRows, error: errInst } = await supabase
         .from("estudiantes")
-        .select("idinstitucioneducativa")
-        .eq("idestudiante", idEstudiante)
-        .maybeSingle();
-      if (errStud) throw errStud;
-      if (!stud) return res.status(404).json({ ok: false, mensaje: "Estudiante no encontrado" });
+        .select("idestudiante, idinstitucioneducativa")
+        .in("idestudiante", ids);
+      if (errInst) {
+        console.error("Supabase error validar instituciones:", errInst);
+        throw errInst;
+      }
+      if (!instRows || instRows.length !== ids.length)
+        return res.status(404).json({ ok: false, mensaje: "Algún estudiante no existe" });
+
+      const instSet = new Set(instRows.map(r => r.idinstitucioneducativa));
+      if (instSet.size > 1) {
+        return res.status(400).json({ ok: false, mensaje: "Los estudiantes pertenecen a instituciones diferentes" });
+      }
+      const finalInst = instRows[0].idinstitucioneducativa;
+
+      const values = ids.map(id => ({
+        idestudiante: id,
+        nombredocente: NombreDocente,
+        dnidocente: DNIDocente,
+        email: Email,
+        telefono: Telefono || null,
+        gradoseccionlabora: GradoSeccionLabora || null,
+        idinstitucioneducativa: finalInst
+      }));
 
       const { data: inserted, error: errIns } = await supabase
         .from("docentes_estudiante")
-        .insert([{
-          idestudiante: idEstudiante,
-          nombredocente: NombreDocente,
-          dnidocente: DNIDocente,
-          email: Email,
-          telefono: Telefono || null,
-          gradoseccionlabora: GradoSeccionLabora || null,
-          idinstitucioneducativa: stud.idinstitucioneducativa
-        }])
-        .select()
-        .single();
+        .insert(values)
+        .select();
+      if (errIns) {
+        console.error("Supabase error insertar docentes:", errIns);
+        throw errIns;
+      }
 
-      if (errIns) throw errIns;
-
-      return res.json({ ok: true, mensaje: "Docente registrado", data: inserted });
+      return res.json({ ok: true, mensaje: "Docente(s) registrado(s)", data: inserted });
     }
 
-    // --- ACTUALIZAR DOCENTE
+    // --- ACTUALIZAR DOCENTE (espera idEstudiante array)
     if (action === "actualizar") {
       if (req.method !== "PUT")
         return res.status(405).json({ ok: false, mensaje: "Método no permitido" });
@@ -92,7 +118,6 @@ export default async function handler(req, res) {
       if (!DNIDocente || !NombreDocente || !Email || !Array.isArray(idEstudiante))
         return res.status(400).json({ ok: false, mensaje: "Campos inválidos" });
 
-      // obtener instituciones de estudiantes
       const { data: instRows, error: errInsts } = await supabase
         .from("estudiantes")
         .select("idestudiante, idinstitucioneducativa")
@@ -101,7 +126,6 @@ export default async function handler(req, res) {
 
       const instMap = new Map((instRows || []).map(r => [r.idestudiante, r.idinstitucioneducativa]));
 
-      // asignaciones actuales
       const { data: currentRows, error: errCurrent } = await supabase
         .from("docentes_estudiante")
         .select("iddocente, idestudiante")
@@ -113,7 +137,6 @@ export default async function handler(req, res) {
       const toDelete = (currentRows || []).filter(r => !idEstudiante.includes(r.idestudiante)).map(r => r.iddocente);
       const toAdd = idEstudiante.filter(id => !currentMap.has(id));
 
-      // actualizar datos base
       const { error: errUpdate } = await supabase
         .from("docentes_estudiante")
         .update({
@@ -125,7 +148,6 @@ export default async function handler(req, res) {
         .eq("dnidocente", DNIDocente);
       if (errUpdate) throw errUpdate;
 
-      // borrar sobrantes
       if (toDelete.length) {
         const { error: errDel } = await supabase
           .from("docentes_estudiante")
@@ -134,7 +156,6 @@ export default async function handler(req, res) {
         if (errDel) throw errDel;
       }
 
-      // insertar nuevos
       if (toAdd.length) {
         const values = toAdd.map(idEst => ({
           idestudiante: idEst,
@@ -152,7 +173,7 @@ export default async function handler(req, res) {
       return res.json({ ok: true, mensaje: "Docente actualizado" });
     }
 
-    // --- ELIMINAR DOCENTE
+    // --- ELIMINAR DOCENTE (borra todas las filas con dnidocente igual)
     if (action === "eliminar") {
       if (req.method !== "DELETE")
         return res.status(405).json({ ok: false, mensaje: "Método no permitido" });
@@ -180,7 +201,7 @@ export default async function handler(req, res) {
       return res.json({ ok: true, mensaje: "Docente eliminado", count: deleted.length });
     }
 
-    // --- BUSCAR DOCENTE
+    // --- BUSCAR DOCENTE (devuelve datos con idEstudiante array) - usa ilike para mayor flexibilidad
     if (action === "buscar") {
       if (req.method !== "GET")
         return res.status(405).json({ ok: false, mensaje: "Método no permitido" });
@@ -189,10 +210,11 @@ export default async function handler(req, res) {
       if (!nombreDocente)
         return res.status(400).json({ ok: false, mensaje: "Se requiere nombreDocente" });
 
+      // buscar un dnidocente que coincida parcialmente (ilike) para mayor flexibilidad
       const { data: baseRows, error: errBase } = await supabase
         .from("docentes_estudiante")
         .select("dnidocente")
-        .eq("nombredocente", nombreDocente)
+        .ilike("nombredocente", `%${nombreDocente}%`)
         .limit(1);
       if (errBase) throw errBase;
       if (!baseRows || baseRows.length === 0)
