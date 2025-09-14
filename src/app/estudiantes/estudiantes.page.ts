@@ -14,18 +14,18 @@ import jsPDF from 'jspdf';
 import { environment } from 'src/environments/environment';
 
 interface EstudianteResponse {
-  id: number;
-  apellidosnombres: string;
-  fechanacimiento: string;
-  edad: number;
-  dni: string;
-  gradoseccion: string;
-  tipodiscapacidad?: string;
-  documentosustentatorio?: string;
-  documentoinclusiva?: string;
-  ipp: 'Si' | 'No';
-  pep: 'Si' | 'No';
-  idinstitucioneducativa: number;
+  idEstudiante: number;
+  ApellidosNombres: string;
+  FechaNacimiento: string;
+  Edad: number;
+  DNI: string;
+  GradoSeccion: string;
+  TipoDiscapacidad?: string;
+  DocumentoSustentatorio?: string;
+  DocumentoInclusiva?: string;
+  IPP: 'Si' | 'No';
+  PEP: 'Si' | 'No';
+  idInstitucionEducativa: number;
 }
 
 interface EstudianteLocal {
@@ -125,18 +125,18 @@ export class EstudiantesPage implements AfterViewInit, OnDestroy {
         (res) => {
           const list = res?.data || [];
           this.estudiantes = list.map((r, i) => ({
-            id: r.id,
+            id: r.idEstudiante,
             fila: i + 1,
-            ApellidosNombres: r.apellidosnombres,
-            FechaNacimiento: r.fechanacimiento,
-            Edad: r.edad,
-            DNI: r.dni,
-            GradoSeccion: r.gradoseccion,
-            TipoDiscapacidad: r.tipodiscapacidad || '',
-            DocumentoSustentatorio: r.documentosustentatorio || '',
-            DocumentoInclusiva: r.documentoinclusiva || '',
-            IPP: r.ipp === 'Si',
-            PEP: r.pep === 'Si',
+            ApellidosNombres: r.ApellidosNombres,
+            FechaNacimiento: r.FechaNacimiento,
+            Edad: r.Edad,
+            DNI: r.DNI,
+            GradoSeccion: r.GradoSeccion,
+            TipoDiscapacidad: r.TipoDiscapacidad || '',
+            DocumentoSustentatorio: r.DocumentoSustentatorio || '',
+            DocumentoInclusiva: r.DocumentoInclusiva || '',
+            IPP: r.IPP === 'Si',
+            PEP: r.PEP === 'Si',
           }));
           this.estudiantesFiltrados = [...this.estudiantes];
           if (typeof callback === 'function') callback();
@@ -144,6 +144,7 @@ export class EstudiantesPage implements AfterViewInit, OnDestroy {
         () => this.mostrarAlerta('Error', 'Error cargando estudiantes')
       );
   }
+
 
   buscarEstudiante(): void {
     this.seleccionMultiple = false;
