@@ -525,23 +525,22 @@ export class DocentesPage {
     await alert.present();
   }
 
-resetForm(): void {
-  this.docente = {
-    DNIDocente: '',
-    NombreDocente: '',
-    Email: '',
-    Telefono: '',
-    GradoSeccionLabora: '',
-    idEstudiante: []
-  };
-  this.selectedStudentNames = '';
-  this.nombreBusqueda = '';
-  this.datosCargados = false;
-  this.buscandoDocente = false;
-  this.emailInvalid = false;
-  // NO reasignar docentesFiltrados aquí
-  // this.docentesFiltrados = [...this.docentes];
-}
+  resetForm(): void {
+    this.docente = {
+      DNIDocente: '',
+      NombreDocente: '',
+      Email: '',
+      Telefono: '',
+      GradoSeccionLabora: '',
+      idEstudiante: []
+    };
+    this.selectedStudentNames = '';
+    this.nombreBusqueda = '';
+    this.datosCargados = false;
+    this.buscandoDocente = false;
+    this.emailInvalid = false;
+    // no reasignar docentesFiltrados aquí
+  }
 
   onEstudiantesChange(): void {
     this.selectedStudentNames = this.estudiantes
@@ -549,71 +548,52 @@ resetForm(): void {
       .map(e => e.ApellidosNombres)
       .join(', ');
   }
-openStudentsModal(): void {
-  this.studentFilter = '';
 
-  const idsDocenteActual = new Set(
-    (this.docente.idEstudiante || []).map((n: any) => Number(n)).filter((x: number) => !isNaN(x))
-  );
+  openStudentsModal(): void {
+    this.studentFilter = '';
 
-  // Mostrar SOLO:
-  // - estudiantes que ya pertenecen a este docente (idsDocenteActual)
-  // - OR estudiantes que NO están asignados globalmente (no están en allAsignados)
-this.allStudents = this.estudiantes
-  .filter(e => idsDocenteActual.has(e.idEstudiante) || !this.asignados.includes(e.idEstudiante))
-  .map(e => ({
-    ...e,
-    selected: idsDocenteActual.has(e.idEstudiante)
-  }));
+    const idsDocenteActual = new Set(
+      (this.docente.idEstudiante || []).map((n: any) => Number(n)).filter((x: number) => !isNaN(x))
+    );
 
-  this.filteredStudents = [...this.allStudents];
-  this.showStudentsModal = true;
-}
+    this.allStudents = this.estudiantes
+      .filter(e => idsDocenteActual.has(e.idEstudiante) || !this.asignados.includes(e.idEstudiante))
+      .map(e => ({
+        ...e,
+        selected: idsDocenteActual.has(e.idEstudiante)
+      }));
 
-
-
-  closeStudentsModal(): void {
-    this.showStudentsModal = false;
-  }
-
-filterStudents(): void {
-  const txt = (this.studentFilter || '').trim().toLowerCase();
-  if (!txt) {
     this.filteredStudents = [...this.allStudents];
-    return;
-  }
-  this.filteredStudents = this.allStudents.filter(s =>
-    (s.ApellidosNombres || '').toLowerCase().includes(txt)
-  );
-}
-
-
-applyStudentsSelection(): void {
-  const seleccionados = this.allStudents
-    .filter(s => !!s.selected)
-    .map(s => Number(s.idEstudiante))
-    .filter(n => !isNaN(n));
-
-  const selNums = Array.from(new Set(seleccionados));
-
-  this.docente.idEstudiante = selNums;
-  this.onEstudiantesChange();
-
-  // recalcular asignados: quitar los que ahora pertenecen a este docente
-  this.asignados = this.asignados.filter(id => !this.docente.idEstudiante.includes(id));
-
-
-  this.closeStudentsModal();
-}
-
-  goTo(page: string): void {
-    this.navCtrl.navigateRoot(`/${page}`);
+    this.showStudentsModal = true;
   }
 
-get estudiantesDisponibles(): Student[] {
-  const idsDocenteActual = this.docente.idEstudiante || [];
-  return this.estudiantes.filter(e => !this.asignados.includes(e.idEstudiante) || idsDocenteActual.includes(e.idEstudiante));
-}
+  closeStudentsModal(): void { this.showStudentsModal = false; }
+
+  filterStudents(): void {
+    const txt = (this.studentFilter || '').trim().toLowerCase();
+    if (!txt) { this.filteredStudents = [...this.allStudents]; return; }
+    this.filteredStudents = this.allStudents.filter(s => (s.ApellidosNombres || '').toLowerCase().includes(txt));
+  }
+
+  applyStudentsSelection(): void {
+    const seleccionados = this.allStudents
+      .filter(s => !!s.selected)
+      .map(s => Number(s.idEstudiante))
+      .filter(n => !isNaN(n));
+    const selNums = Array.from(new Set(seleccionados));
+    this.docente.idEstudiante = selNums;
+    this.onEstudiantesChange();
+    this.asignados = this.asignados.filter(id => !this.docente.idEstudiante.includes(id));
+    this.closeStudentsModal();
+  }
+
+  goTo(page: string): void { this.navCtrl.navigateRoot(`/${page}`); }
+
+  get estudiantesDisponibles(): Student[] {
+    const idsDocenteActual = this.docente.idEstudiante || [];
+    return this.estudiantes.filter(e => !this.asignados.includes(e.idEstudiante) || idsDocenteActual.includes(e.idEstudiante));
+  }
+
   get docentesFiltradosIndexados(): Array<DocenteView & { index: number }> {
     return this.docentesFiltrados.map(d => ({ ...d, index: d.displayId! }));
   }
