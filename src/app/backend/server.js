@@ -1,439 +1,439 @@
-// server.js
-require("dotenv").config();
-const express = require("express");
-const cors = require("cors");
-const nodemailer = require("nodemailer");
-const { supabase } = require("./supabase"); // cliente Supabase
-const app = express();
-const port = process.env.PORT || 3000;
-
-app.use(express.json());
-app.use(cors());
-////////////// CONFIGURACION DE HOME //////////////
-
-// Configuración de correo
-const transporter = nodemailer.createTransport({
-  service: "gmail",
-  auth: {
-    user: process.env.GMAIL_USER,
-    pass: process.env.GMAIL_APP_PASS
-  }
-});
-
-
-const ALLOWED_EMAILS = [
-  process.env.GMAIL_USER,
-  "gezetab@ucvvirtual.edu.pe",
-  "gerson29012004@gmail.com"
-].map(e => e.toLowerCase());
-
-// Solicitar reset de clave
-app.post("/solicitar-reset", async (req, res) => {
-  try {
-    let { correo } = req.body;
-    if (!correo) return res.status(400).json({ ok: false, mensaje: "Correo requerido" });
-
-    correo = correo.trim().toLowerCase();
-
-    if (!ALLOWED_EMAILS.includes(correo)) {
-      return res.status(401).json({ ok: false, mensaje: "Correo no autorizado" });
-    }
-
-    const token = Math.floor(100000 + Math.random() * 900000).toString();
-
-    const { data, error } = await supabase
-      .from("administrador")
-      .update({
-        reset_token: token,
-        token_expiracion: new Date(Date.now() + 15 * 60000) // 15 min
-      })
-      .eq("correo", correo)
-      .select();
-
-    if (error) throw error;
-
-    if (!data || data.length === 0) {
-      console.log("Correo no encontrado en DB:", correo);
-      return res.status(404).json({ ok: false, mensaje: "Correo no encontrado" });
-    }
-
-    try {
-      await transporter.sendMail({
-        from: process.env.GMAIL_USER,
-        to: correo,
-        subject: "Tu código de seguridad",
-        text: `Tu código de seguridad es: ${token}`
-      });
-      console.log(`Token enviado a ${correo}: ${token}`);
-    } catch (mailErr) {
-      console.error("Error enviando correo:", mailErr);
-      return res.status(500).json({ ok: false, mensaje: "Error enviando correo" });
-    }
-
-    return res.json({ ok: true, mensaje: "Token enviado" });
-
-  } catch (err) {
-    console.error("Error solicitar-reset:", err);
-    return res.status(500).json({ ok: false, mensaje: "No se pudo generar token" });
-  }
-});
-
-// Resetear clave
-app.post("/reset-security-code", async (req, res) => {
-  try {
-    const { correo, token, nuevaClave } = req.body;
-    if (!correo || !token || !nuevaClave) {
-      return res.status(400).json({ ok: false, mensaje: "Faltan datos" });
-    }
-
-    const { data, error } = await supabase
-      .from("administrador")
-      .select("reset_token, token_expiracion")
-      .eq("correo", correo.trim().toLowerCase())
-      .single();
-
-    if (error || !data) return res.status(400).json({ ok: false, mensaje: "Correo inválido" });
-
-    const { reset_token, token_expiracion } = data;
-    if (reset_token !== token.trim() || new Date(token_expiracion) < new Date()) {
-      return res.status(400).json({ ok: false, mensaje: "Token inválido o expirado" });
-    }
-
-    const { error: updError } = await supabase
-      .from("administrador")
-      .update({ clave: nuevaClave, reset_token: null, token_expiracion: null })
-      .eq("correo", correo.trim().toLowerCase());
-
-    if (updError) throw updError;
-
-    return res.json({ ok: true, mensaje: "Clave cambiada con éxito" });
-
-  } catch (err) {
-    console.error("Error reset-security-code:", err);
-    return res.status(500).json({ ok: false, mensaje: "Error al cambiar clave" });
-  }
-});
-
-// Verificar si existe admin
-app.get('/existe-admin', async (req, res) => {
-  try {
-    const { count, error } = await supabase
-      .from('administrador')
-      .select('*', { count: 'exact', head: true });
-    if (error) throw error;
-    res.json({ existe: count > 0 });
-  } catch (err) {
-    res.status(500).json({ error: 'Error servidor', detalle: err.message });
-  }
-});
-
-// Registrar admin
-app.post("/registrar-admin", async (req, res) => {
-  try {
-    const { correo, clave } = req.body;
-    if (!correo || !clave) return res.status(400).json({ ok: false, mensaje: "Faltan campos" });
-
-    const { error } = await supabase
-      .from("administrador")
-      .insert([{ correo: correo.trim().toLowerCase(), clave }]);
-
-    if (error) throw error;
-
-    res.json({ ok: true });
-  } catch (err) {
-    console.error("Error registrar-admin:", err);
-    res.status(500).json({ ok: false, mensaje: "Error al registrar" });
-  }
-});
-
-// Login admin
-app.post("/login-admin", async (req, res) => {
-  try {
-    const { correo, clave } = req.body;
-    const { data, error } = await supabase
-      .from("administrador")
-      .select("clave")
-      .eq("correo", correo.trim().toLowerCase())
-      .single();
-
-    if (error || !data) return res.json({ ok: false, mensaje: "Correo no registrado" });
-
-    if (data.clave === clave) return res.json({ ok: true });
-    else return res.json({ ok: false, mensaje: "Clave incorrecta" });
-  } catch (err) {
-    console.error("Error login-admin:", err);
-    return res.status(500).json({ ok: false, mensaje: "Error servidor" });
-  }
-});
-
-
-
-
-
-
-////////////// PROFESORES SAANEE //////////////
-// Obtener todos los profesores con sus instituciones
-app.get("/profesores", async (req, res) => {
-  try {
-    const { data: profesores, error } = await supabase
-      .from("profesores_saanee")
-      .select("*");
-    if (error) throw error;
-
-    // Añadir instituciones a cada profesor
-    const profesoresConInst = await Promise.all(
-      profesores.map(async (prof) => {
-        const { data: insts, error: instError } = await supabase
-          .from("profesores_saanee_institucion")
-          .select("idinstitucioneducativa")
-          .eq("idprofesorsaanee", prof.idprofesorsaanee);
-        if (instError) throw instError;
-
-        return { ...prof, instituciones: insts.map(i => i.idinstitucioneducativa) };
-      })
-    );
-
-    res.json(profesoresConInst);
-  } catch (err) {
-    console.error("Error al obtener profesores:", err);
-    res.status(500).json({ error: "Error al obtener profesores" });
-  }
-});
-
-// Buscar profesor por nombre
-app.get("/buscar-profesor", async (req, res) => {
-  const nombre = req.query.nombreProfesor;
-  if (!nombre) return res.status(400).json({ error: "Falta nombreProfesor" });
-
-  try {
-    const { data: profs, error } = await supabase
-      .from("profesores_saanee")
-      .select("*")
-      .ilike("nombreprofesorsaanee", `%${nombre}%`);
-    if (error) throw error;
-    if (!profs || profs.length === 0) return res.status(404).json({ error: "Profesor no encontrado" });
-
-    const prof = profs[0];
-    const { data: insts, error: instError } = await supabase
-      .from("profesores_saanee_institucion")
-      .select("idinstitucioneducativa")
-      .eq("idprofesorsaanee", prof.idprofesorsaanee);
-    if (instError) throw instError;
-
-    res.json({ ...prof, instituciones: insts.map(i => i.idinstitucioneducativa) });
-  } catch (err) {
-    console.error("Error al buscar profesor:", err);
-    res.status(500).json({ error: "Error al buscar profesor" });
-  }
-});
-
-// Registrar profesor
-app.post("/registrar-profesor", async (req, res) => {
-  const { correo, nombreprofesorsaanee, clave, telefonosaanee, instituciones } = req.body;
-  try {
-    const { data: prof, error } = await supabase
-      .from("profesores_saanee")
-      .insert([{ correo, nombreprofesorsaanee, clave, telefonosaanee }])
-      .select()
-      .single();
-    if (error) throw error;
-
-    if (instituciones && instituciones.length > 0) {
-      const instInsert = instituciones.map(id => ({
-        idprofesorsaanee: prof.idprofesorsaanee,
-        idinstitucioneducativa: id
-      }));
-      const { error: instError } = await supabase
-        .from("profesores_saanee_institucion")
-        .insert(instInsert);
-      if (instError) throw instError;
-    }
-
-    res.json({ success: true });
-  } catch (err) {
-    console.error("Error al registrar profesor:", err);
-    res.status(500).json({ error: "Error al registrar profesor" });
-  }
-});
-
-// Actualizar profesor
-app.put("/actualizar-profesor", async (req, res) => {
-  const { idprofesorsaanee, correo, nombreprofesorsaanee, clave, telefonosaanee, instituciones } = req.body;
-  try {
-    const { error } = await supabase
-      .from("profesores_saanee")
-      .update({ correo, nombreprofesorsaanee, clave, telefonosaanee })
-      .eq("idprofesorsaanee", idprofesorsaanee);
-    if (error) throw error;
-
-    // Eliminar las antiguas instituciones
-    const { error: delError } = await supabase
-      .from("profesores_saanee_institucion")
-      .delete()
-      .eq("idprofesorsaanee", idprofesorsaanee);
-    if (delError) throw delError;
-
-    // Insertar nuevas instituciones
-    if (instituciones && instituciones.length > 0) {
-      const instInsert = instituciones.map(id => ({
-        idprofesorsaanee,
-        idinstitucioneducativa: id
-      }));
-      const { error: instError } = await supabase
-        .from("profesores_saanee_institucion")
-        .insert(instInsert);
-      if (instError) throw instError;
-    }
-
-    res.json({ success: true });
-  } catch (err) {
-    console.error("Error al actualizar profesor:", err);
-    res.status(500).json({ error: "Error al actualizar profesor" });
-  }
-});
-
-// /////////////////// INSTITUCIONES EDUCATIVAS ///////////////////
-
-// Instituciones sin asignar
-app.get("/instituciones", async (req, res) => {
-  try {
-    const { data: usedInsts, error: usedError } = await supabase
-      .from("profesores_saanee_institucion")
-      .select("idinstitucioneducativa");
-    if (usedError) throw usedError;
-
-    const idsUsadas = usedInsts.map(x => x.idinstitucioneducativa);
-
-    const { data, error } = await supabase
-      .from("instituciones_educativas")
-      .select("idinstitucioneducativa, nombreinstitucion")
-      .not("idinstitucioneducativa", "in", idsUsadas);
-
-    if (error) throw error;
-
-    res.json(data);
-  } catch (err) {
-    console.error("Error al obtener instituciones:", err);
-    res.status(500).json({ error: "Error al obtener instituciones" });
-  }
-});
-
-// Todas las instituciones
-app.get("/instituciones-all", async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from("instituciones_educativas")
-      .select("idinstitucioneducativa, nombreinstitucion");
-    if (error) throw error;
-    res.json(data);
-  } catch (err) {
-    console.error("Error al obtener todas las instituciones:", err);
-    res.status(500).json({ error: "Error al obtener instituciones" });
-  }
-});
-
-// Instituciones usadas por otros profesores (para editar)
-app.get("/instituciones-no-editables", async (req, res) => {
-  const { idprofesorsaanee } = req.query;
-  if (!idprofesorsaanee) return res.status(400).send("Se requiere idprofesorsaanee");
-
-  try {
-    const { data, error } = await supabase
-      .from("profesores_saanee_institucion")
-      .select("idinstitucioneducativa")
-      .neq("idprofesorsaanee", idprofesorsaanee);
-
-    if (error) throw error;
-    res.json(data.map(r => r.idinstitucioneducativa));
-  } catch (err) {
-    console.error("Error al obtener instituciones no editables:", err);
-    res.status(500).json({ error: "Error al obtener instituciones no editables" });
-  }
-});
-
-// Instituciones de un profesor (por id o correo)
-app.get("/instituciones-profesor", async (req, res) => {
-  const { idprofesorsaanee, correo } = req.query;
-  if (!idprofesorsaanee && !correo) return res.status(400).send("Se requiere idprofesorsaanee o correo");
-
-  try {
-    const filtro = idprofesorsaanee
-      ? { idprofesorsaanee }
-      : { correo: correo.trim().toLowerCase() };
-
-    const { data: profs, error: profError } = await supabase
-      .from("profesores_saanee")
-      .select("*")
-      .match(filtro);
-
-    if (profError) throw profError;
-    if (!profs || profs.length === 0) return res.status(404).send("Profesor no encontrado");
-
-    const prof = profs[0];
-
-    const { data: insts, error: instError } = await supabase
-      .from("profesores_saanee_institucion")
-      .select("idinstitucioneducativa")
-      .eq("idprofesorsaanee", prof.idprofesorsaanee);
-
-    if (instError) throw instError;
-
-    res.json({
-      idProfesor: prof.idprofesorsaanee,
-      Correo: prof.correo,
-      NombreProfesor: prof.nombreprofesorsaanee,
-      Clave: prof.clave,
-      TelefonoProf: prof.telefonosaanee,
-      Instituciones: insts.map(r => r.idinstitucioneducativa)
-    });
-  } catch (err) {
-    console.error("Error al obtener instituciones del profesor:", err);
-    res.status(500).json({ error: "Error interno" });
-  }
-});
-
-// Crear institución
-app.post("/institucion", async (req, res) => {
-  const { nombreinstitucion } = req.body;
-  console.log('Body recibido:', req.body);
-
-  if (!nombreinstitucion)
-    return res.status(400).json({ error: "Nombre de institución es obligatorio" });
-
-  try {
-    const { data, error } = await supabase
-      .from("instituciones_educativas")
-      .insert([{ nombreinstitucion }])
-      .select();
-
-    if (error) throw error;
-
-    res.status(201).json(data[0]);
-  } catch (err) {
-    console.error("Error al crear institución:", err);
-    res.status(500).json({ error: "Error interno al crear institución" });
-  }
-});
-
-// Editar institución
-app.put("/institucion/:id", async (req, res) => {
-  const { id } = req.params;
-  const { nombreinstitucion } = req.body;
-  if (!nombreinstitucion) return res.status(400).json({ error: "Nombre de institución es obligatorio" });
-
-  try {
-    const { error } = await supabase
-      .from("instituciones_educativas")
-      .update({ nombreinstitucion })
-      .eq("idinstitucioneducativa", id);
-
-    if (error) throw error;
-    res.json({ message: "Institución actualizada con éxito" });
-  } catch (err) {
-    console.error("Error al editar institución:", err);
-    res.status(500).json({ error: "Error interno al editar institución" });
-  }
-});
+// // server.js
+// require("dotenv").config();
+// const express = require("express");
+// const cors = require("cors");
+// const nodemailer = require("nodemailer");
+// const { supabase } = require("./supabase"); // cliente Supabase
+// const app = express();
+// const port = process.env.PORT || 3000;
+
+// app.use(express.json());
+// app.use(cors());
+// ////////////// CONFIGURACION DE HOME //////////////
+
+// // Configuración de correo
+// const transporter = nodemailer.createTransport({
+//   service: "gmail",
+//   auth: {
+//     user: process.env.GMAIL_USER,
+//     pass: process.env.GMAIL_APP_PASS
+//   }
+// });
+
+
+// const ALLOWED_EMAILS = [
+//   process.env.GMAIL_USER,
+//   "gezetab@ucvvirtual.edu.pe",
+//   "gerson29012004@gmail.com"
+// ].map(e => e.toLowerCase());
+
+// // Solicitar reset de clave
+// app.post("/solicitar-reset", async (req, res) => {
+//   try {
+//     let { correo } = req.body;
+//     if (!correo) return res.status(400).json({ ok: false, mensaje: "Correo requerido" });
+
+//     correo = correo.trim().toLowerCase();
+
+//     if (!ALLOWED_EMAILS.includes(correo)) {
+//       return res.status(401).json({ ok: false, mensaje: "Correo no autorizado" });
+//     }
+
+//     const token = Math.floor(100000 + Math.random() * 900000).toString();
+
+//     const { data, error } = await supabase
+//       .from("administrador")
+//       .update({
+//         reset_token: token,
+//         token_expiracion: new Date(Date.now() + 15 * 60000) // 15 min
+//       })
+//       .eq("correo", correo)
+//       .select();
+
+//     if (error) throw error;
+
+//     if (!data || data.length === 0) {
+//       console.log("Correo no encontrado en DB:", correo);
+//       return res.status(404).json({ ok: false, mensaje: "Correo no encontrado" });
+//     }
+
+//     try {
+//       await transporter.sendMail({
+//         from: process.env.GMAIL_USER,
+//         to: correo,
+//         subject: "Tu código de seguridad",
+//         text: `Tu código de seguridad es: ${token}`
+//       });
+//       console.log(`Token enviado a ${correo}: ${token}`);
+//     } catch (mailErr) {
+//       console.error("Error enviando correo:", mailErr);
+//       return res.status(500).json({ ok: false, mensaje: "Error enviando correo" });
+//     }
+
+//     return res.json({ ok: true, mensaje: "Token enviado" });
+
+//   } catch (err) {
+//     console.error("Error solicitar-reset:", err);
+//     return res.status(500).json({ ok: false, mensaje: "No se pudo generar token" });
+//   }
+// });
+
+// // Resetear clave
+// app.post("/reset-security-code", async (req, res) => {
+//   try {
+//     const { correo, token, nuevaClave } = req.body;
+//     if (!correo || !token || !nuevaClave) {
+//       return res.status(400).json({ ok: false, mensaje: "Faltan datos" });
+//     }
+
+//     const { data, error } = await supabase
+//       .from("administrador")
+//       .select("reset_token, token_expiracion")
+//       .eq("correo", correo.trim().toLowerCase())
+//       .single();
+
+//     if (error || !data) return res.status(400).json({ ok: false, mensaje: "Correo inválido" });
+
+//     const { reset_token, token_expiracion } = data;
+//     if (reset_token !== token.trim() || new Date(token_expiracion) < new Date()) {
+//       return res.status(400).json({ ok: false, mensaje: "Token inválido o expirado" });
+//     }
+
+//     const { error: updError } = await supabase
+//       .from("administrador")
+//       .update({ clave: nuevaClave, reset_token: null, token_expiracion: null })
+//       .eq("correo", correo.trim().toLowerCase());
+
+//     if (updError) throw updError;
+
+//     return res.json({ ok: true, mensaje: "Clave cambiada con éxito" });
+
+//   } catch (err) {
+//     console.error("Error reset-security-code:", err);
+//     return res.status(500).json({ ok: false, mensaje: "Error al cambiar clave" });
+//   }
+// });
+
+// // Verificar si existe admin
+// app.get('/existe-admin', async (req, res) => {
+//   try {
+//     const { count, error } = await supabase
+//       .from('administrador')
+//       .select('*', { count: 'exact', head: true });
+//     if (error) throw error;
+//     res.json({ existe: count > 0 });
+//   } catch (err) {
+//     res.status(500).json({ error: 'Error servidor', detalle: err.message });
+//   }
+// });
+
+// // Registrar admin
+// app.post("/registrar-admin", async (req, res) => {
+//   try {
+//     const { correo, clave } = req.body;
+//     if (!correo || !clave) return res.status(400).json({ ok: false, mensaje: "Faltan campos" });
+
+//     const { error } = await supabase
+//       .from("administrador")
+//       .insert([{ correo: correo.trim().toLowerCase(), clave }]);
+
+//     if (error) throw error;
+
+//     res.json({ ok: true });
+//   } catch (err) {
+//     console.error("Error registrar-admin:", err);
+//     res.status(500).json({ ok: false, mensaje: "Error al registrar" });
+//   }
+// });
+
+// // Login admin
+// app.post("/login-admin", async (req, res) => {
+//   try {
+//     const { correo, clave } = req.body;
+//     const { data, error } = await supabase
+//       .from("administrador")
+//       .select("clave")
+//       .eq("correo", correo.trim().toLowerCase())
+//       .single();
+
+//     if (error || !data) return res.json({ ok: false, mensaje: "Correo no registrado" });
+
+//     if (data.clave === clave) return res.json({ ok: true });
+//     else return res.json({ ok: false, mensaje: "Clave incorrecta" });
+//   } catch (err) {
+//     console.error("Error login-admin:", err);
+//     return res.status(500).json({ ok: false, mensaje: "Error servidor" });
+//   }
+// });
+
+
+
+
+
+
+// ////////////// PROFESORES SAANEE //////////////
+// // Obtener todos los profesores con sus instituciones
+// app.get("/profesores", async (req, res) => {
+//   try {
+//     const { data: profesores, error } = await supabase
+//       .from("profesores_saanee")
+//       .select("*");
+//     if (error) throw error;
+
+//     // Añadir instituciones a cada profesor
+//     const profesoresConInst = await Promise.all(
+//       profesores.map(async (prof) => {
+//         const { data: insts, error: instError } = await supabase
+//           .from("profesores_saanee_institucion")
+//           .select("idinstitucioneducativa")
+//           .eq("idprofesorsaanee", prof.idprofesorsaanee);
+//         if (instError) throw instError;
+
+//         return { ...prof, instituciones: insts.map(i => i.idinstitucioneducativa) };
+//       })
+//     );
+
+//     res.json(profesoresConInst);
+//   } catch (err) {
+//     console.error("Error al obtener profesores:", err);
+//     res.status(500).json({ error: "Error al obtener profesores" });
+//   }
+// });
+
+// // Buscar profesor por nombre
+// app.get("/buscar-profesor", async (req, res) => {
+//   const nombre = req.query.nombreProfesor;
+//   if (!nombre) return res.status(400).json({ error: "Falta nombreProfesor" });
+
+//   try {
+//     const { data: profs, error } = await supabase
+//       .from("profesores_saanee")
+//       .select("*")
+//       .ilike("nombreprofesorsaanee", `%${nombre}%`);
+//     if (error) throw error;
+//     if (!profs || profs.length === 0) return res.status(404).json({ error: "Profesor no encontrado" });
+
+//     const prof = profs[0];
+//     const { data: insts, error: instError } = await supabase
+//       .from("profesores_saanee_institucion")
+//       .select("idinstitucioneducativa")
+//       .eq("idprofesorsaanee", prof.idprofesorsaanee);
+//     if (instError) throw instError;
+
+//     res.json({ ...prof, instituciones: insts.map(i => i.idinstitucioneducativa) });
+//   } catch (err) {
+//     console.error("Error al buscar profesor:", err);
+//     res.status(500).json({ error: "Error al buscar profesor" });
+//   }
+// });
+
+// // Registrar profesor
+// app.post("/registrar-profesor", async (req, res) => {
+//   const { correo, nombreprofesorsaanee, clave, telefonosaanee, instituciones } = req.body;
+//   try {
+//     const { data: prof, error } = await supabase
+//       .from("profesores_saanee")
+//       .insert([{ correo, nombreprofesorsaanee, clave, telefonosaanee }])
+//       .select()
+//       .single();
+//     if (error) throw error;
+
+//     if (instituciones && instituciones.length > 0) {
+//       const instInsert = instituciones.map(id => ({
+//         idprofesorsaanee: prof.idprofesorsaanee,
+//         idinstitucioneducativa: id
+//       }));
+//       const { error: instError } = await supabase
+//         .from("profesores_saanee_institucion")
+//         .insert(instInsert);
+//       if (instError) throw instError;
+//     }
+
+//     res.json({ success: true });
+//   } catch (err) {
+//     console.error("Error al registrar profesor:", err);
+//     res.status(500).json({ error: "Error al registrar profesor" });
+//   }
+// });
+
+// // Actualizar profesor
+// app.put("/actualizar-profesor", async (req, res) => {
+//   const { idprofesorsaanee, correo, nombreprofesorsaanee, clave, telefonosaanee, instituciones } = req.body;
+//   try {
+//     const { error } = await supabase
+//       .from("profesores_saanee")
+//       .update({ correo, nombreprofesorsaanee, clave, telefonosaanee })
+//       .eq("idprofesorsaanee", idprofesorsaanee);
+//     if (error) throw error;
+
+//     // Eliminar las antiguas instituciones
+//     const { error: delError } = await supabase
+//       .from("profesores_saanee_institucion")
+//       .delete()
+//       .eq("idprofesorsaanee", idprofesorsaanee);
+//     if (delError) throw delError;
+
+//     // Insertar nuevas instituciones
+//     if (instituciones && instituciones.length > 0) {
+//       const instInsert = instituciones.map(id => ({
+//         idprofesorsaanee,
+//         idinstitucioneducativa: id
+//       }));
+//       const { error: instError } = await supabase
+//         .from("profesores_saanee_institucion")
+//         .insert(instInsert);
+//       if (instError) throw instError;
+//     }
+
+//     res.json({ success: true });
+//   } catch (err) {
+//     console.error("Error al actualizar profesor:", err);
+//     res.status(500).json({ error: "Error al actualizar profesor" });
+//   }
+// });
+
+// // /////////////////// INSTITUCIONES EDUCATIVAS ///////////////////
+
+// // Instituciones sin asignar
+// app.get("/instituciones", async (req, res) => {
+//   try {
+//     const { data: usedInsts, error: usedError } = await supabase
+//       .from("profesores_saanee_institucion")
+//       .select("idinstitucioneducativa");
+//     if (usedError) throw usedError;
+
+//     const idsUsadas = usedInsts.map(x => x.idinstitucioneducativa);
+
+//     const { data, error } = await supabase
+//       .from("instituciones_educativas")
+//       .select("idinstitucioneducativa, nombreinstitucion")
+//       .not("idinstitucioneducativa", "in", idsUsadas);
+
+//     if (error) throw error;
+
+//     res.json(data);
+//   } catch (err) {
+//     console.error("Error al obtener instituciones:", err);
+//     res.status(500).json({ error: "Error al obtener instituciones" });
+//   }
+// });
+
+// // Todas las instituciones
+// app.get("/instituciones-all", async (req, res) => {
+//   try {
+//     const { data, error } = await supabase
+//       .from("instituciones_educativas")
+//       .select("idinstitucioneducativa, nombreinstitucion");
+//     if (error) throw error;
+//     res.json(data);
+//   } catch (err) {
+//     console.error("Error al obtener todas las instituciones:", err);
+//     res.status(500).json({ error: "Error al obtener instituciones" });
+//   }
+// });
+
+// // Instituciones usadas por otros profesores (para editar)
+// app.get("/instituciones-no-editables", async (req, res) => {
+//   const { idprofesorsaanee } = req.query;
+//   if (!idprofesorsaanee) return res.status(400).send("Se requiere idprofesorsaanee");
+
+//   try {
+//     const { data, error } = await supabase
+//       .from("profesores_saanee_institucion")
+//       .select("idinstitucioneducativa")
+//       .neq("idprofesorsaanee", idprofesorsaanee);
+
+//     if (error) throw error;
+//     res.json(data.map(r => r.idinstitucioneducativa));
+//   } catch (err) {
+//     console.error("Error al obtener instituciones no editables:", err);
+//     res.status(500).json({ error: "Error al obtener instituciones no editables" });
+//   }
+// });
+
+// // Instituciones de un profesor (por id o correo)
+// app.get("/instituciones-profesor", async (req, res) => {
+//   const { idprofesorsaanee, correo } = req.query;
+//   if (!idprofesorsaanee && !correo) return res.status(400).send("Se requiere idprofesorsaanee o correo");
+
+//   try {
+//     const filtro = idprofesorsaanee
+//       ? { idprofesorsaanee }
+//       : { correo: correo.trim().toLowerCase() };
+
+//     const { data: profs, error: profError } = await supabase
+//       .from("profesores_saanee")
+//       .select("*")
+//       .match(filtro);
+
+//     if (profError) throw profError;
+//     if (!profs || profs.length === 0) return res.status(404).send("Profesor no encontrado");
+
+//     const prof = profs[0];
+
+//     const { data: insts, error: instError } = await supabase
+//       .from("profesores_saanee_institucion")
+//       .select("idinstitucioneducativa")
+//       .eq("idprofesorsaanee", prof.idprofesorsaanee);
+
+//     if (instError) throw instError;
+
+//     res.json({
+//       idProfesor: prof.idprofesorsaanee,
+//       Correo: prof.correo,
+//       NombreProfesor: prof.nombreprofesorsaanee,
+//       Clave: prof.clave,
+//       TelefonoProf: prof.telefonosaanee,
+//       Instituciones: insts.map(r => r.idinstitucioneducativa)
+//     });
+//   } catch (err) {
+//     console.error("Error al obtener instituciones del profesor:", err);
+//     res.status(500).json({ error: "Error interno" });
+//   }
+// });
+
+// // Crear institución
+// app.post("/institucion", async (req, res) => {
+//   const { nombreinstitucion } = req.body;
+//   console.log('Body recibido:', req.body);
+
+//   if (!nombreinstitucion)
+//     return res.status(400).json({ error: "Nombre de institución es obligatorio" });
+
+//   try {
+//     const { data, error } = await supabase
+//       .from("instituciones_educativas")
+//       .insert([{ nombreinstitucion }])
+//       .select();
+
+//     if (error) throw error;
+
+//     res.status(201).json(data[0]);
+//   } catch (err) {
+//     console.error("Error al crear institución:", err);
+//     res.status(500).json({ error: "Error interno al crear institución" });
+//   }
+// });
+
+// // Editar institución
+// app.put("/institucion/:id", async (req, res) => {
+//   const { id } = req.params;
+//   const { nombreinstitucion } = req.body;
+//   if (!nombreinstitucion) return res.status(400).json({ error: "Nombre de institución es obligatorio" });
+
+//   try {
+//     const { error } = await supabase
+//       .from("instituciones_educativas")
+//       .update({ nombreinstitucion })
+//       .eq("idinstitucioneducativa", id);
+
+//     if (error) throw error;
+//     res.json({ message: "Institución actualizada con éxito" });
+//   } catch (err) {
+//     console.error("Error al editar institución:", err);
+//     res.status(500).json({ error: "Error interno al editar institución" });
+//   }
+// });
 
 
 
@@ -716,6 +716,17 @@ app.delete('/eliminar-estudiante/:id', async (req, res) => {
     return res.status(500).json({ error: 'Error interno al eliminar estudiante' });
   }
 });
+
+
+
+
+
+
+
+
+
+
+
 
 /////////////////// DOCENTE-ESTUDIANTE ///////////////////
 app.get('/estudiantes-con-docente', async (req, res) => {

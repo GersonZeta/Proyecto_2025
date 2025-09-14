@@ -11,6 +11,7 @@ import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import autoTable from 'jspdf-autotable';
 import jsPDF from 'jspdf';
+import { environment } from 'src/environments/environment';
 
 interface EstudianteResponse {
   idEstudiante: number;
@@ -25,7 +26,6 @@ interface EstudianteResponse {
   IPP: 'Si' | 'No';
   PEP: 'Si' | 'No';
   idInstitucionEducativa: number;
-
 }
 
 interface EstudianteLocal {
@@ -55,7 +55,7 @@ interface EstudianteLocal {
   standalone: false,
 })
 export class EstudiantesPage implements AfterViewInit, OnDestroy {
-  private baseUrl = 'http://localhost:3000';
+  private baseUrl = environment.apiUrl + '/estudiantes';
   idIE!: number;
   nombreBusqueda = '';
   datosCargados = false;
@@ -78,7 +78,8 @@ export class EstudiantesPage implements AfterViewInit, OnDestroy {
   ) {}
 
   ngAfterViewInit() {
-    this.resizeListener = () => this.zone.runOutsideAngular(() => this.fixZoom());
+    this.resizeListener = () =>
+      this.zone.runOutsideAngular(() => this.fixZoom());
     window.addEventListener('resize', this.resizeListener);
     this.fixZoom();
   }
@@ -110,87 +111,90 @@ export class EstudiantesPage implements AfterViewInit, OnDestroy {
     this.cargarEstudiantes();
   }
 
-private cargarEstudiantes(callback?: () => void): void {
-  const params = new HttpParams().set('idInstitucionEducativa', this.idIE.toString());
-  this.http.get<EstudianteResponse[]>(`${this.baseUrl}/estudiantes`, { params })
-    .subscribe(list => {
-      this.estudiantes = (list || []).map((r, i) => ({
-        idEstudiante: r.idEstudiante,
-        fila: i + 1,
-        ApellidosNombres: r.ApellidosNombres,
-        FechaNacimiento: r.FechaNacimiento,
-        Edad: r.Edad,
-        DNI: r.DNI,
-        GradoSeccion: r.GradoSeccion,
-        TipoDiscapacidad: r.TipoDiscapacidad || '',
-        DocumentoSustentatorio: r.DocumentoSustentatorio || '',
-        DocumentoInclusiva: r.DocumentoInclusiva || '',
-        IPP: r.IPP === 'Si',
-        PEP: r.PEP === 'Si'
-      }));
-      this.estudiantesFiltrados = [...this.estudiantes];
-      if (typeof callback === 'function') callback();
-    }, () => this.mostrarAlerta('Error', 'Error cargando estudiantes'));
-}
-
-
-buscarEstudiante(): void {
-  this.seleccionMultiple = false;
-  this.datosCargados = false;
-  this.hoverActivo = false; // 🔴 Lo apagamos por defecto
-
-  const raw = this.nombreBusqueda.trim();
-  if (!raw) {
-    this.mostrarAlerta('Error', 'Ingresa un nombre para buscar.');
-    return;
+  private cargarEstudiantes(callback?: () => void): void {
+    const params = new HttpParams().set(
+      'idInstitucionEducativa',
+      this.idIE.toString()
+    );
+    this.http
+      .get<EstudianteResponse[]>(`${this.baseUrl}?action=listar`, { params })
+      .subscribe(
+        (list) => {
+          this.estudiantes = (list || []).map((r, i) => ({
+            idEstudiante: r.idEstudiante,
+            fila: i + 1,
+            ApellidosNombres: r.ApellidosNombres,
+            FechaNacimiento: r.FechaNacimiento,
+            Edad: r.Edad,
+            DNI: r.DNI,
+            GradoSeccion: r.GradoSeccion,
+            TipoDiscapacidad: r.TipoDiscapacidad || '',
+            DocumentoSustentatorio: r.DocumentoSustentatorio || '',
+            DocumentoInclusiva: r.DocumentoInclusiva || '',
+            IPP: r.IPP === 'Si',
+            PEP: r.PEP === 'Si',
+          }));
+          this.estudiantesFiltrados = [...this.estudiantes];
+          if (typeof callback === 'function') callback();
+        },
+        () => this.mostrarAlerta('Error', 'Error cargando estudiantes')
+      );
   }
 
-  const normalize = (s: string) =>
-    s ? s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase() : '';
+  buscarEstudiante(): void {
+    this.seleccionMultiple = false;
+    this.datosCargados = false;
+    this.hoverActivo = false;
 
-  const q = normalize(raw);
+    const raw = this.nombreBusqueda.trim();
+    if (!raw) {
+      this.mostrarAlerta('Error', 'Ingresa un nombre para buscar.');
+      return;
+    }
 
-  const matches = this.estudiantes.filter(e =>
-    normalize(e.ApellidosNombres).startsWith(q)
-  );
+    const normalize = (s: string) =>
+      s
+        ? s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+        : '';
 
-  if (!matches.length) {
-    this.mostrarAlerta('Error', 'No hay estudiantes con ese nombre.');
-    this.estudiantesFiltrados = [];
-    return;
+    const q = normalize(raw);
+
+    const matches = this.estudiantes.filter((e) =>
+      normalize(e.ApellidosNombres).startsWith(q)
+    );
+
+    if (!matches.length) {
+      this.mostrarAlerta('Error', 'No hay estudiantes con ese nombre.');
+      this.estudiantesFiltrados = [];
+      return;
+    }
+
+    this.estudiantesFiltrados = matches;
+
+    if (matches.length > 1) {
+      this.seleccionMultiple = true;
+      this.hoverActivo = true;
+    } else {
+      this.alumno = { ...matches[0] };
+      this.datosCargados = true;
+      this.hoverActivo = false;
+    }
   }
 
-  this.estudiantesFiltrados = matches;
-
-  if (matches.length > 1) {
-    // ✅ Solo si hay más de un resultado: hover y selección múltiple
-    this.seleccionMultiple = true;
-    this.hoverActivo = true; // Activamos hover solo si hay más de un resultado
-  } else {
-    // ❌ Si solo hay uno: cargar directo, sin hover
-    this.alumno = { ...matches[0] };
+  seleccionarEstudiante(est: EstudianteLocal): void {
+    this.alumno = { ...est };
     this.datosCargados = true;
-    this.hoverActivo = false; // Desactivamos hover
+    this.estudiantesFiltrados = [est];
+    this.seleccionMultiple = false;
+    this.hoverActivo = false;
   }
-}
-
-
-
-seleccionarEstudiante(est: EstudianteLocal): void {
-  // Cargar datos al formulario
-  this.alumno = { ...est };
-  this.datosCargados = true;
-
-  // 🔥 Ahora filtramos la tabla para que SOLO se quede el estudiante elegido
-  this.estudiantesFiltrados = [est];
-
-  // Opcional: ya no necesitamos hover ni selección múltiple después de elegir
-  this.seleccionMultiple = false;
-  this.hoverActivo = false;
-}
 
   private async validarCampos(): Promise<boolean> {
-    if (!this.alumno.ApellidosNombres || !this.alumno.FechaNacimiento || !this.alumno.DNI) {
+    if (
+      !this.alumno.ApellidosNombres ||
+      !this.alumno.FechaNacimiento ||
+      !this.alumno.DNI
+    ) {
       this.mostrarErrorCampos = true;
       return false;
     }
@@ -216,53 +220,60 @@ seleccionarEstudiante(est: EstudianteLocal): void {
       DocumentoInclusiva: this.alumno.DocumentoInclusiva,
       IPP: this.alumno.IPP ? 'Si' : 'No',
       PEP: this.alumno.PEP ? 'Si' : 'No',
-      idInstitucionEducativa: this.idIE
+      idInstitucionEducativa: this.idIE,
     };
-    this.http.post<{ idEstudiante?: number }>(`${this.baseUrl}/registrar-estudiante`, payload)
+    this.http
+      .post<{ idEstudiante?: number }>(
+        `${this.baseUrl}?action=registrar`,
+        payload
+      )
       .subscribe({
         next: () => {
           this.resetForm();
           this.cargarEstudiantes();
         },
-        error: e => this.mostrarAlerta('Error', e.error?.error || 'No fue posible registrar')
+        error: (e) =>
+          this.mostrarAlerta(
+            'Error',
+            e.error?.error || 'No fue posible registrar'
+          ),
       });
   }
 
-actualizarEstudiante(): void {
-  this.validarCampos().then(ok => {
-    if (!ok) return;
-    const payload: any = {
-      idEstudiante: this.alumno.idEstudiante,
-      ApellidosNombres: this.alumno.ApellidosNombres,
-      FechaNacimiento: this.alumno.FechaNacimiento,
-      Edad: this.alumno.Edad,
-      DNI: this.alumno.DNI,
-      GradoSeccion: this.alumno.GradoSeccion,
-      TipoDiscapacidad: this.alumno.TipoDiscapacidad,
-      DocumentoSustentatorio: this.alumno.DocumentoSustentatorio,
-      DocumentoInclusiva: this.alumno.DocumentoInclusiva,
-      IPP: this.alumno.IPP ? 'Si' : 'No',
-      PEP: this.alumno.PEP ? 'Si' : 'No'
-    };
+  actualizarEstudiante(): void {
+    this.validarCampos().then((ok) => {
+      if (!ok) return;
+      const payload: any = {
+        idEstudiante: this.alumno.idEstudiante,
+        ApellidosNombres: this.alumno.ApellidosNombres,
+        FechaNacimiento: this.alumno.FechaNacimiento,
+        Edad: this.alumno.Edad,
+        DNI: this.alumno.DNI,
+        GradoSeccion: this.alumno.GradoSeccion,
+        TipoDiscapacidad: this.alumno.TipoDiscapacidad,
+        DocumentoSustentatorio: this.alumno.DocumentoSustentatorio,
+        DocumentoInclusiva: this.alumno.DocumentoInclusiva,
+        IPP: this.alumno.IPP ? 'Si' : 'No',
+        PEP: this.alumno.PEP ? 'Si' : 'No',
+      };
 
-    this.http.put(`${this.baseUrl}/actualizar-estudiante`, payload).subscribe({
-      next: () => {
-        // Reiniciamos formulario (desactiva hover por defecto)
-        this.resetForm();
-
-        // Recargamos la tabla y desactivamos hover inmediatamente después de la actualización
-        this.cargarEstudiantes(() => {
-          // Aquí la tabla ya tiene los datos recargados: desactivamos el hover
-          this.hoverActivo = false;
+      this.http
+        .put(`${this.baseUrl}?action=actualizar`, payload)
+        .subscribe({
+          next: () => {
+            this.resetForm();
+            this.cargarEstudiantes(() => {
+              this.hoverActivo = false;
+            });
+          },
+          error: (e) =>
+            this.mostrarAlerta(
+              'Error',
+              e.error?.error || 'No fue posible actualizar'
+            ),
         });
-      },
-      error: e =>
-        this.mostrarAlerta('Error', e.error?.error || 'No fue posible actualizar')
     });
-  });
-}
-
-
+  }
 
   async confirmEliminar() {
     const localFlag = localStorage.getItem('noMostrarEliminar');
@@ -279,63 +290,72 @@ actualizarEstudiante(): void {
           name: 'noMostrar',
           type: 'checkbox',
           label: 'No volver a mostrar este mensaje',
-          value: 'noMostrar'
-        }
+          value: 'noMostrar',
+        },
       ],
       buttons: [
         { text: 'No', role: 'cancel' },
         {
           text: 'Sí',
           handler: (data: any) => {
-            if (Array.isArray(data) ? data.includes('noMostrar') : (data?.noMostrar === 'noMostrar')) {
+            if (
+              Array.isArray(data)
+                ? data.includes('noMostrar')
+                : data?.noMostrar === 'noMostrar'
+            ) {
               localStorage.setItem('noMostrarEliminar', 'true');
             }
             this.eliminarEstudiante();
-          }
-        }
-      ]
+          },
+        },
+      ],
     });
     await alert.present();
   }
 
   private eliminarEstudiante() {
     if (!this.alumno.idEstudiante) return;
-    this.http.delete(`${this.baseUrl}/eliminar-estudiante/${this.alumno.idEstudiante}`)
+    this.http
+      .delete(
+        `${this.baseUrl}?action=eliminar&idEstudiante=${this.alumno.idEstudiante}`
+      )
       .subscribe({
         next: () => {
           this.resetForm();
           this.cargarEstudiantes();
         },
-        error: () => this.mostrarAlerta('Error', 'No fue posible eliminar')
+        error: () => this.mostrarAlerta('Error', 'No fue posible eliminar'),
       });
   }
 
-resetForm(): void {
-  this.alumno = {};
-  this.nombreBusqueda = '';
-  this.datosCargados = false;
-  this.seleccionMultiple = false;
-  this.estudiantesFiltrados = [...this.estudiantes];
-  this.hoverActivo = false; // desactivar hover al reset
-}
+  resetForm(): void {
+    this.alumno = {};
+    this.nombreBusqueda = '';
+    this.datosCargados = false;
+    this.seleccionMultiple = false;
+    this.estudiantesFiltrados = [...this.estudiantes];
+    this.hoverActivo = false;
+  }
 
-
-  private async mostrarAlerta(header: string, message: string): Promise<void> {
+  private async mostrarAlerta(
+    header: string,
+    message: string
+  ): Promise<void> {
     const alert = await this.alertCtrl.create({ header, message, buttons: ['OK'] });
     await alert.present();
   }
 
   onFechaChange(): void {
-    let v = (this.alumno.FechaNacimiento || '').replace(/\D/g, '').substr(0, 8);
+    let v = (this.alumno.FechaNacimiento || '')
+      .replace(/\D/g, '')
+      .substr(0, 8);
     if (v.length <= 2) {
       this.alumno.FechaNacimiento = v;
     } else if (v.length <= 4) {
       this.alumno.FechaNacimiento = v.substr(0, 2) + '/' + v.substr(2);
     } else {
       this.alumno.FechaNacimiento =
-        v.substr(0, 2) + '/' +
-        v.substr(2, 2) + '/' +
-        v.substr(4);
+        v.substr(0, 2) + '/' + v.substr(2, 2) + '/' + v.substr(4);
     }
     this.calculateAge();
   }
@@ -346,7 +366,7 @@ resetForm(): void {
       this.alumno.Edad = undefined;
       return;
     }
-    const [dd, mm, yyyy] = fecha.split('/').map(s => +s);
+    const [dd, mm, yyyy] = fecha.split('/').map((s) => +s);
     const birthDate = new Date(yyyy, mm - 1, dd);
     if (isNaN(birthDate.getTime())) {
       this.alumno.Edad = undefined;
@@ -379,10 +399,19 @@ resetForm(): void {
 
   exportExcel(): void {
     const headers = [
-      'Fila', 'Apellidos y Nombres', 'Fecha Nac.', 'Edad', 'DNI',
-      'Grado/Sección', 'Tipo Discapacidad', 'Doc. Sust.', 'Doc. Inc.', 'IPP', 'PEP'
+      'Fila',
+      'Apellidos y Nombres',
+      'Fecha Nac.',
+      'Edad',
+      'DNI',
+      'Grado/Sección',
+      'Tipo Discapacidad',
+      'Doc. Sust.',
+      'Doc. Inc.',
+      'IPP',
+      'PEP',
     ];
-    const data = this.estudiantesFiltrados.map(e => ({
+    const data = this.estudiantesFiltrados.map((e) => ({
       Fila: e.fila,
       'Apellidos y Nombres': e.ApellidosNombres,
       'Fecha Nac.': e.FechaNacimiento,
@@ -393,22 +422,46 @@ resetForm(): void {
       'Doc. Sust.': e.DocumentoSustentatorio,
       'Doc. Inc.': e.DocumentoInclusiva,
       IPP: e.IPP ? 'Si' : 'No',
-      PEP: e.PEP ? 'Si' : 'No'
+      PEP: e.PEP ? 'Si' : 'No',
     }));
     const ws = XLSX.utils.json_to_sheet(data, { header: headers });
-    ws['!cols'] = headers.map(_ => ({ wch: 18 }));
+    ws['!cols'] = headers.map((_) => ({ wch: 18 }));
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, 'Estudiantes');
     const wbout = XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
-    saveAs(new Blob([wbout], { type: 'application/octet-stream' }), 'estudiantes.xlsx');
+    saveAs(
+      new Blob([wbout], { type: 'application/octet-stream' }),
+      'estudiantes.xlsx'
+    );
   }
 
   exportPDF(): void {
-    const doc = new jsPDF({ orientation: 'landscape', unit: 'pt', format: 'a4' });
-    const cols = ['Fila','Apellido y Nombres','Fecha Nac.','Edad','DNI','Grado/Sección','Discapacidad','IPP','PEP'];
-    const rows = this.estudiantesFiltrados.map(e => [
-      e.fila, e.ApellidosNombres, e.FechaNacimiento, e.Edad, e.DNI,
-      e.GradoSeccion, e.TipoDiscapacidad || '', e.IPP ? 'Si' : 'No', e.PEP ? 'Si' : 'No'
+    const doc = new jsPDF({
+      orientation: 'landscape',
+      unit: 'pt',
+      format: 'a4',
+    });
+    const cols = [
+      'Fila',
+      'Apellido y Nombres',
+      'Fecha Nac.',
+      'Edad',
+      'DNI',
+      'Grado/Sección',
+      'Discapacidad',
+      'IPP',
+      'PEP',
+    ];
+    const rows = this.estudiantesFiltrados.map((e) => [
+      e.fila,
+      e.ApellidosNombres,
+      e.FechaNacimiento,
+      e.Edad,
+      e.DNI,
+      e.GradoSeccion,
+      e.TipoDiscapacidad || '',
+      e.IPP ? 'Si' : 'No',
+      e.PEP ? 'Si' : 'No',
     ]);
     autoTable(doc, { head: [cols], body: rows, startY: 40 });
     doc.save('estudiantes.pdf');
