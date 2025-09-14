@@ -210,75 +210,79 @@ export class EstudiantesPage implements AfterViewInit, OnDestroy {
     this.mostrarErrorCampos = false;
   }
 
-  async registrarEstudiante(): Promise<void> {
-    if (!(await this.validarCampos())) {
-      return;
-    }
+async registrarEstudiante(): Promise<void> {
+  if (!(await this.validarCampos())) {
+    return;
+  }
+
+  const payload: any = {
+    ApellidosNombres: this.alumno.ApellidosNombres,
+    FechaNacimiento: this.alumno.FechaNacimiento,
+    Edad: this.alumno.Edad,
+    DNI: this.alumno.DNI,
+    GradoSeccion: this.alumno.GradoSeccion,
+    TipoDiscapacidad: this.alumno.TipoDiscapacidad,
+    DocumentoSustentatorio: this.alumno.DocumentoSustentatorio,
+    DocumentoInclusiva: this.alumno.DocumentoInclusiva,
+    IPP: this.alumno.IPP ? 'Si' : 'No',
+    PEP: this.alumno.PEP ? 'Si' : 'No',
+    idInstitucionEducativa: this.idIE,
+  };
+
+  this.http
+    .post<{ ok: boolean; data?: any }>(
+      `${this.baseUrl}?action=registrar`,
+      payload
+    )
+    .subscribe({
+      next: () => {
+        this.resetForm();
+        this.cargarEstudiantes();
+      },
+      error: (e) =>
+        this.mostrarAlerta(
+          'Error',
+          e.error?.mensaje || 'No fue posible registrar'
+        ),
+    });
+}
+
+actualizarEstudiante(): void {
+  this.validarCampos().then((ok) => {
+    if (!ok) return;
+
     const payload: any = {
-      apellidosnombres: this.alumno.ApellidosNombres,
-      fechanacimiento: this.alumno.FechaNacimiento,
-      edad: this.alumno.Edad,
-      dni: this.alumno.DNI,
-      gradoseccion: this.alumno.GradoSeccion,
-      tipodiscapacidad: this.alumno.TipoDiscapacidad,
-      documentosustentatorio: this.alumno.DocumentoSustentatorio,
-      documentoinclusiva: this.alumno.DocumentoInclusiva,
-      ipp: this.alumno.IPP ? 'Si' : 'No',
-      pep: this.alumno.PEP ? 'Si' : 'No',
-      idinstitucioneducativa: this.idIE,
+      idEstudiante: this.alumno.id,
+      ApellidosNombres: this.alumno.ApellidosNombres,
+      FechaNacimiento: this.alumno.FechaNacimiento,
+      Edad: this.alumno.Edad,
+      DNI: this.alumno.DNI,
+      GradoSeccion: this.alumno.GradoSeccion,
+      TipoDiscapacidad: this.alumno.TipoDiscapacidad,
+      DocumentoSustentatorio: this.alumno.DocumentoSustentatorio,
+      DocumentoInclusiva: this.alumno.DocumentoInclusiva,
+      IPP: this.alumno.IPP ? 'Si' : 'No',
+      PEP: this.alumno.PEP ? 'Si' : 'No',
     };
+
     this.http
-      .post<{ ok: boolean; data?: any }>(
-        `${this.baseUrl}?action=registrar`,
-        payload
-      )
+      .put(`${this.baseUrl}?action=actualizar`, payload)
       .subscribe({
         next: () => {
           this.resetForm();
-          this.cargarEstudiantes();
+          this.cargarEstudiantes(() => {
+            this.hoverActivo = false;
+          });
         },
         error: (e) =>
           this.mostrarAlerta(
             'Error',
-            e.error?.mensaje || 'No fue posible registrar'
+            e.error?.mensaje || 'No fue posible actualizar'
           ),
       });
-  }
+  });
+}
 
-  actualizarEstudiante(): void {
-    this.validarCampos().then((ok) => {
-      if (!ok) return;
-      const payload: any = {
-        id: this.alumno.id,
-        apellidosnombres: this.alumno.ApellidosNombres,
-        fechanacimiento: this.alumno.FechaNacimiento,
-        edad: this.alumno.Edad,
-        dni: this.alumno.DNI,
-        gradoseccion: this.alumno.GradoSeccion,
-        tipodiscapacidad: this.alumno.TipoDiscapacidad,
-        documentosustentatorio: this.alumno.DocumentoSustentatorio,
-        documentoinclusiva: this.alumno.DocumentoInclusiva,
-        ipp: this.alumno.IPP ? 'Si' : 'No',
-        pep: this.alumno.PEP ? 'Si' : 'No',
-      };
-
-      this.http
-        .put(`${this.baseUrl}?action=actualizar`, payload)
-        .subscribe({
-          next: () => {
-            this.resetForm();
-            this.cargarEstudiantes(() => {
-              this.hoverActivo = false;
-            });
-          },
-          error: (e) =>
-            this.mostrarAlerta(
-              'Error',
-              e.error?.mensaje || 'No fue posible actualizar'
-            ),
-        });
-    });
-  }
 
   async confirmEliminar() {
     const localFlag = localStorage.getItem('noMostrarEliminar');
