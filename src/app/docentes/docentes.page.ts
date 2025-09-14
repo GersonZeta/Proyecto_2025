@@ -411,13 +411,13 @@ this.http.get<{ ok: boolean, data: number[] }>(`${this.baseUrl}/estudiantes-con-
       idInstitucionEducativa: this.idInstitucionEducativa
     };
 
-    this.http.put(`${this.baseUrl}/actualizar-docente`, payload).subscribe({
-      next: () => {
-        this.mostrarAlerta('Éxito', 'Datos actualizados.');
-        this.cargarAsignadosGlobal();
-        this.resetForm();
-        this.cargarDocentes();
-      },
+this.http.put(`${this.baseUrl}/actualizar-docente`, payload).subscribe({
+  next: () => {
+    this.cargarAsignadosGlobal(); // recarga asignados primero
+    this.resetForm();
+    this.cargarDocentes();
+    this.mostrarAlerta('Éxito', 'Datos actualizados.');
+  },
       error: () => this.mostrarAlerta('Error', 'No fue posible actualizar')
     });
   }
@@ -447,12 +447,11 @@ this.http.get<{ ok: boolean, data: number[] }>(`${this.baseUrl}/estudiantes-con-
       return this.http.post<{ idDocente: number }>(`${this.baseUrl}/registrar-docente`, payload);
     });
 
-    forkJoin(reqs).subscribe(() => {
-      this.allAsignados.push(...this.docente.idEstudiante);
-      this.asignados.push(...this.docente.idEstudiante);
-      this.resetForm();
-      this.cargarDocentes();
-    });
+forkJoin(reqs).subscribe(() => {
+  this.resetForm();
+  this.cargarAsignadosGlobal(); // recarga asignados
+  this.cargarDocentes();
+});
   }
 
   eliminarDocente(): void {
@@ -520,23 +519,23 @@ this.http.get<{ ok: boolean, data: number[] }>(`${this.baseUrl}/estudiantes-con-
     await alert.present();
   }
 
-  resetForm(): void {
-    this.docente = {
-      DNIDocente: '',
-      NombreDocente: '',
-      Email: '',
-      Telefono: '',
-      GradoSeccionLabora: '',
-      idEstudiante: []
-    };
-    this.selectedStudentNames = '';
-    this.nombreBusqueda = '';
-    this.datosCargados = false;
-    this.buscandoDocente = false;
-    this.asignados = [...this.allAsignados];
-    this.emailInvalid = false;
-    this.docentesFiltrados = [...this.docentes];
-  }
+resetForm(): void {
+  this.docente = {
+    DNIDocente: '',
+    NombreDocente: '',
+    Email: '',
+    Telefono: '',
+    GradoSeccionLabora: '',
+    idEstudiante: []
+  };
+  this.selectedStudentNames = '';
+  this.nombreBusqueda = '';
+  this.datosCargados = false;
+  this.buscandoDocente = false;
+  this.emailInvalid = false;
+  // no reasignar aquí this.asignados
+  this.docentesFiltrados = [...this.docentes];
+}
 
   onEstudiantesChange(): void {
     this.selectedStudentNames = this.estudiantes
@@ -554,12 +553,12 @@ openStudentsModal(): void {
   // Mostrar SOLO:
   // - estudiantes que ya pertenecen a este docente (idsDocenteActual)
   // - OR estudiantes que NO están asignados globalmente (no están en allAsignados)
-  this.allStudents = this.estudiantes
-    .filter(e => idsDocenteActual.has(e.idEstudiante) || !this.allAsignados.includes(e.idEstudiante))
-    .map(e => ({
-      ...e,
-      selected: idsDocenteActual.has(e.idEstudiante)
-    }));
+this.allStudents = this.estudiantes
+  .filter(e => idsDocenteActual.has(e.idEstudiante) || !this.asignados.includes(e.idEstudiante))
+  .map(e => ({
+    ...e,
+    selected: idsDocenteActual.has(e.idEstudiante)
+  }));
 
   this.filteredStudents = [...this.allStudents];
   this.showStudentsModal = true;
@@ -595,7 +594,8 @@ applyStudentsSelection(): void {
   this.onEstudiantesChange();
 
   // recalcular asignados: quitar los que ahora pertenecen a este docente
-  this.asignados = this.allAsignados.filter(id => !this.docente.idEstudiante.includes(id));
+  this.asignados = this.asignados.filter(id => !this.docente.idEstudiante.includes(id));
+
 
   this.closeStudentsModal();
 }
