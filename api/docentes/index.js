@@ -6,24 +6,28 @@ export default async function handler(req, res) {
 
   try {
     // --- LISTAR DOCENTES
-    if (action === "listar") {
-      if (req.method !== "GET")
-        return res.status(405).json({ ok: false, mensaje: "Método no permitido" });
+if (action === "listar") {
+  if (req.method !== "GET")
+    return res.status(405).json({ ok: false, mensaje: "Método no permitido" });
 
-      const { idInstitucionEducativa, nombreDocente } = req.query;
+  const { idInstitucionEducativa, nombreDocente } = req.query;
 
-      let query = supabase.from("docentes_estudiante").select("*");
-      if (idInstitucionEducativa)
-        query = query.eq("idinstitucioneducativa", idInstitucionEducativa);
-      if (nombreDocente)
-        query = query.ilike("nombredocente", `%${nombreDocente}%`);
+  console.log("idInstitucionEducativa recibido:", idInstitucionEducativa); // <- debug
 
-      const { data: docs, error } = await query
-        .order("dnidocente", { ascending: true })
-        .order("idestudiante", { ascending: true });
+  // ⚠️ Asegúrate de usar el nombre exacto de la columna en Supabase
+  let query = supabase.from("docentes_estudiante").select("*");
+  if (idInstitucionEducativa)
+    query = query.eq("id_institucion_educativa", idInstitucionEducativa); // <- Cambiado
+  if (nombreDocente)
+    query = query.ilike("nombredocente", `%${nombreDocente}%`);
 
-      if (error) throw error;
-      const docsList = docs || [];
+  const { data: docs, error } = await query
+    .order("dnidocente", { ascending: true })
+    .order("idestudiante", { ascending: true });
+
+  if (error) throw error;
+  const docsList = docs || [];
+
 
       // obtener nombres de estudiantes
       const studentIds = Array.from(new Set(docsList.map(d => d.idestudiante).filter(Boolean)));
