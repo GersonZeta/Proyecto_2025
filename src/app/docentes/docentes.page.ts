@@ -588,16 +588,31 @@ resetForm(): void {
   }
 
 openStudentsModal(): void {
-  // Solo estudiantes NO asignados globalmente
-  const disponibles = this.estudiantes.filter(
-    e => !this.allAsignados.includes(e.idEstudiante)
+  this.studentFilter = '';
+
+  const idsDocenteActual = new Set(
+    (this.docente.idEstudiante || [])
+      .map((n: any) => Number(n))
+      .filter((x: number) => !isNaN(x))
   );
 
-  this.allStudents = [...disponibles];      // 🔹 base para filtro
-  this.filteredStudents = [...disponibles]; // 🔹 lo que se muestra en modal
+  // Mostrar SOLO:
+  // - estudiantes que ya pertenecen a este docente (idsDocenteActual)
+  // - OR estudiantes que NO están asignados globalmente (no están en allAsignados)
+  this.allStudents = this.estudiantes
+    .filter(e =>
+      idsDocenteActual.has(e.idEstudiante) ||
+      !this.allAsignados.includes(e.idEstudiante)
+    )
+    .map(e => ({
+      ...e,
+      selected: idsDocenteActual.has(e.idEstudiante)
+    }));
 
+  this.filteredStudents = [...this.allStudents];
   this.showStudentsModal = true;
 }
+
 
 
 
