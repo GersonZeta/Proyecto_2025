@@ -719,339 +719,339 @@
 
 
 /////////////////// DOCENTE-ESTUDIANTE ///////////////////
-app.get('/estudiantes-con-docente', async (req, res) => {
-  try {
-    const { data, error } = await supabase
-      .from('docentes_estudiante')
-      .select('idestudiante');
+// app.get('/estudiantes-con-docente', async (req, res) => {
+//   try {
+//     const { data, error } = await supabase
+//       .from('docentes_estudiante')
+//       .select('idestudiante');
 
-    if (error) {
-      console.error('Error fetching docentes_estudiante:', error);
-      return res.status(500).json({ error: 'Error interno' });
-    }
+//     if (error) {
+//       console.error('Error fetching docentes_estudiante:', error);
+//       return res.status(500).json({ error: 'Error interno' });
+//     }
 
-    const ids = Array.from(new Set((data || []).map(r => r.idestudiante)));
-    return res.json(ids);
-  } catch (err) {
-    console.error('Excepción estudiantes-con-docente:', err);
-    return res.status(500).json({ error: 'Error interno' });
-  }
-});
+//     const ids = Array.from(new Set((data || []).map(r => r.idestudiante)));
+//     return res.json(ids);
+//   } catch (err) {
+//     console.error('Excepción estudiantes-con-docente:', err);
+//     return res.status(500).json({ error: 'Error interno' });
+//   }
+// });
 
-app.get('/docentes-estudiante', async (req, res) => {
-  try {
-    const { idInstitucionEducativa, nombreDocente } = req.query;
+// app.get('/docentes-estudiante', async (req, res) => {
+//   try {
+//     const { idInstitucionEducativa, nombreDocente } = req.query;
 
-    let query = supabase.from('docentes_estudiante').select('*');
+//     let query = supabase.from('docentes_estudiante').select('*');
 
-    if (idInstitucionEducativa) {
-      query = query.eq('idinstitucioneducativa', idInstitucionEducativa);
-    }
-    if (nombreDocente) {
-      // ilike para case-insensitive
-      query = query.ilike('nombredocente', `%${nombreDocente}%`);
-    }
+//     if (idInstitucionEducativa) {
+//       query = query.eq('idinstitucioneducativa', idInstitucionEducativa);
+//     }
+//     if (nombreDocente) {
+//       // ilike para case-insensitive
+//       query = query.ilike('nombredocente', `%${nombreDocente}%`);
+//     }
 
-    const { data: docs, error: errDocs } = await query
-  .order('dnidocente', { ascending: true })   // orden principal por DNI del docente
-  .order('idestudiante', { ascending: true }); // orden secundario por estudiante
+//     const { data: docs, error: errDocs } = await query
+//   .order('dnidocente', { ascending: true })   // orden principal por DNI del docente
+//   .order('idestudiante', { ascending: true }); // orden secundario por estudiante
 
-    if (errDocs) {
-      console.error('Error obteniendo docentes:', errDocs);
-      return res.status(500).json({ error: 'Error interno' });
-    }
+//     if (errDocs) {
+//       console.error('Error obteniendo docentes:', errDocs);
+//       return res.status(500).json({ error: 'Error interno' });
+//     }
 
-    const docsList = docs || [];
+//     const docsList = docs || [];
 
-    // Traer nombres de estudiantes en batch
-    const studentIds = Array.from(new Set(docsList.map(d => d.idestudiante).filter(Boolean)));
-    let studentsMap = new Map();
-    if (studentIds.length) {
-      const { data: studs, error: errStuds } = await supabase
-        .from('estudiantes')
-        .select('idestudiante, apellidosnombres')
-        .in('idestudiante', studentIds);
+//     // Traer nombres de estudiantes en batch
+//     const studentIds = Array.from(new Set(docsList.map(d => d.idestudiante).filter(Boolean)));
+//     let studentsMap = new Map();
+//     if (studentIds.length) {
+//       const { data: studs, error: errStuds } = await supabase
+//         .from('estudiantes')
+//         .select('idestudiante, apellidosnombres')
+//         .in('idestudiante', studentIds);
 
-      if (errStuds) {
-        console.error('Error obteniendo estudiantes para mapear:', errStuds);
-        return res.status(500).json({ error: 'Error interno' });
-      }
-      (studs || []).forEach(s => studentsMap.set(s.idestudiante, s.apellidosnombres));
-    }
+//       if (errStuds) {
+//         console.error('Error obteniendo estudiantes para mapear:', errStuds);
+//         return res.status(500).json({ error: 'Error interno' });
+//       }
+//       (studs || []).forEach(s => studentsMap.set(s.idestudiante, s.apellidosnombres));
+//     }
 
-    // Construir respuesta con NombreEstudiante
-    const result = docsList.map(d => ({
-      idDocente: d.iddocente ?? null,
-      idEstudiante: d.idestudiante ?? null,
-      NombreEstudiante: studentsMap.get(d.idestudiante) ?? null,
-      NombreDocente: d.nombredocente ?? null,
-      DNIDocente: d.dnidocente ?? null,
-      Email: d.email ?? null,
-      Telefono: d.telefono ?? null,
-      GradoSeccionLabora: d.gradoseccionlabora ?? null,
-      idInstitucionEducativa: d.idinstitucioneducativa ?? null
-    }));
+//     // Construir respuesta con NombreEstudiante
+//     const result = docsList.map(d => ({
+//       idDocente: d.iddocente ?? null,
+//       idEstudiante: d.idestudiante ?? null,
+//       NombreEstudiante: studentsMap.get(d.idestudiante) ?? null,
+//       NombreDocente: d.nombredocente ?? null,
+//       DNIDocente: d.dnidocente ?? null,
+//       Email: d.email ?? null,
+//       Telefono: d.telefono ?? null,
+//       GradoSeccionLabora: d.gradoseccionlabora ?? null,
+//       idInstitucionEducativa: d.idinstitucioneducativa ?? null
+//     }));
 
-    return res.json(result);
-  } catch (err) {
-    console.error('Excepción docentes-estudiante:', err);
-    return res.status(500).json({ error: 'Error interno' });
-  }
-});
+//     return res.json(result);
+//   } catch (err) {
+//     console.error('Excepción docentes-estudiante:', err);
+//     return res.status(500).json({ error: 'Error interno' });
+//   }
+// });
 
 
-app.post('/registrar-docente', async (req, res) => {
-  try {
-    const { idEstudiante, NombreDocente, DNIDocente, Email, Telefono, GradoSeccionLabora } = req.body;
-    if (!idEstudiante || !NombreDocente || !DNIDocente || !Email) {
-      return res.status(400).json({ error: 'Faltan campos obligatorios' });
-    }
+// app.post('/registrar-docente', async (req, res) => {
+//   try {
+//     const { idEstudiante, NombreDocente, DNIDocente, Email, Telefono, GradoSeccionLabora } = req.body;
+//     if (!idEstudiante || !NombreDocente || !DNIDocente || !Email) {
+//       return res.status(400).json({ error: 'Faltan campos obligatorios' });
+//     }
 
-    // 1) obtener idinstitucioneducativa del estudiante
-    const { data: stud, error: errStud } = await supabase
-      .from('estudiantes')
-      .select('idinstitucioneducativa')
-      .eq('idestudiante', idEstudiante)
-      .maybeSingle();
+//     // 1) obtener idinstitucioneducativa del estudiante
+//     const { data: stud, error: errStud } = await supabase
+//       .from('estudiantes')
+//       .select('idinstitucioneducativa')
+//       .eq('idestudiante', idEstudiante)
+//       .maybeSingle();
 
-    if (errStud) {
-      console.error('Error obteniendo institución del estudiante:', errStud);
-      return res.status(500).json({ error: 'Error interno al obtener institución' });
-    }
-    if (!stud) {
-      return res.status(404).json({ error: 'Estudiante no encontrado' });
-    }
+//     if (errStud) {
+//       console.error('Error obteniendo institución del estudiante:', errStud);
+//       return res.status(500).json({ error: 'Error interno al obtener institución' });
+//     }
+//     if (!stud) {
+//       return res.status(404).json({ error: 'Estudiante no encontrado' });
+//     }
 
-    const idInstitucionEducativa = stud.idinstitucioneducativa;
+//     const idInstitucionEducativa = stud.idinstitucioneducativa;
 
-    // 2) insertar en docentes_estudiante
-    const { data: inserted, error: errIns } = await supabase
-      .from('docentes_estudiante')
-      .insert([{
-        idestudiante: idEstudiante,
-        nombredocente: NombreDocente,
-        dnidocente: DNIDocente,
-        email: Email,
-        telefono: Telefono || null,
-        gradoseccionlabora: GradoSeccionLabora || null,
-        idinstitucioneducativa: idInstitucionEducativa
-      }])
-      .select()
-      .single();
+//     // 2) insertar en docentes_estudiante
+//     const { data: inserted, error: errIns } = await supabase
+//       .from('docentes_estudiante')
+//       .insert([{
+//         idestudiante: idEstudiante,
+//         nombredocente: NombreDocente,
+//         dnidocente: DNIDocente,
+//         email: Email,
+//         telefono: Telefono || null,
+//         gradoseccionlabora: GradoSeccionLabora || null,
+//         idinstitucioneducativa: idInstitucionEducativa
+//       }])
+//       .select()
+//       .single();
 
-    if (errIns) {
-      console.error('Error insertando docente:', errIns);
-      return res.status(500).json({ error: 'Error interno al registrar docente' });
-    }
+//     if (errIns) {
+//       console.error('Error insertando docente:', errIns);
+//       return res.status(500).json({ error: 'Error interno al registrar docente' });
+//     }
 
-    return res.status(201).json({ idDocente: inserted.iddocente ?? inserted.id ?? null });
-  } catch (err) {
-    console.error('Excepción registrar-docente:', err);
-    return res.status(500).json({ error: 'Error interno' });
-  }
-});
+//     return res.status(201).json({ idDocente: inserted.iddocente ?? inserted.id ?? null });
+//   } catch (err) {
+//     console.error('Excepción registrar-docente:', err);
+//     return res.status(500).json({ error: 'Error interno' });
+//   }
+// });
 
-app.put('/actualizar-docente', async (req, res) => {
-  try {
-    const {
-      DNIDocente,
-      NombreDocente,
-      Email,
-      Telefono,
-      GradoSeccionLabora,
-      idEstudiante // array de ids
-    } = req.body;
+// app.put('/actualizar-docente', async (req, res) => {
+//   try {
+//     const {
+//       DNIDocente,
+//       NombreDocente,
+//       Email,
+//       Telefono,
+//       GradoSeccionLabora,
+//       idEstudiante // array de ids
+//     } = req.body;
 
-    if (!DNIDocente || !NombreDocente || !Email || !Array.isArray(idEstudiante)) {
-      return res.status(400).json({ error: 'Faltan campos obligatorios o idEstudiante no es array' });
-    }
+//     if (!DNIDocente || !NombreDocente || !Email || !Array.isArray(idEstudiante)) {
+//       return res.status(400).json({ error: 'Faltan campos obligatorios o idEstudiante no es array' });
+//     }
 
-    // 0) obtener instituciones para los estudiantes dados
-    const { data: instRows, error: errInsts } = await supabase
-      .from('estudiantes')
-      .select('idestudiante, idinstitucioneducativa')
-      .in('idestudiante', idEstudiante);
+//     // 0) obtener instituciones para los estudiantes dados
+//     const { data: instRows, error: errInsts } = await supabase
+//       .from('estudiantes')
+//       .select('idestudiante, idinstitucioneducativa')
+//       .in('idestudiante', idEstudiante);
 
-    if (errInsts) {
-      console.error('Error obteniendo instituciones:', errInsts);
-      return res.status(500).json({ error: 'Error interno al obtener instituciones' });
-    }
+//     if (errInsts) {
+//       console.error('Error obteniendo instituciones:', errInsts);
+//       return res.status(500).json({ error: 'Error interno al obtener instituciones' });
+//     }
 
-    const instMap = new Map((instRows || []).map(r => [r.idestudiante, r.idinstitucioneducativa]));
+//     const instMap = new Map((instRows || []).map(r => [r.idestudiante, r.idinstitucioneducativa]));
 
-    // 1) traer asignaciones actuales para ese DNIDocente
-    const { data: currentRows, error: errCurrent } = await supabase
-      .from('docentes_estudiante')
-      .select('iddocente, idestudiante')
-      .eq('dnidocente', DNIDocente);
+//     // 1) traer asignaciones actuales para ese DNIDocente
+//     const { data: currentRows, error: errCurrent } = await supabase
+//       .from('docentes_estudiante')
+//       .select('iddocente, idestudiante')
+//       .eq('dnidocente', DNIDocente);
 
-    if (errCurrent) {
-      console.error('Error obteniendo asignaciones actuales:', errCurrent);
-      return res.status(500).json({ error: 'Error interno' });
-    }
+//     if (errCurrent) {
+//       console.error('Error obteniendo asignaciones actuales:', errCurrent);
+//       return res.status(500).json({ error: 'Error interno' });
+//     }
 
-    const currentMap = new Map((currentRows || []).map(r => [r.idestudiante, r.iddocente]));
-    const currentIds = (currentRows || []).map(r => r.idestudiante);
+//     const currentMap = new Map((currentRows || []).map(r => [r.idestudiante, r.iddocente]));
+//     const currentIds = (currentRows || []).map(r => r.idestudiante);
 
-    const toDelete = (currentRows || []).filter(r => !idEstudiante.includes(r.idestudiante)).map(r => r.iddocente);
-    const toAdd = idEstudiante.filter(id => !currentMap.has(id));
+//     const toDelete = (currentRows || []).filter(r => !idEstudiante.includes(r.idestudiante)).map(r => r.iddocente);
+//     const toAdd = idEstudiante.filter(id => !currentMap.has(id));
 
-    // 2) actualizar filas existentes (todos los registros que tengan ese DNIDocente)
-    const { error: errUpdate } = await supabase
-      .from('docentes_estudiante')
-      .update({
-        nombredocente: NombreDocente,
-        email: Email,
-        telefono: Telefono || null,
-        gradoseccionlabora: GradoSeccionLabora || null
-      })
-      .eq('dnidocente', DNIDocente);
+//     // 2) actualizar filas existentes (todos los registros que tengan ese DNIDocente)
+//     const { error: errUpdate } = await supabase
+//       .from('docentes_estudiante')
+//       .update({
+//         nombredocente: NombreDocente,
+//         email: Email,
+//         telefono: Telefono || null,
+//         gradoseccionlabora: GradoSeccionLabora || null
+//       })
+//       .eq('dnidocente', DNIDocente);
 
-    if (errUpdate) {
-      console.error('Error actualizando datos existentes:', errUpdate);
-      return res.status(500).json({ error: 'Error interno al actualizar datos' });
-    }
+//     if (errUpdate) {
+//       console.error('Error actualizando datos existentes:', errUpdate);
+//       return res.status(500).json({ error: 'Error interno al actualizar datos' });
+//     }
 
-    // 3) eliminar asignaciones sobrantes por iddocente
-    if (toDelete.length) {
-      const { error: errDel } = await supabase
-        .from('docentes_estudiante')
-        .delete()
-        .in('iddocente', toDelete);
+//     // 3) eliminar asignaciones sobrantes por iddocente
+//     if (toDelete.length) {
+//       const { error: errDel } = await supabase
+//         .from('docentes_estudiante')
+//         .delete()
+//         .in('iddocente', toDelete);
 
-      if (errDel) {
-        console.error('Error eliminando asignaciones:', errDel);
-        return res.status(500).json({ error: 'Error interno al eliminar asignaciones' });
-      }
-    }
+//       if (errDel) {
+//         console.error('Error eliminando asignaciones:', errDel);
+//         return res.status(500).json({ error: 'Error interno al eliminar asignaciones' });
+//       }
+//     }
 
-    // 4) insertar nuevas asignaciones (si hay)
-    if (toAdd.length) {
-      const values = toAdd.map(idEst => ({
-        idestudiante: idEst,
-        nombredocente: NombreDocente,
-        dnidocente: DNIDocente,
-        email: Email,
-        telefono: Telefono || null,
-        gradoseccionlabora: GradoSeccionLabora || null,
-        idinstitucioneducativa: instMap.get(idEst) ?? null
-      }));
+//     // 4) insertar nuevas asignaciones (si hay)
+//     if (toAdd.length) {
+//       const values = toAdd.map(idEst => ({
+//         idestudiante: idEst,
+//         nombredocente: NombreDocente,
+//         dnidocente: DNIDocente,
+//         email: Email,
+//         telefono: Telefono || null,
+//         gradoseccionlabora: GradoSeccionLabora || null,
+//         idinstitucioneducativa: instMap.get(idEst) ?? null
+//       }));
 
-      const { error: errIns } = await supabase
-        .from('docentes_estudiante')
-        .insert(values);
+//       const { error: errIns } = await supabase
+//         .from('docentes_estudiante')
+//         .insert(values);
 
-      if (errIns) {
-        console.error('Error insertando nuevas asignaciones:', errIns);
-        return res.status(500).json({ error: 'Error interno al insertar nuevas asignaciones' });
-      }
-    }
+//       if (errIns) {
+//         console.error('Error insertando nuevas asignaciones:', errIns);
+//         return res.status(500).json({ error: 'Error interno al insertar nuevas asignaciones' });
+//       }
+//     }
 
-    return res.json({ message: 'Docente y asignaciones actualizadas con éxito' });
-  } catch (err) {
-    console.error('Excepción actualizar-docente:', err);
-    return res.status(500).json({ error: 'Error interno' });
-  }
-});
+//     return res.json({ message: 'Docente y asignaciones actualizadas con éxito' });
+//   } catch (err) {
+//     console.error('Excepción actualizar-docente:', err);
+//     return res.status(500).json({ error: 'Error interno' });
+//   }
+// });
 
-app.delete('/eliminar-docente/:id', async (req, res) => {
-  try {
-    const id = Number(req.params.id);
-    if (!id || Number.isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
+// app.delete('/eliminar-docente/:id', async (req, res) => {
+//   try {
+//     const id = Number(req.params.id);
+//     if (!id || Number.isNaN(id)) return res.status(400).json({ error: 'ID inválido' });
 
-    // 1) obtener dnidocente de la fila indicada
-    const { data: row, error: err0 } = await supabase
-      .from('docentes_estudiante')
-      .select('dnidocente')
-      .eq('iddocente', id)
-      .maybeSingle();
+//     // 1) obtener dnidocente de la fila indicada
+//     const { data: row, error: err0 } = await supabase
+//       .from('docentes_estudiante')
+//       .select('dnidocente')
+//       .eq('iddocente', id)
+//       .maybeSingle();
 
-    if (err0) {
-      console.error('Error al buscar dnidocente para eliminación:', err0);
-      return res.status(500).json({ error: 'Error interno al buscar docente' });
-    }
-    if (!row) {
-      return res.status(404).json({ error: 'Docente no encontrado' });
-    }
+//     if (err0) {
+//       console.error('Error al buscar dnidocente para eliminación:', err0);
+//       return res.status(500).json({ error: 'Error interno al buscar docente' });
+//     }
+//     if (!row) {
+//       return res.status(404).json({ error: 'Docente no encontrado' });
+//     }
 
-    const dni = row.dnidocente;
+//     const dni = row.dnidocente;
 
-    // 2) eliminar todas las filas con ese dnidocente
-    const { data: deleted, error: errDel } = await supabase
-      .from('docentes_estudiante')
-      .delete()
-      .eq('dnidocente', dni)
-      .select(); // devuelve filas borradas
+//     // 2) eliminar todas las filas con ese dnidocente
+//     const { data: deleted, error: errDel } = await supabase
+//       .from('docentes_estudiante')
+//       .delete()
+//       .eq('dnidocente', dni)
+//       .select(); // devuelve filas borradas
 
-    if (errDel) {
-      console.error('Error al eliminar las asignaciones del docente:', errDel);
-      return res.status(500).json({ error: 'Error interno al eliminar docente' });
-    }
+//     if (errDel) {
+//       console.error('Error al eliminar las asignaciones del docente:', errDel);
+//       return res.status(500).json({ error: 'Error interno al eliminar docente' });
+//     }
 
-    if (!deleted || deleted.length === 0) {
-      return res.status(404).json({ error: 'Docente no encontrado o ya eliminado' });
-    }
+//     if (!deleted || deleted.length === 0) {
+//       return res.status(404).json({ error: 'Docente no encontrado o ya eliminado' });
+//     }
 
-    return res.json({
-      message: 'Docente eliminado con éxito. Las filas relacionadas quedaron libres para nueva asignación.',
-      deletedCount: deleted.length
-    });
-  } catch (err) {
-    console.error('Excepción eliminar-docente:', err);
-    return res.status(500).json({ error: 'Error interno' });
-  }
-});
+//     return res.json({
+//       message: 'Docente eliminado con éxito. Las filas relacionadas quedaron libres para nueva asignación.',
+//       deletedCount: deleted.length
+//     });
+//   } catch (err) {
+//     console.error('Excepción eliminar-docente:', err);
+//     return res.status(500).json({ error: 'Error interno' });
+//   }
+// });
 
-app.get('/buscar-docente', async (req, res) => {
-  try {
-    const { nombreDocente } = req.query;
-    if (!nombreDocente) return res.status(400).send('Se requiere nombreDocente');
+// app.get('/buscar-docente', async (req, res) => {
+//   try {
+//     const { nombreDocente } = req.query;
+//     if (!nombreDocente) return res.status(400).send('Se requiere nombreDocente');
 
-    // 1) obtener DNIDocente del primer registro (igual que tu versión MySQL)
-    const { data: baseRows, error: errBase } = await supabase
-      .from('docentes_estudiante')
-      .select('dnidocente')
-      .eq('nombredocente', nombreDocente)
-      .limit(1);
+//     // 1) obtener DNIDocente del primer registro (igual que tu versión MySQL)
+//     const { data: baseRows, error: errBase } = await supabase
+//       .from('docentes_estudiante')
+//       .select('dnidocente')
+//       .eq('nombredocente', nombreDocente)
+//       .limit(1);
 
-    if (errBase) {
-      console.error('Error en buscar-docente (base):', errBase);
-      return res.status(500).json({ error: 'Error interno' });
-    }
-    if (!baseRows || baseRows.length === 0) {
-      return res.status(404).send('Docente no encontrado');
-    }
-    const dni = baseRows[0].dnidocente;
+//     if (errBase) {
+//       console.error('Error en buscar-docente (base):', errBase);
+//       return res.status(500).json({ error: 'Error interno' });
+//     }
+//     if (!baseRows || baseRows.length === 0) {
+//       return res.status(404).send('Docente no encontrado');
+//     }
+//     const dni = baseRows[0].dnidocente;
 
-    // 2) traer todas las filas con ese DNIDocente
-    const { data: rows, error: errAll } = await supabase
-      .from('docentes_estudiante')
-      .select('iddocente, idestudiante, nombredocente, dnidocente, email, telefono, gradoseccionlabora')
-      .eq('dnidocente', dni);
+//     // 2) traer todas las filas con ese DNIDocente
+//     const { data: rows, error: errAll } = await supabase
+//       .from('docentes_estudiante')
+//       .select('iddocente, idestudiante, nombredocente, dnidocente, email, telefono, gradoseccionlabora')
+//       .eq('dnidocente', dni);
 
-    if (errAll) {
-      console.error('Error en buscar-docente (all):', errAll);
-      return res.status(500).json({ error: 'Error interno' });
-    }
+//     if (errAll) {
+//       console.error('Error en buscar-docente (all):', errAll);
+//       return res.status(500).json({ error: 'Error interno' });
+//     }
 
-    if (!rows || rows.length === 0) {
-      return res.status(404).send('Docente no encontrado');
-    }
+//     if (!rows || rows.length === 0) {
+//       return res.status(404).send('Docente no encontrado');
+//     }
 
-    const any = rows[0];
-    return res.json({
-      DNIDocente: any.dnidocente,
-      NombreDocente: any.nombredocente,
-      Email: any.email,
-      Telefono: any.telefono,
-      GradoSeccionLabora: any.gradoseccionlabora,
-      idEstudiante: rows.map(r => r.idestudiante)
-    });
-  } catch (err) {
-    console.error('Excepción buscar-docente:', err);
-    return res.status(500).json({ error: 'Error interno' });
-  }
-});
+//     const any = rows[0];
+//     return res.json({
+//       DNIDocente: any.dnidocente,
+//       NombreDocente: any.nombredocente,
+//       Email: any.email,
+//       Telefono: any.telefono,
+//       GradoSeccionLabora: any.gradoseccionlabora,
+//       idEstudiante: rows.map(r => r.idestudiante)
+//     });
+//   } catch (err) {
+//     console.error('Excepción buscar-docente:', err);
+//     return res.status(500).json({ error: 'Error interno' });
+//   }
+// });
 
 
 
