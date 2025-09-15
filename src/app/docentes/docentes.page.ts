@@ -217,7 +217,7 @@ private cargarAsignadosGlobal(): void {
   }
 
   // ------------------ BÚSQUEDA ------------------
-buscarDocente(): void {
+bbuscarDocente(): void {
   const raw = this.nombreBusqueda.trim();
   if (!raw) {
     this.mostrarAlerta('Error', 'Ingresa un nombre de docente para buscar.');
@@ -227,7 +227,7 @@ buscarDocente(): void {
   const normalize = (s: string) => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   const normalizedRaw = normalize(raw);
 
-  // Traer todas las filas cuyo NombreDocente contenga la búsqueda
+  // Filtrar TODOS los docentes cuyo nombre contenga la búsqueda
   const matches = this.docentes.filter(d => normalize(d.NombreDocente).includes(normalizedRaw));
 
   if (!matches.length) {
@@ -235,21 +235,23 @@ buscarDocente(): void {
     return;
   }
 
-  // Generar la vista de estudiantes sin agrupar ni deduplicar por docente
-  const views: DocenteView[] = matches.map(row => ({
-    idDocente: row.idDocente ?? 0,
-    idEstudiante: row.idEstudiante,
-    NombreEstudiante: row.NombreEstudiante || this.getEstudianteNombre(row.idEstudiante),
-    NombreDocente: row.NombreDocente,
-    DNIDocente: row.DNIDocente,
-    Email: row.Email,
-    Telefono: row.Telefono,
-    GradoSeccionLabora: row.GradoSeccionLabora,
-    displayId: row.displayId
-  }));
+  // Construir la lista completa de filas: cada estudiante de cada docente
+  const allRows: DocenteView[] = [];
+  matches.forEach(row => {
+    allRows.push({
+      idDocente: row.idDocente ?? 0,
+      idEstudiante: row.idEstudiante,
+      NombreEstudiante: this.getEstudianteNombre(row.idEstudiante),
+      NombreDocente: row.NombreDocente,
+      DNIDocente: row.DNIDocente,
+      Email: row.Email,
+      Telefono: row.Telefono,
+      GradoSeccionLabora: row.GradoSeccionLabora,
+      displayId: row.displayId
+    });
+  });
 
-  // Mostrar todos los estudiantes en la tabla
-  this.docentesFiltrados = views;
+  this.docentesFiltrados = allRows;
   this.datosCargados = true;
   this.buscandoDocente = false;
   this.searchLoading = false;
