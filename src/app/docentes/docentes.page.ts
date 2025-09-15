@@ -175,8 +175,10 @@ private cargarAsignadosGlobal(): void {
   this.http.get<{ ok: boolean, data: any[] }>(`${environment.apiUrl}/estudiantes-con-docente`, { params })
     .subscribe(res => {
       if (res.ok && Array.isArray(res.data)) {
-        // Asegurarse de extraer SOLO los ids de estudiante
-        this.allAsignados = res.data.map(r => r.idEstudiante ?? r.idestudiante);
+        // Extraer solo los IDs de estudiante asignados
+        this.allAsignados = res.data
+          .map(r => r.idEstudiante)  // <-- usar el campo correcto
+          .filter((id: number | null) => !!id); // limpiar nulos
         this.asignados = [...this.allAsignados];
       } else {
         this.allAsignados = [];
@@ -188,6 +190,7 @@ private cargarAsignadosGlobal(): void {
       this.asignados = [];
     });
 }
+
 
 
   // ------------------ BÚSQUEDA ------------------
@@ -541,6 +544,7 @@ openStudentsModal(): void {
   this.studentFilter = '';
   this.showStudentsModal = true;
 }
+
 
 
 
