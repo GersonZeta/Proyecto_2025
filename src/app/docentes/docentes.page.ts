@@ -235,7 +235,7 @@ buscarDocente(): void {
     return;
   }
 
-  // Generar la vista de estudiantes sin deduplicar ni agrupar por docente
+  // Generar la vista de estudiantes sin agrupar ni deduplicar por docente
   const views: DocenteView[] = matches.map(row => ({
     idDocente: row.idDocente ?? 0,
     idEstudiante: row.idEstudiante,
@@ -253,6 +253,8 @@ buscarDocente(): void {
   this.datosCargados = true;
   this.buscandoDocente = false;
   this.searchLoading = false;
+
+  // Después, el usuario elige la ID del docente para llenar los campos de detalle
 
 
   // --- 3. Lógica original para coincidencias exactas y elección de docente ---
