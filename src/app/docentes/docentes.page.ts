@@ -583,35 +583,36 @@ export class DocentesPage {
   }
 
   // ------------------ MODAL: SOLO ESTUDIANTES NO ASIGNADOS ------------------
-  openStudentsModal(): void {
-    // prevenir abrir si todavía están cargando las asignaciones
-    if (this.isLoadingAsignados) {
-      this.mostrarAlerta('Espera', 'Espere a que terminen de cargarse las asignaciones.');
-      return;
-    }
+openStudentsModal(): void {
+  // Asegura que la lista de disponibles esté actualizada
+  this.updateAvailableStudents();
 
-    this.studentFilter = '';
+  // Usa solo los no asignados
+  this.allStudents = [...this.availableStudents];
 
-    // construir lista del modal usando availableStudents (solo NO asignados globalmente)
-    this.allStudents = this.availableStudents.map(s => ({ ...s, selected: false }));
-    this.filteredStudents = [...this.allStudents];
-    this.showStudentsModal = true;
-  }
+  // Por defecto aplica filtro inicial
+  this.filteredStudents = [...this.allStudents];
+
+  // Mostrar modal
+  this.showStudentsModal = true;
+}
+
 
   closeStudentsModal(): void {
     this.showStudentsModal = false;
   }
 
-  filterStudents(): void {
-    const term = (this.studentFilter || '').trim().toLowerCase();
-    if (!term) {
-      this.filteredStudents = [...this.allStudents];
-      return;
-    }
-    this.filteredStudents = this.allStudents.filter(s =>
-      (s.ApellidosNombres || '').toLowerCase().includes(term)
-    );
+filterStudents(): void {
+  const term = this.studentFilter.trim().toLowerCase();
+  if (!term) {
+    this.filteredStudents = [...this.allStudents];
+    return;
   }
+  this.filteredStudents = this.allStudents.filter(s =>
+    s.ApellidosNombres.toLowerCase().includes(term)
+  );
+}
+
 
   applyStudentsSelection(): void {
     const seleccionados = this.allStudents
