@@ -227,21 +227,21 @@ buscarDocente(): void {
   const normalize = (s: string) => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   const normalizedRaw = normalize(raw);
 
-  // --- 1. FILTRAR TODAS LAS FILAS QUE COINCIDAN CON LA BÚSQUEDA (substring) ---
-  let matches = this.docentes.filter(d => normalize(d.NombreDocente).includes(normalizedRaw));
+  // Filtrar todas las filas que contengan el término
+  const matches = this.docentes.filter(d => normalize(d.NombreDocente).includes(normalizedRaw));
 
   if (!matches.length) {
     this.mostrarAlerta('Error', 'No hay docentes con ese nombre.');
     return;
   }
 
-  // --- 2. MOSTRAR TODOS LOS ESTUDIANTES DE LOS DOCENTES COINCIDENTES ---
-  const estudiantesVistos = new Set<number>();
-  const allStudents: DocenteView[] = [];
+  // MOSTRAR TODAS LAS FILAS COINCIDENTES EN LA TABLA
+  const seen = new Set<number>();
+  const views: DocenteView[] = [];
   matches.forEach(row => {
-    if (estudiantesVistos.has(row.idEstudiante)) return;
-    estudiantesVistos.add(row.idEstudiante);
-    allStudents.push({
+    if (seen.has(row.idEstudiante)) return;
+    seen.add(row.idEstudiante);
+    views.push({
       idDocente: row.idDocente ?? 0,
       idEstudiante: row.idEstudiante,
       NombreEstudiante: this.getEstudianteNombre(row.idEstudiante),
@@ -254,8 +254,7 @@ buscarDocente(): void {
     });
   });
 
-  // Mostramos la tabla con todos los estudiantes
-  this.docentesFiltrados = allStudents;
+  this.docentesFiltrados = views; // ✅ aquí se muestran todos los estudiantes
   this.datosCargados = true;
   this.buscandoDocente = false;
   this.searchLoading = false;
