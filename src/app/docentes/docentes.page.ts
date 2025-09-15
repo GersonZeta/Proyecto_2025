@@ -588,9 +588,13 @@ resetForm(): void {
   }
 
 openStudentsModal(): void {
-  this.filteredStudents = this.estudiantes.filter(
+  // Solo estudiantes NO asignados globalmente
+  const disponibles = this.estudiantes.filter(
     e => !this.allAsignados.includes(e.idEstudiante)
   );
+
+  this.allStudents = [...disponibles];      // 🔹 base para filtro
+  this.filteredStudents = [...disponibles]; // 🔹 lo que se muestra en modal
 
   this.showStudentsModal = true;
 }
@@ -598,10 +602,10 @@ openStudentsModal(): void {
 
 
 
+
   closeStudentsModal(): void {
   this.showStudentsModal = false;
 }
-
 filterStudents(): void {
   const term = this.studentFilter.trim().toLowerCase();
   if (!term) {
