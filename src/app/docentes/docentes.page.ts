@@ -528,23 +528,21 @@ export class DocentesPage {
   }
 
 openStudentsModal(): void {
-  const idsDocenteActual = this.docente.idEstudiante || [];
-
-  // Filtrar estudiantes que no estén asignados globalmente
-  // o que sean parte del docente actual (para no desaparecerlos)
+  // Solo mostrar estudiantes que no están asignados globalmente
   const disponibles = this.estudiantes.filter(
-    e => !this.allAsignados.includes(e.idEstudiante) || idsDocenteActual.includes(e.idEstudiante)
+    e => !this.allAsignados.includes(e.idEstudiante)
   );
 
   this.allStudents = disponibles.map(s => ({
     ...s,
-    selected: idsDocenteActual.includes(s.idEstudiante) // marcar como ya seleccionado si ya pertenece al docente
+    selected: false
   }));
 
   this.filteredStudents = [...this.allStudents];
   this.studentFilter = '';
   this.showStudentsModal = true;
 }
+
 
 
   closeStudentsModal(): void {
