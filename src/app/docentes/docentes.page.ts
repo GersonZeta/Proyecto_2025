@@ -584,18 +584,27 @@ export class DocentesPage {
 
   // ------------------ MODAL: SOLO ESTUDIANTES NO ASIGNADOS ------------------
 openStudentsModal(): void {
-  // Asegura que la lista de disponibles esté actualizada
-  this.updateAvailableStudents();
-
-  // Usa solo los no asignados
-  this.allStudents = [...this.availableStudents];
-
-  // Por defecto aplica filtro inicial
-  this.filteredStudents = [...this.allStudents];
-
-  // Mostrar modal
-  this.showStudentsModal = true;
+  this.http.get<any>(`${this.baseUrl}?action=listar-estudiantes-disponibles`)
+    .subscribe({
+      next: (res: any) => {
+        if (res.ok) {
+          this.allStudents = res.data;
+          this.filteredStudents = [...this.allStudents];
+        } else {
+          this.allStudents = [];
+          this.filteredStudents = [];
+        }
+        this.showStudentsModal = true;
+      },
+      error: (err) => {
+        console.error("Error cargando estudiantes disponibles:", err);
+        this.allStudents = [];
+        this.filteredStudents = [];
+        this.showStudentsModal = true;
+      }
+    });
 }
+
 
 
   closeStudentsModal(): void {

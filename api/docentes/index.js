@@ -6,56 +6,30 @@ export default async function handler(req, res) {
 
   try {
     // --- LISTAR DOCENTES (una fila por relación: iddocente + idestudiante + NombreEstudiante)
-    if (action === "listar") {
+    // --- LISTAR ESTUDIANTES DISPONIBLES (los que NO tienen docente asignado)
+    if (action === "listar-estudiantes-disponibles") {
       if (req.method !== "GET")
         return res.status(405).json({ ok: false, mensaje: "Método no permitido" });
 
-      const idInstitucionEducativa = req.query.idInstitucionEducativa;
-      const nombreDocente = req.query.nombreDocente;
-
-      // Seleccionar solo columnas necesarias
-      let query = supabase
+      // Traer todos los estudiantes asignados
+      const { data: asignados, error: errorAsignados } = await supabase
         .from("docentes_estudiante")
-        .select("iddocente, idestudiante, nombredocente, dnidocente, email, telefono, gradoseccionlabora, idinstitucioneducativa");
+        .select("idestudiante");
 
-      if (idInstitucionEducativa) {
-        // usar nombre de columna que usas en tu BD (idinstitucioneducativa)
-        query = query.eq("idinstitucioneducativa", idInstitucionEducativa);
-      }
-      if (nombreDocente) {
-        query = query.ilike("nombredocente", `%${nombreDocente}%`);
-      }
+      if (errorAsignados) throw errorAsignados;
 
-      const { data: docs, error } = await query.order("dnidocente", { ascending: true }).order("idestudiante", { ascending: true });
-      if (error) throw error;
+      const idsAsignados = (asignados || []).map(a => a.idestudiante);
 
-      const docsList = docs || [];
-
-      // obtener nombres de estudiantes en batch
-      const studentIds = Array.from(new Set(docsList.map(d => d.idestudiante).filter(Boolean)));
-      let studentsMap = new Map();
-      if (studentIds.length) {
-        const { data: studs, error: errStuds } = await supabase
-          .from("estudiantes")
-          .select("idestudiante, apellidosnombres")
-          .in("idestudiante", studentIds);
-        if (errStuds) throw errStuds;
-        (studs || []).forEach(s => studentsMap.set(s.idestudiante, s.apellidosnombres));
+      // Buscar estudiantes que NO estén en esa lista
+      let query = supabase.from("estudiantes").select("idestudiante, apellidosnombres");
+      if (idsAsignados.length > 0) {
+        query = query.not("idestudiante", "in", `(${idsAsignados.join(",")})`);
       }
 
-      const result = docsList.map(d => ({
-        idDocente: d.iddocente,
-        idEstudiante: d.idestudiante,
-        NombreEstudiante: studentsMap.get(d.idestudiante) ?? null,
-        NombreDocente: d.nombredocente,
-        DNIDocente: d.dnidocente,
-        Email: d.email,
-        Telefono: d.telefono,
-        GradoSeccionLabora: d.gradoseccionlabora,
-        idInstitucionEducativa: d.idinstitucioneducativa,
-      }));
+      const { data: disponibles, error: errorDisponibles } = await query;
+      if (errorDisponibles) throw errorDisponibles;
 
-      return res.json({ ok: true, data: result });
+      return res.json({ ok: true, data: disponibles });
     }
 
     // --- REGISTRAR DOCENTE (inserta una fila por relacion docente->estudiante)
