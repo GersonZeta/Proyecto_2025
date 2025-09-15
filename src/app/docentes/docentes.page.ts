@@ -573,10 +573,13 @@ resetForm(): void {
 
   // restaurar asignados para que la UI vuelva al estado global
   this.asignados = [...this.allAsignados];
+  this.docentesFiltrados = [...this.docentes];
+
 
   // limpiar modal buffers
   this.allStudents = [];
   this.filteredStudents = [];
+
 }
 
   onEstudiantesChange(): void {
