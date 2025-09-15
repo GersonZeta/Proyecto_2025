@@ -219,36 +219,63 @@ private cargarAsignadosGlobal(): void {
   }
 
   // ------------------ BÚSQUEDA ------------------
-  buscarDocente(): void {
-    const raw = this.nombreBusqueda.trim();
-    if (!raw) {
-      this.mostrarAlerta('Error', 'Ingresa un nombre de docente para buscar.');
-      return;
-    }
+buscarDocente(): void {
+  const raw = this.nombreBusqueda.trim();
+  if (!raw) {
+    this.mostrarAlerta('Error', 'Ingresa un nombre de docente para buscar.');
+    return;
+  }
 
-    const normalizedRaw = raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const normalizedRaw = raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
-    const matches = this.docentes.filter(d =>
-      (d.NombreDocente || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes(normalizedRaw)
-    );
+  // obtener todas las filas que coinciden (puede haber varias por el mismo docente)
+  const matches = this.docentes.filter(d =>
+    (d.NombreDocente || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes(normalizedRaw)
+  );
 
-    if (!matches.length) {
-      this.mostrarAlerta('Error', 'No hay docentes con ese nombre.');
-      return;
-    }
+  if (!matches.length) {
+    this.mostrarAlerta('Error', 'No hay docentes con ese nombre.');
+    return;
+  }
 
-    if (matches.length === 1) {
-      this.buscandoDocente = true;
-      this.datosCargados = false;
-      this.searchLoading = true;
-      this.buscarPorId(matches[0]);
-      return;
-    }
+  // Agrupar matches por docente (usar DNIDocente cuando exista, sino fallback por nombre+email+telefono)
+  const groups = new Map<string, DocenteView[]>();
+  matches.forEach(m => {
+    const dni = (m.DNIDocente || '').toString().trim();
+    const key = dni || `${(m.NombreDocente || '').toString().trim()}||${(m.Email || '').toString().trim()}||${(m.Telefono || '').toString().trim()}`;
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key)!.push(m);
+  });
 
-    this.docentesFiltrados = matches;
+  // Si sólo hay un docente (aunque tenga varias filas), cargarlo inmediatamente
+  if (groups.size === 1) {
+    const onlyGroup = groups.values().next().value as DocenteView[];
+    // Llamamos buscarPorId con la primera fila representativa
     this.buscandoDocente = true;
     this.datosCargados = false;
+    this.searchLoading = true;
+    this.buscarPorId(onlyGroup[0]);
+    return;
   }
+
+  // Si hay varios docentes distintos, mostrar una lista deduplicada (una fila por docente)
+  const deduped: DocenteView[] = Array.from(groups.values()).map(group => {
+    // elegimos la primera fila del grupo como representante
+    const rep = group[0];
+    return {
+      ...rep,
+      // mantener displayId existente (viene de cargarDocentes); si quieres reasignar displayId aquí, hacerlo explícitamente
+      displayId: rep.displayId
+    };
+  });
+
+  // Ordenamos (opcional) y asignamos a docentesFiltrados para que el usuario elija
+  deduped.sort((a, b) => a.NombreDocente.localeCompare(b.NombreDocente));
+  this.docentesFiltrados = deduped;
+  this.buscandoDocente = true;
+  this.datosCargados = false;
+}
+
 
   buscarPorId(d: DocenteView | (DocenteView & { index: number })): void {
     if (this.searchSub) {
