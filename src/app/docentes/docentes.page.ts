@@ -224,23 +224,22 @@ buscarDocente(): void {
     return;
   }
 
-  const normalize = (s: string) =>
-    (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const normalize = (s: string) => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   const normalizedRaw = normalize(raw);
 
   // 1. Filtrar todos los docentes cuyo nombre contenga la búsqueda
-  const matches = this.docentes.filter(d =>
-    normalize(d.NombreDocente).includes(normalizedRaw)
-  );
+  const matches = this.docentes.filter(d => normalize(d.NombreDocente).includes(normalizedRaw));
 
   if (!matches.length) {
     this.mostrarAlerta('Error', 'No hay docentes con ese nombre.');
     return;
   }
 
-  // 2. Construir lista con TODOS los estudiantes de todos los docentes coincidentes
+  // 2. Construir lista de coincidencias con TODOS los estudiantes de cada docente
   const allRows: DocenteView[] = [];
+
   matches.forEach(d => {
+    // Tomar todas las filas del mismo docente (por DNIDocente)
     const filasDocente = this.docentes.filter(x => x.DNIDocente === d.DNIDocente);
     filasDocente.forEach(f => {
       allRows.push({
@@ -262,27 +261,69 @@ buscarDocente(): void {
   this.datosCargados = true;
   this.buscandoDocente = matches.length > 1;
 
-  // 4. Si hay al menos un match, seleccionar automáticamente el primer docente
-  if (allRows.length > 0) {
-    const firstDni = allRows[0].DNIDocente;
-    const estudiantesDelPrimero = allRows
-      .filter(r => r.DNIDocente === firstDni)
-      .map(r => r.idEstudiante);
+  // 3. Manejo de coincidencias exactas
+  const exactMatches = matches.filter(d => normalize(d.NombreDocente) === normalizedRaw);
 
-    this.docente = {
-      idDocente: allRows[0].idDocente,
-      DNIDocente: allRows[0].DNIDocente,
-      NombreDocente: allRows[0].NombreDocente,
-      Email: allRows[0].Email,
-      Telefono: allRows[0].Telefono,
-      GradoSeccionLabora: allRows[0].GradoSeccionLabora,
-      idEstudiante: estudiantesDelPrimero
-    };
+  if (exactMatches.length === 1) {
+    this.buscarPorId(exactMatches[0]);
+  }
 
-    this.onEstudiantesChange();
-    this.updateAvailableStudents();
-    this.allStudents = [];
-    this.filteredStudents = [];
+  if (exactMatches.length > 0) {
+    const mapByKey = new Map<string, DocenteView[]>();
+    exactMatches.forEach(m => {
+      const dni = (m.DNIDocente || '').toString().trim();
+      const key = dni || `${(m.NombreDocente || '').toString().trim()}||${(m.Email || '').toString().trim()}||${(m.Telefono || '').toString().trim()}`;
+      if (!mapByKey.has(key)) mapByKey.set(key, []);
+      mapByKey.get(key)!.push(m);
+    });
+
+    if (mapByKey.size > 1) {
+      const deduped = Array.from(mapByKey.entries()).map(([key, group]) => {
+        const rep = group[0];
+        return { ...rep, studentCount: group.length } as any;
+      });
+      deduped.sort((a: any, b: any) => (a.NombreDocente || '').localeCompare(b.NombreDocente || ''));
+      this.docentesFiltrados = deduped;
+      this.buscandoDocente = true;
+      this.datosCargados = false;
+      return;
+    }
+
+    const onlyGroupRows = exactMatches;
+    const seen = new Set<number>();
+    const views: DocenteView[] = [];
+    onlyGroupRows.forEach(row => {
+      if (seen.has(row.idEstudiante)) return;
+      seen.add(row.idEstudiante);
+      views.push({
+        idDocente: row.idDocente ?? 0,
+        idEstudiante: row.idEstudiante,
+        NombreEstudiante: this.getEstudianteNombre(row.idEstudiante),
+        NombreDocente: row.NombreDocente,
+        DNIDocente: row.DNIDocente,
+        Email: row.Email,
+        Telefono: row.Telefono,
+        GradoSeccionLabora: row.GradoSeccionLabora,
+        displayId: row.displayId
+      });
+    });
+
+    if (views.length) {
+      this.docente = {
+        idDocente: views[0]?.idDocente,
+        DNIDocente: onlyGroupRows[0]?.DNIDocente ?? '',
+        NombreDocente: onlyGroupRows[0]?.NombreDocente ?? '',
+        Email: onlyGroupRows[0]?.Email ?? '',
+        Telefono: onlyGroupRows[0]?.Telefono ?? '',
+        GradoSeccionLabora: onlyGroupRows[0]?.GradoSeccionLabora ?? '',
+        idEstudiante: Array.from(seen)
+      };
+      this.asignados = this.allAsignados.filter(id => !Array.from(seen).includes(id));
+      this.onEstudiantesChange();
+      this.updateAvailableStudents();
+      this.allStudents = [];
+      this.filteredStudents = [];
+    }
   }
 }
 
