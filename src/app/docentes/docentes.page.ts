@@ -235,34 +235,33 @@ buscarDocente(): void {
     return;
   }
 
-// 2. Construir lista de coincidencias con TODOS los estudiantes de cada docente
-const allRows: DocenteView[] = [];
-matches.forEach(d => {
-  // Buscar todas las filas del mismo docente (por DNIDocente)
-  const filasDocente = this.docentes.filter(x => x.DNIDocente === d.DNIDocente);
-  filasDocente.forEach(f => {
+  // 2. Construir lista de coincidencias con TODOS los estudiantes de cada docente
+  const allRows: DocenteView[] = [];
+  matches.forEach(d => {
     allRows.push({
-      idDocente: f.idDocente ?? 0,
-      idEstudiante: f.idEstudiante,
-      NombreEstudiante: this.getEstudianteNombre(f.idEstudiante),
-      NombreDocente: f.NombreDocente,
-      DNIDocente: f.DNIDocente,
-      Email: f.Email,
-      Telefono: f.Telefono,
-      GradoSeccionLabora: f.GradoSeccionLabora,
-      displayId: f.displayId
+      idDocente: d.idDocente ?? 0,
+      idEstudiante: d.idEstudiante,
+      NombreEstudiante: this.getEstudianteNombre(d.idEstudiante),
+      NombreDocente: d.NombreDocente,
+      DNIDocente: d.DNIDocente,
+      Email: d.Email,
+      Telefono: d.Telefono,
+      GradoSeccionLabora: d.GradoSeccionLabora,
+      displayId: d.displayId
     });
   });
-});
 
   this.docentesFiltrados = allRows;
   this.datosCargados = true;
-  this.buscandoDocente = matches.length > 1; // true si hay más de una coincidencia
+  this.buscandoDocente = matches.length > 1; // true si hay que elegir uno
 
-  const exactMatches = matches.filter(d => normalize(d.NombreDocente) === normalizedRaw);
-  if (exactMatches.length === 1) {
-    this.buscarPorId(exactMatches[0]);
+  // 3. Si hay solo una coincidencia exacta, la podemos seleccionar automáticamente
+  if (matches.length === 1) {
+    this.buscarPorId(matches[0]); // llena el formulario con todos sus estudiantes
   }
+
+  // --- 3. Lógica original para coincidencias exactas y elección de docente ---
+  const exactMatches = matches.filter(d => normalize(d.NombreDocente) === normalizedRaw);
 
   if (exactMatches.length > 0) {
     const mapByKey = new Map<string, DocenteView[]>();
