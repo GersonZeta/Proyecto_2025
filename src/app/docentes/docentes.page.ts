@@ -155,16 +155,13 @@ private cargarEstudiantes(): void {
 
   this.http.get<{ ok: boolean; data: any[] }>(`${environment.apiUrl}/estudiantes`, { params })
     .subscribe(res => {
-      const list = (res?.data || []).map((r: any) => ({
+      this.estudiantes = (res?.data || []).map((r: any) => ({
         idEstudiante: r.idEstudiante ?? r.idestudiante,
         ApellidosNombres: r.ApellidosNombres ?? r.apellidosnombres,
         idInstitucionEducativa: r.idInstitucionEducativa ?? r.idinstitucioneducativa
       }));
 
-      // 🚨 Filtrar: excluir los que ya están asignados globalmente
-      this.estudiantes = list.filter(e => !this.allAsignados.includes(e.idEstudiante));
-
-      // Inicializar filtro para el modal
+      // 🚨 No filtrar aquí, solo inicializar modal vacío
       this.filteredStudents = [...this.estudiantes];
     }, err => {
       console.error('Error cargando estudiantes:', err);
@@ -312,19 +309,20 @@ buscarPorId(d: DocenteView | (DocenteView & { index: number })): void {
       this.onEstudiantesChange();
 
       // 🚨 Arreglo: recalcular estudiantes disponibles para el modal
-      const idsDocenteActual = new Set((this.docente.idEstudiante as number[]) || []);
+const idsDocenteActual = new Set((this.docente.idEstudiante as number[]) || []);
 
-      // Estudiantes no asignados globalmente
-      const disponibles = this.estudiantes.filter(
-        e => !this.allAsignados.includes(e.idEstudiante)
-      );
+// Estudiantes NO asignados globalmente
+const disponibles = this.estudiantes.filter(
+  e => !this.allAsignados.includes(e.idEstudiante)
+);
 
-      // Agregar los que ya tiene el docente actual (para editarlos)
-      const actuales = this.estudiantes.filter(
-        e => idsDocenteActual.has(e.idEstudiante)
-      );
+// Agregar también los que ya tiene el docente actual
+const actuales = this.estudiantes.filter(
+  e => idsDocenteActual.has(e.idEstudiante)
+);
 
-      this.filteredStudents = [...disponibles, ...actuales];
+// Resultado final: solo no asignados + actuales
+this.filteredStudents = [...disponibles, ...actuales];
 
       return;
     }
