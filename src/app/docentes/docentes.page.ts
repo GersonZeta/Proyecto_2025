@@ -253,15 +253,12 @@ buscarDocente(): void {
 
   this.docentesFiltrados = allRows;
   this.datosCargados = true;
-  this.buscandoDocente = matches.length > 1; // true si hay que elegir uno
+  this.buscandoDocente = matches.length > 1; // true si hay más de una coincidencia
 
-  // 3. Si hay solo una coincidencia exacta, la podemos seleccionar automáticamente
-  if (matches.length === 1) {
-    this.buscarPorId(matches[0]); // llena el formulario con todos sus estudiantes
-  }
-
-  // --- 3. Lógica original para coincidencias exactas y elección de docente ---
   const exactMatches = matches.filter(d => normalize(d.NombreDocente) === normalizedRaw);
+  if (exactMatches.length === 1) {
+    this.buscarPorId(exactMatches[0]);
+  }
 
   if (exactMatches.length > 0) {
     const mapByKey = new Map<string, DocenteView[]>();
