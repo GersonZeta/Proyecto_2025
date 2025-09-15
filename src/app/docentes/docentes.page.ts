@@ -96,12 +96,14 @@ export class DocentesPage {
 
   private searchSub?: Subscription;
   searchLoading = false;
+  isLoadingAsignados = false;
 
   constructor(
     private http: HttpClient,
     private alertCtrl: AlertController,
     private actionSheetCtrl: ActionSheetController,
     private navCtrl: NavController
+
   ) {}
 
   cerrarAlertaExportar(): void { this.mostrarAlertaExportar = false; }
@@ -168,28 +170,41 @@ export class DocentesPage {
   }
 
 private cargarAsignadosGlobal(): void {
+  this.isLoadingAsignados = true;
   const params = new HttpParams()
     .set('action', 'listar')
     .set('idInstitucionEducativa', this.idInstitucionEducativa.toString());
 
-  this.http.get<{ ok: boolean, data: any[] }>(`${environment.apiUrl}/estudiantes-con-docente`, { params })
+  this.http.get<any>(`${this.baseUrl}/estudiantes-con-docente`, { params })
     .subscribe(res => {
-      if (res.ok && Array.isArray(res.data)) {
-        // Extraer solo los IDs de estudiante asignados
-        this.allAsignados = res.data
-          .map(r => r.idEstudiante)  // <-- usar el campo correcto
-          .filter((id: number | null) => !!id); // limpiar nulos
-        this.asignados = [...this.allAsignados];
-      } else {
-        this.allAsignados = [];
-        this.asignados = [];
-      }
+      // Normalizar la respuesta a un array "raw"
+      let raw: any[] = [];
+      if (!res) raw = [];
+      else if (Array.isArray(res)) raw = res;            // el endpoint devolvió un array directamente
+      else if (res.ok && Array.isArray(res.data)) raw = res.data; // {ok:true, data: [...]}
+      else if (Array.isArray(res.data)) raw = res.data;  // por si viene así
+      else raw = [];
+
+      // Extraer ids soportando varias formas: number, string numeric, objeto {idEstudiante|idestudiante|id}
+      const ids = raw.map((r: any) => {
+        if (typeof r === 'number') return r;
+        if (typeof r === 'string' && /^\d+$/.test(r)) return Number(r);
+        return r?.idEstudiante ?? r?.idestudiante ?? r?.id ?? null;
+      }).filter((n: any) => Number.isInteger(n)) as number[];
+
+      this.allAsignados = ids;
+      // asignados = lista de IDs asignados globalmente por defecto.
+      // cuando el usuario seleccione un docente actual, se recalculará asignados para excluir los del docente.
+      this.asignados = [...this.allAsignados];
+      this.isLoadingAsignados = false;
     }, err => {
       console.error('Error cargando asignados:', err);
       this.allAsignados = [];
       this.asignados = [];
+      this.isLoadingAsignados = false;
     });
 }
+
 
 
 
@@ -506,22 +521,28 @@ private cargarAsignadosGlobal(): void {
     await alert.present();
   }
 
-  resetForm(): void {
-    this.docente = {
-      DNIDocente: '',
-      NombreDocente: '',
-      Email: '',
-      Telefono: '',
-      GradoSeccionLabora: '',
-      idEstudiante: []
-    };
-    this.selectedStudentNames = '';
-    this.nombreBusqueda = '';
-    this.datosCargados = false;
-    this.buscandoDocente = false;
-    this.emailInvalid = false;
-    // no reasignar docentesFiltrados aquí
-  }
+resetForm(): void {
+  this.docente = {
+    DNIDocente: '',
+    NombreDocente: '',
+    Email: '',
+    Telefono: '',
+    GradoSeccionLabora: '',
+    idEstudiante: []
+  };
+  this.selectedStudentNames = '';
+  this.nombreBusqueda = '';
+  this.datosCargados = false;
+  this.buscandoDocente = false;
+  this.emailInvalid = false;
+
+  // restaurar asignados para que la UI vuelva al estado global
+  this.asignados = [...this.allAsignados];
+
+  // limpiar modal buffers
+  this.allStudents = [];
+  this.filteredStudents = [];
+}
 
   onEstudiantesChange(): void {
     this.selectedStudentNames = this.estudiantes
@@ -531,21 +552,26 @@ private cargarAsignadosGlobal(): void {
   }
 
 openStudentsModal(): void {
-  const idsDocenteActual = this.docente.idEstudiante || [];
+  this.studentFilter = '';
 
+  const idsDocenteActual = new Set(this.docente.idEstudiante || []);
+
+  // Mostrar SOLO:
+  // - estudiantes que ya pertenecen al docente actual (idsDocenteActual)
+  // - OR estudiantes que NO están en la lista `asignados` (asignados = asignados globales EXCLUYENDO los del docente actual, si corresponde)
   const disponibles = this.estudiantes.filter(
-    e => !this.allAsignados.includes(e.idEstudiante) || idsDocenteActual.includes(e.idEstudiante)
+    e => idsDocenteActual.has(e.idEstudiante) || !this.asignados.includes(e.idEstudiante)
   );
 
   this.allStudents = disponibles.map(s => ({
     ...s,
-    selected: idsDocenteActual.includes(s.idEstudiante) // marcar como seleccionados los del docente actual
+    selected: idsDocenteActual.has(s.idEstudiante)
   }));
 
   this.filteredStudents = [...this.allStudents];
-  this.studentFilter = '';
   this.showStudentsModal = true;
 }
+
 
 
   closeStudentsModal(): void {
@@ -564,15 +590,19 @@ filterStudents(): void {
 }
 
 applyStudentsSelection(): void {
-  const seleccionados = this.allStudents.filter(s => s.selected).map(s => s.idEstudiante);
-  this.docente.idEstudiante = [...seleccionados];
+  const seleccionados = this.allStudents
+    .filter(s => !!s.selected)
+    .map(s => Number(s.idEstudiante))
+    .filter(n => !isNaN(n));
 
-  this.selectedStudentNames = this.allStudents
-    .filter(s => s.selected)
-    .map(s => s.ApellidosNombres)
-    .join(', ');
+  const selNums = Array.from(new Set(seleccionados));
+  this.docente.idEstudiante = selNums;
+  this.onEstudiantesChange();
 
-  this.showStudentsModal = false;
+  // recalcular asignados: quitar los que ahora pertenecen a este docente
+  this.asignados = this.allAsignados.filter(id => !this.docente.idEstudiante.includes(id));
+
+  this.closeStudentsModal();
 }
 
   goTo(page: string): void { this.navCtrl.navigateRoot(`/${page}`); }
