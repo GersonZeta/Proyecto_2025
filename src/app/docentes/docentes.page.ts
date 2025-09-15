@@ -588,21 +588,13 @@ resetForm(): void {
   }
 
 openStudentsModal(): void {
-  this.studentFilter = '';
-
-  // 🚨 Solo mostrar estudiantes que NO están en la lista global de asignados
-  const disponibles = this.estudiantes.filter(
+  this.filteredStudents = this.estudiantes.filter(
     e => !this.allAsignados.includes(e.idEstudiante)
   );
 
-  this.allStudents = disponibles.map(s => ({
-    ...s,
-    selected: false
-  }));
-
-  this.filteredStudents = [...this.allStudents];
   this.showStudentsModal = true;
 }
+
 
 
 
