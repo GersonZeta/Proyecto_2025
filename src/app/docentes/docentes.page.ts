@@ -235,18 +235,40 @@ buscarDocente(): void {
     return;
   }
 
-  // Si hay coincidencias EXACTAS por nombre, PRIORIZA esas.
+  // PRIORIDAD: si existe al menos un docente cuya NombreDocente coincide exactamente con la búsqueda,
+  // trabajar sobre esas filas exactas primero
   const exactMatches = matches.filter(d => normalize(d.NombreDocente) === normalizedRaw);
 
   if (exactMatches.length > 0) {
-    // Tomar **todas** las filas locales cuyo NombreDocente normalizado sea EXACTAMENTE la búsqueda,
-    // esto incluye a varios DNIs/emails si existen (ej: dos docentes distintos llamados "a").
-    const byNameRows = this.docentes.filter(d => normalize(d.NombreDocente) === normalizedRaw);
+    // agrupar por clave única del docente (preferible DNIDocente, si no usar nombre+email+telefono)
+    const mapByKey = new Map<string, DocenteView[]>();
+    exactMatches.forEach(m => {
+      const dni = (m.DNIDocente || '').toString().trim();
+      const key = dni || `${(m.NombreDocente || '').toString().trim()}||${(m.Email || '').toString().trim()}||${(m.Telefono || '').toString().trim()}`;
+      if (!mapByKey.has(key)) mapByKey.set(key, []);
+      mapByKey.get(key)!.push(m);
+    });
 
+    // Si hay más de un docente distinto (misma 'NombreDocente' pero claves distintas), mostrar lista para elegir
+    if (mapByKey.size > 1) {
+      const deduped = Array.from(mapByKey.entries()).map(([key, group]) => {
+        const rep = group[0];
+        // incluir count de estudiantes para ayudar a elegir (campo extra, opcional)
+        return { ...rep, studentCount: group.length } as any;
+      });
+      // ordenar por nombre para buena UX (opcional)
+      deduped.sort((a: any, b: any) => (a.NombreDocente || '').localeCompare(b.NombreDocente || ''));
+      this.docentesFiltrados = deduped;
+      this.buscandoDocente = true;
+      this.datosCargados = false;
+      return;
+    }
+
+    // Si sólo hay 1 docente (clave única) cuyo nombre coincide exactamente -> mostrar todos sus estudiantes
+    const onlyGroupRows = exactMatches; // todas las filas con ese nombre exacto (puede ser 1+ filas con mismo DNI)
     const seen = new Set<number>();
     const views: DocenteView[] = [];
-
-    byNameRows.forEach(row => {
+    onlyGroupRows.forEach(row => {
       if (seen.has(row.idEstudiante)) return;
       seen.add(row.idEstudiante);
       views.push({
@@ -266,11 +288,11 @@ buscarDocente(): void {
       this.docentesFiltrados = views;
       this.docente = {
         idDocente: views[0]?.idDocente,
-        DNIDocente: '', // varios DNIs posibles, dejamos vacío para evitar confusión
-        NombreDocente: byNameRows[0]?.NombreDocente ?? '',
-        Email: byNameRows[0]?.Email ?? '',
-        Telefono: byNameRows[0]?.Telefono ?? '',
-        GradoSeccionLabora: byNameRows[0]?.GradoSeccionLabora ?? '',
+        DNIDocente: onlyGroupRows[0]?.DNIDocente ?? '',
+        NombreDocente: onlyGroupRows[0]?.NombreDocente ?? '',
+        Email: onlyGroupRows[0]?.Email ?? '',
+        Telefono: onlyGroupRows[0]?.Telefono ?? '',
+        GradoSeccionLabora: onlyGroupRows[0]?.GradoSeccionLabora ?? '',
         idEstudiante: Array.from(seen)
       };
 
@@ -278,7 +300,6 @@ buscarDocente(): void {
       this.buscandoDocente = false;
       this.searchLoading = false;
 
-      // recalcular asignados UI y demás
       this.asignados = this.allAsignados.filter(id => !Array.from(seen).includes(id));
       this.onEstudiantesChange();
       this.updateAvailableStudents();
@@ -288,7 +309,7 @@ buscarDocente(): void {
     }
   }
 
-  // Si no hay coincidencias exactas, seguimos con la lógica anterior (agrupando por docente)
+  // Si no hay coincidencias EXACTAS, agrupamos por docente usando substring matches (como antes)
   const groups = new Map<string, DocenteView[]>();
   matches.forEach(m => {
     const dni = (m.DNIDocente || '').toString().trim();
@@ -297,6 +318,7 @@ buscarDocente(): void {
     groups.get(key)!.push(m);
   });
 
+  // Si hay un único grupo, cargarlo directamente
   if (groups.size === 1) {
     const onlyGroup = groups.values().next().value as DocenteView[];
     this.buscandoDocente = true;
@@ -306,9 +328,13 @@ buscarDocente(): void {
     return;
   }
 
+  // Si hay varios grupos (varios docentes distintos), mostrar lista deduplicada para elegir
   const deduped: DocenteView[] = Array.from(groups.values()).map(group => {
     const rep = group[0];
-    return { ...rep, displayId: rep.displayId };
+    return {
+      ...rep,
+      displayId: rep.displayId
+    };
   });
 
   deduped.sort((a, b) => a.NombreDocente.localeCompare(b.NombreDocente));
