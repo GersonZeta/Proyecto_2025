@@ -237,15 +237,10 @@ buscarDocente(): void {
 
   // 2. Construir lista de coincidencias con TODOS los estudiantes de cada docente
   const allRows: DocenteView[] = [];
-  const processedDocentes = new Set<string>(); // Para no duplicar docentes por DNIDocente
 
   matches.forEach(d => {
-    const keyDocente = d.DNIDocente || `${d.NombreDocente}||${d.Email}||${d.Telefono}`;
-    if (processedDocentes.has(keyDocente)) return;
-    processedDocentes.add(keyDocente);
-
-    // Traer todas las filas del mismo docente (todos sus estudiantes)
-    const filasDocente = this.docentes.filter(x => (x.DNIDocente || '').trim() === (d.DNIDocente || '').trim());
+    // Tomar todas las filas del mismo docente (por DNIDocente)
+    const filasDocente = this.docentes.filter(x => x.DNIDocente === d.DNIDocente);
     filasDocente.forEach(f => {
       allRows.push({
         idDocente: f.idDocente ?? 0,
@@ -261,6 +256,7 @@ buscarDocente(): void {
     });
   });
 
+  // 3. Asignar todos los resultados a docentesFiltrados
   this.docentesFiltrados = allRows;
   this.datosCargados = true;
   this.buscandoDocente = matches.length > 1;
