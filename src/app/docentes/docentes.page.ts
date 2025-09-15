@@ -217,7 +217,7 @@ private cargarAsignadosGlobal(): void {
   }
 
   // ------------------ BÚSQUEDA ------------------
-bbuscarDocente(): void {
+buscarDocente(): void {
   const raw = this.nombreBusqueda.trim();
   if (!raw) {
     this.mostrarAlerta('Error', 'Ingresa un nombre de docente para buscar.');
