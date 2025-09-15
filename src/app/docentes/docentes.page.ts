@@ -226,14 +226,24 @@ buscarDocente(): void {
 
   const normalizedRaw = raw.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
 
-  // obtener todas las filas que coinciden (puede haber varias por el mismo docente)
-  const matches = this.docentes.filter(d =>
+  // todas las filas que contengan el término (substring) — sigue siendo útil para búsquedas parciales
+  let matches = this.docentes.filter(d =>
     (d.NombreDocente || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().includes(normalizedRaw)
   );
 
   if (!matches.length) {
     this.mostrarAlerta('Error', 'No hay docentes con ese nombre.');
     return;
+  }
+
+  // PRIORIDAD: si existe al menos un docente cuya NombreDocente coincide exactamente con la búsqueda,
+  // usar sólo esas filas exactas (evita traer 'ac' cuando buscaste 'a').
+  const exactMatches = matches.filter(d =>
+    (d.NombreDocente || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase() === normalizedRaw
+  );
+
+  if (exactMatches.length > 0) {
+    matches = exactMatches;
   }
 
   // Agrupar matches por docente (usar DNIDocente cuando exista, sino fallback por nombre+email+telefono)
@@ -248,7 +258,6 @@ buscarDocente(): void {
   // Si sólo hay un docente (aunque tenga varias filas), cargarlo inmediatamente
   if (groups.size === 1) {
     const onlyGroup = groups.values().next().value as DocenteView[];
-    // Llamamos buscarPorId con la primera fila representativa
     this.buscandoDocente = true;
     this.datosCargados = false;
     this.searchLoading = true;
@@ -258,21 +267,20 @@ buscarDocente(): void {
 
   // Si hay varios docentes distintos, mostrar una lista deduplicada (una fila por docente)
   const deduped: DocenteView[] = Array.from(groups.values()).map(group => {
-    // elegimos la primera fila del grupo como representante
     const rep = group[0];
     return {
       ...rep,
-      // mantener displayId existente (viene de cargarDocentes); si quieres reasignar displayId aquí, hacerlo explícitamente
       displayId: rep.displayId
     };
   });
 
-  // Ordenamos (opcional) y asignamos a docentesFiltrados para que el usuario elija
+  // Ordenamos por nombre para que la lista sea legible al usuario
   deduped.sort((a, b) => a.NombreDocente.localeCompare(b.NombreDocente));
   this.docentesFiltrados = deduped;
   this.buscandoDocente = true;
   this.datosCargados = false;
 }
+
 
 
 buscarPorId(d: DocenteView | (DocenteView & { index: number })): void {

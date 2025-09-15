@@ -1478,9 +1478,6 @@ app.get('/buscar-familia', async (req, res) => {
   }
 });
 
-
-
-
 // En lugar de usar .distinct(), haz la consulta normal
 app.get('/estudiantes-con-familia', async (req, res) => {
   const { idInstitucionEducativa } = req.query;
@@ -1507,6 +1504,8 @@ app.get('/estudiantes-con-familia', async (req, res) => {
     return res.status(500).json({ error: 'Error interno' });
   }
 });
+
+
 
 
 
