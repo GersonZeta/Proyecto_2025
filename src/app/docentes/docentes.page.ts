@@ -543,31 +543,55 @@ private cargarAsignadosGlobal(): void {
     await alert.present();
   }
 
-  resetForm(): void {
-    this.docente = {
-      DNIDocente: '',
-      NombreDocente: '',
-      Email: '',
-      Telefono: '',
-      GradoSeccionLabora: '',
-      idEstudiante: []
-    };
-    this.selectedStudentNames = '';
-    this.nombreBusqueda = '';
-    this.datosCargados = false;
-    this.buscandoDocente = false;
-    this.emailInvalid = false;
-
-    // restaurar asignados UI
-    this.asignados = [...this.allAsignados];
-    this.docentesFiltrados = [...this.docentes];
-
-    // limpiar modal buffers
-    this.allStudents = [];
-    this.filteredStudents = [];
-    // recalcular disponibles
-    this.updateAvailableStudents();
+resetForm(): void {
+  // cancelar subscripciones de búsqueda activas (si las hubiera)
+  if (this.searchSub) {
+    this.searchSub.unsubscribe();
+    this.searchSub = undefined;
   }
+
+  // restablecer el formulario del docente
+  this.docente = {
+    idDocente: undefined,
+    DNIDocente: '',
+    NombreDocente: '',
+    Email: '',
+    Telefono: '',
+    GradoSeccionLabora: '',
+    idEstudiante: []
+  };
+
+  // limpiar textos / flags UI
+  this.selectedStudentNames = '';
+  this.nombreBusqueda = '';
+  this.datosCargados = false;
+  this.buscandoDocente = false;
+  this.searchLoading = false;
+  this.emailInvalid = false;
+
+  // restaurar asignados visibles desde el origen (allAsignados)
+  this.asignados = Array.isArray(this.allAsignados) ? [...this.allAsignados] : [];
+
+  // restaurar lista de docentes filtrados a la lista completa
+  this.docentesFiltrados = Array.isArray(this.docentes) ? [...this.docentes] : [];
+
+  // limpiar modal / buffers
+  this.allStudents = [];
+  this.filteredStudents = [];
+  this.showStudentsModal = false;
+  this.studentFilter = '';
+
+  // limpiar cualquier "selected" que pudiera haberse quedado en estudiantes
+  if (Array.isArray(this.estudiantes)) {
+    this.estudiantes.forEach(s => { delete (s as any).selected; });
+  }
+
+  // recalcular disponibles con base en estudiantes + allAsignados
+  this.updateAvailableStudents();
+
+  // (opcional) forzar recalculo del nombre seleccionado mostrado
+  this.onEstudiantesChange();
+}
 
   onEstudiantesChange(): void {
     this.selectedStudentNames = this.estudiantes
@@ -576,7 +600,6 @@ private cargarAsignadosGlobal(): void {
       .join(', ');
   }
 
-  // ------------------ MODAL: SOLO ESTUDIANTES NO ASIGNADOS ------------------
 openStudentsModal(): void {
   // Asegura que la lista de disponibles esté actualizada
   this.updateAvailableStudents();
@@ -618,10 +641,14 @@ openStudentsModal(): void {
     });
   }
 
-  // 3) Convertir a array y ordenar por nombre para mejor UX
-  const list = Array.from(map.values()).sort((a, b) =>
-    (a.ApellidosNombres || '').localeCompare(b.ApellidosNombres || '')
-  );
+  // 3) Convertir a array y ordenar: primero los asignados al docente (selected = true),
+  //    luego los no asignados; dentro de cada grupo ordenar alfabéticamente por nombre.
+  const list = Array.from(map.values()).sort((a, b) => {
+    const aSel = a.selected ? 1 : 0;
+    const bSel = b.selected ? 1 : 0;
+    if (aSel !== bSel) return bSel - aSel; // selected (1) debe ir antes
+    return (a.ApellidosNombres || '').localeCompare(b.ApellidosNombres || '');
+  });
 
   // 4) Preparar modal
   this.allStudents = list;
