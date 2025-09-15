@@ -235,21 +235,25 @@ buscarDocente(): void {
     return;
   }
 
-  // 2. Construir lista de coincidencias con TODOS los estudiantes de cada docente
-  const allRows: DocenteView[] = [];
-  matches.forEach(d => {
+// 2. Construir lista de coincidencias con TODOS los estudiantes de cada docente
+const allRows: DocenteView[] = [];
+matches.forEach(d => {
+  // Buscar todas las filas del mismo docente (por DNIDocente)
+  const filasDocente = this.docentes.filter(x => x.DNIDocente === d.DNIDocente);
+  filasDocente.forEach(f => {
     allRows.push({
-      idDocente: d.idDocente ?? 0,
-      idEstudiante: d.idEstudiante,
-      NombreEstudiante: this.getEstudianteNombre(d.idEstudiante),
-      NombreDocente: d.NombreDocente,
-      DNIDocente: d.DNIDocente,
-      Email: d.Email,
-      Telefono: d.Telefono,
-      GradoSeccionLabora: d.GradoSeccionLabora,
-      displayId: d.displayId
+      idDocente: f.idDocente ?? 0,
+      idEstudiante: f.idEstudiante,
+      NombreEstudiante: this.getEstudianteNombre(f.idEstudiante),
+      NombreDocente: f.NombreDocente,
+      DNIDocente: f.DNIDocente,
+      Email: f.Email,
+      Telefono: f.Telefono,
+      GradoSeccionLabora: f.GradoSeccionLabora,
+      displayId: f.displayId
     });
   });
+});
 
   this.docentesFiltrados = allRows;
   this.datosCargados = true;
