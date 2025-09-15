@@ -227,120 +227,19 @@ buscarDocente(): void {
   const normalize = (s: string) => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   const normalizedRaw = normalize(raw);
 
-  // todas las filas que contengan el término (substring)
-  let matches = this.docentes.filter(d => normalize(d.NombreDocente).includes(normalizedRaw));
+  // Filtrar todas las filas cuyo NombreDocente contenga el texto buscado
+  const matches = this.docentes.filter(d => normalize(d.NombreDocente).includes(normalizedRaw));
 
   if (!matches.length) {
     this.mostrarAlerta('Error', 'No hay docentes con ese nombre.');
     return;
   }
 
-  // PRIORIDAD: si existe al menos un docente cuya NombreDocente coincide exactamente con la búsqueda,
-  // trabajar sobre esas filas exactas primero
-  const exactMatches = matches.filter(d => normalize(d.NombreDocente) === normalizedRaw);
-
-  if (exactMatches.length > 0) {
-    // agrupar por clave única del docente (preferible DNIDocente, si no usar nombre+email+telefono)
-    const mapByKey = new Map<string, DocenteView[]>();
-    exactMatches.forEach(m => {
-      const dni = (m.DNIDocente || '').toString().trim();
-      const key = dni || `${(m.NombreDocente || '').toString().trim()}||${(m.Email || '').toString().trim()}||${(m.Telefono || '').toString().trim()}`;
-      if (!mapByKey.has(key)) mapByKey.set(key, []);
-      mapByKey.get(key)!.push(m);
-    });
-
-    // Si hay más de un docente distinto (misma 'NombreDocente' pero claves distintas), mostrar lista para elegir
-    if (mapByKey.size > 1) {
-      const deduped = Array.from(mapByKey.entries()).map(([key, group]) => {
-        const rep = group[0];
-        // incluir count de estudiantes para ayudar a elegir (campo extra, opcional)
-        return { ...rep, studentCount: group.length } as any;
-      });
-      // ordenar por nombre para buena UX (opcional)
-      deduped.sort((a: any, b: any) => (a.NombreDocente || '').localeCompare(b.NombreDocente || ''));
-      this.docentesFiltrados = deduped;
-      this.buscandoDocente = true;
-      this.datosCargados = false;
-      return;
-    }
-
-    // Si sólo hay 1 docente (clave única) cuyo nombre coincide exactamente -> mostrar todos sus estudiantes
-    const onlyGroupRows = exactMatches; // todas las filas con ese nombre exacto (puede ser 1+ filas con mismo DNI)
-    const seen = new Set<number>();
-    const views: DocenteView[] = [];
-    onlyGroupRows.forEach(row => {
-      if (seen.has(row.idEstudiante)) return;
-      seen.add(row.idEstudiante);
-      views.push({
-        idDocente: row.idDocente ?? 0,
-        idEstudiante: row.idEstudiante,
-        NombreEstudiante: this.getEstudianteNombre(row.idEstudiante),
-        NombreDocente: row.NombreDocente,
-        DNIDocente: row.DNIDocente,
-        Email: row.Email,
-        Telefono: row.Telefono,
-        GradoSeccionLabora: row.GradoSeccionLabora,
-        displayId: row.displayId
-      });
-    });
-
-    if (views.length) {
-      this.docentesFiltrados = views;
-      this.docente = {
-        idDocente: views[0]?.idDocente,
-        DNIDocente: onlyGroupRows[0]?.DNIDocente ?? '',
-        NombreDocente: onlyGroupRows[0]?.NombreDocente ?? '',
-        Email: onlyGroupRows[0]?.Email ?? '',
-        Telefono: onlyGroupRows[0]?.Telefono ?? '',
-        GradoSeccionLabora: onlyGroupRows[0]?.GradoSeccionLabora ?? '',
-        idEstudiante: Array.from(seen)
-      };
-
-      this.datosCargados = true;
-      this.buscandoDocente = false;
-      this.searchLoading = false;
-
-      this.asignados = this.allAsignados.filter(id => !Array.from(seen).includes(id));
-      this.onEstudiantesChange();
-      this.updateAvailableStudents();
-      this.allStudents = [];
-      this.filteredStudents = [];
-      return;
-    }
-  }
-
-  // Si no hay coincidencias EXACTAS, agrupamos por docente usando substring matches (como antes)
-  const groups = new Map<string, DocenteView[]>();
-  matches.forEach(m => {
-    const dni = (m.DNIDocente || '').toString().trim();
-    const key = dni || `${(m.NombreDocente || '').toString().trim()}||${(m.Email || '').toString().trim()}||${(m.Telefono || '').toString().trim()}`;
-    if (!groups.has(key)) groups.set(key, []);
-    groups.get(key)!.push(m);
-  });
-
-  // Si hay un único grupo, cargarlo directamente
-  if (groups.size === 1) {
-    const onlyGroup = groups.values().next().value as DocenteView[];
-    this.buscandoDocente = true;
-    this.datosCargados = false;
-    this.searchLoading = true;
-    this.buscarPorId(onlyGroup[0]);
-    return;
-  }
-
-  // Si hay varios grupos (varios docentes distintos), mostrar lista deduplicada para elegir
-  const deduped: DocenteView[] = Array.from(groups.values()).map(group => {
-    const rep = group[0];
-    return {
-      ...rep,
-      displayId: rep.displayId
-    };
-  });
-
-  deduped.sort((a, b) => a.NombreDocente.localeCompare(b.NombreDocente));
-  this.docentesFiltrados = deduped;
-  this.buscandoDocente = true;
-  this.datosCargados = false;
+  // Mostrar directamente todas las filas coincidentes en la tabla
+  this.docentesFiltrados = matches;
+  this.datosCargados = true;
+  this.buscandoDocente = false;
+  this.searchLoading = false;
 }
 
 
