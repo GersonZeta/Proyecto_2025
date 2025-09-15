@@ -1056,15 +1056,6 @@ app.get('/buscar-docente', async (req, res) => {
 
 
 
-
-
-
-
-
-
-
-
-
 // DELETE familia en Supabase
 app.delete('/eliminar-familia/:id', async (req, res) => {
   const idFamilia = parseInt(req.params.id, 10);

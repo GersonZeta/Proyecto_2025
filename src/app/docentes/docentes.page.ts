@@ -527,43 +527,46 @@ export class DocentesPage {
       .join(', ');
   }
 
-  openStudentsModal(): void {
-    this.studentFilter = '';
+openStudentsModal(): void {
+  // Filtrar estudiantes que NO están en la lista de asignados
+  const disponibles = this.estudiantes.filter(e => !this.allAsignados.includes(e.idEstudiante));
 
-    const idsDocenteActual = new Set(
-      (this.docente.idEstudiante || []).map((n: any) => Number(n)).filter((x: number) => !isNaN(x))
-    );
+  // Inicializamos selección
+  this.allStudents = disponibles.map(s => ({ ...s, selected: false }));
+  this.filteredStudents = [...this.allStudents];
 
-    this.allStudents = this.estudiantes
-      .filter(e => idsDocenteActual.has(e.idEstudiante) || !this.asignados.includes(e.idEstudiante))
-      .map(e => ({
-        ...e,
-        selected: idsDocenteActual.has(e.idEstudiante)
-      }));
+  this.studentFilter = '';
+  this.showStudentsModal = true;
+}
 
+
+
+  closeStudentsModal(): void {
+  this.showStudentsModal = false;
+}
+
+filterStudents(): void {
+  const term = this.studentFilter.trim().toLowerCase();
+  if (!term) {
     this.filteredStudents = [...this.allStudents];
-    this.showStudentsModal = true;
+    return;
   }
+  this.filteredStudents = this.allStudents.filter(s =>
+    (s.ApellidosNombres || '').toLowerCase().includes(term)
+  );
+}
 
-  closeStudentsModal(): void { this.showStudentsModal = false; }
+applyStudentsSelection(): void {
+  const seleccionados = this.allStudents.filter(s => s.selected).map(s => s.idEstudiante);
+  this.docente.idEstudiante = [...seleccionados];
 
-  filterStudents(): void {
-    const txt = (this.studentFilter || '').trim().toLowerCase();
-    if (!txt) { this.filteredStudents = [...this.allStudents]; return; }
-    this.filteredStudents = this.allStudents.filter(s => (s.ApellidosNombres || '').toLowerCase().includes(txt));
-  }
+  this.selectedStudentNames = this.allStudents
+    .filter(s => s.selected)
+    .map(s => s.ApellidosNombres)
+    .join(', ');
 
-  applyStudentsSelection(): void {
-    const seleccionados = this.allStudents
-      .filter(s => !!s.selected)
-      .map(s => Number(s.idEstudiante))
-      .filter(n => !isNaN(n));
-    const selNums = Array.from(new Set(seleccionados));
-    this.docente.idEstudiante = selNums;
-    this.onEstudiantesChange();
-    this.asignados = this.asignados.filter(id => !this.docente.idEstudiante.includes(id));
-    this.closeStudentsModal();
-  }
+  this.showStudentsModal = false;
+}
 
   goTo(page: string): void { this.navCtrl.navigateRoot(`/${page}`); }
 
