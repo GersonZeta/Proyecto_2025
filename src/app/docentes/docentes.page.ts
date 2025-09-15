@@ -167,28 +167,28 @@ export class DocentesPage {
       });
   }
 
-  private cargarAsignadosGlobal(): void {
-    // este endpoint debe devolver { ok: true, data: number[] } con ids de estudiantes asignados
-    const params = new HttpParams()
-      .set('action', 'listar')
-      .set('idInstitucionEducativa', this.idInstitucionEducativa.toString());
+private cargarAsignadosGlobal(): void {
+  const params = new HttpParams()
+    .set('action', 'listar')
+    .set('idInstitucionEducativa', this.idInstitucionEducativa.toString());
 
-    // Ajusta esta URL si tu endpoint es distinto; aquí uso '/estudiantes-con-docente'
-    this.http.get<{ ok: boolean, data: number[] }>(`${environment.apiUrl}/estudiantes-con-docente`, { params })
-      .subscribe(res => {
-        if (res.ok && Array.isArray(res.data)) {
-          this.allAsignados = res.data;
-          this.asignados = [...res.data];
-        } else {
-          this.allAsignados = [];
-          this.asignados = [];
-        }
-      }, err => {
-        console.error('Error cargando asignados:', err);
+  this.http.get<{ ok: boolean, data: any[] }>(`${environment.apiUrl}/estudiantes-con-docente`, { params })
+    .subscribe(res => {
+      if (res.ok && Array.isArray(res.data)) {
+        // Asegurarse de extraer SOLO los ids de estudiante
+        this.allAsignados = res.data.map(r => r.idEstudiante ?? r.idestudiante);
+        this.asignados = [...this.allAsignados];
+      } else {
         this.allAsignados = [];
         this.asignados = [];
-      });
-  }
+      }
+    }, err => {
+      console.error('Error cargando asignados:', err);
+      this.allAsignados = [];
+      this.asignados = [];
+    });
+}
+
 
   // ------------------ BÚSQUEDA ------------------
   buscarDocente(): void {
@@ -528,7 +528,6 @@ export class DocentesPage {
   }
 
 openStudentsModal(): void {
-  // Solo mostrar estudiantes que no están asignados globalmente
   const disponibles = this.estudiantes.filter(
     e => !this.allAsignados.includes(e.idEstudiante)
   );
@@ -542,6 +541,7 @@ openStudentsModal(): void {
   this.studentFilter = '';
   this.showStudentsModal = true;
 }
+
 
 
 
