@@ -126,30 +126,28 @@ export class DocentesPage {
   }
 
   // ------------------ CARGAS ------------------
-  private cargarDocentes(): void {
-    const params = new HttpParams()
-      .set('action', 'listar')
-      .set('idInstitucionEducativa', this.idInstitucionEducativa.toString());
+private cargarDocentes(): void {
+  const params = new HttpParams()
+    .set('action', 'listar')
+    .set('idInstitucionEducativa', this.idInstitucionEducativa.toString());
 
-    this.http.get<{ ok: boolean, data: DocenteView[] }>(`${this.baseUrl}`, { params })
-      .subscribe(res => {
-        if (res.ok && Array.isArray(res.data)) {
-          const sorted = res.data.sort((a, b) => {
-            if (a.NombreDocente !== b.NombreDocente) return a.NombreDocente.localeCompare(b.NombreDocente);
-            return (a.NombreEstudiante || '').localeCompare(b.NombreEstudiante || '');
-          });
-          this.docentes = sorted.map((d, i) => ({ ...d, displayId: i + 1 }));
-          this.docentesFiltrados = [...this.docentes];
-        } else {
-          this.docentes = [];
-          this.docentesFiltrados = [];
-        }
-      }, err => {
-        console.error('Error cargando docentes:', err);
+  this.http.get<{ ok: boolean, data: DocenteView[] }>(`${this.baseUrl}`, { params })
+    .subscribe(res => {
+      if (res.ok && Array.isArray(res.data)) {
+        // Mantener el orden que trae el servidor (no ordenar por nombre)
+        this.docentes = res.data.map((d, i) => ({ ...d, displayId: i + 1 }));
+        this.docentesFiltrados = [...this.docentes];
+      } else {
         this.docentes = [];
         this.docentesFiltrados = [];
-      });
-  }
+      }
+    }, err => {
+      console.error('Error cargando docentes:', err);
+      this.docentes = [];
+      this.docentesFiltrados = [];
+    });
+}
+
 
   private cargarEstudiantes(): void {
     const params = new HttpParams()
@@ -730,9 +728,27 @@ filterStudents(): void {
   goTo(page: string): void { this.navCtrl.navigateRoot(`/${page}`); }
 
   // getter para UI: estudiantes realmente disponibles (NO asignados)
-  get estudiantesDisponibles(): Student[] {
-    return this.availableStudents;
+// getter para UI: estudiantes realmente disponibles (NO asignados)
+// Ahora devuelve también los estudiantes asignados al docente (si existe uno),
+// así el botón "Estudiantes" no se bloqueará si el docente ya tiene asignados.
+get estudiantesDisponibles(): Student[] {
+  // estudiantes no asignados globalmente
+  const avail = Array.isArray(this.availableStudents) ? [...this.availableStudents] : [];
+
+  // si hay un docente con estudiantes asignados, incluirlos al inicio
+  if (this.docente && Array.isArray(this.docente.idEstudiante) && this.docente.idEstudiante.length) {
+    const assigned = this.estudiantes
+      .filter(e => this.docente.idEstudiante.includes(e.idEstudiante))
+      // evitar duplicados si por algún motivo están también en availableStudents
+      .filter(a => !avail.some(x => x.idEstudiante === a.idEstudiante));
+
+    // devolver primero asignados (si quieres que estén primero)
+    return [...assigned, ...avail];
   }
+
+  return avail;
+}
+
 
   get docentesFiltradosIndexados(): Array<DocenteView & { index: number }> {
     return this.docentesFiltrados.map(d => ({ ...d, index: d.displayId! }));
