@@ -556,11 +556,16 @@ openStudentsModal(): void {
 
   const idsDocenteActual = new Set(this.docente.idEstudiante || []);
 
+  // 👇 recalcular los asignados en cada apertura
+  const asignadosEfectivos = this.allAsignados.filter(
+    id => !idsDocenteActual.has(id)   // excluir los del docente actual
+  );
+
   // Mostrar SOLO:
   // - estudiantes que ya pertenecen al docente actual (idsDocenteActual)
-  // - OR estudiantes que NO están en la lista `asignados` (asignados = asignados globales EXCLUYENDO los del docente actual, si corresponde)
+  // - OR estudiantes que NO están en la lista global de asignados (excepto los suyos)
   const disponibles = this.estudiantes.filter(
-    e => idsDocenteActual.has(e.idEstudiante) || !this.asignados.includes(e.idEstudiante)
+    e => idsDocenteActual.has(e.idEstudiante) || !asignadosEfectivos.includes(e.idEstudiante)
   );
 
   this.allStudents = disponibles.map(s => ({
@@ -571,7 +576,6 @@ openStudentsModal(): void {
   this.filteredStudents = [...this.allStudents];
   this.showStudentsModal = true;
 }
-
 
 
   closeStudentsModal(): void {
