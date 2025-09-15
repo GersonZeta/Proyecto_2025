@@ -178,41 +178,35 @@ export class DocentesPage {
       });
   }
 
-  private cargarAsignadosGlobal(): void {
-    this.isLoadingAsignados = true;
-    const params = new HttpParams()
-      .set('action', 'listar')
-      .set('idInstitucionEducativa', this.idInstitucionEducativa.toString());
+private cargarAsignadosGlobal(): void {
+  this.isLoadingAsignados = true;
+  const params = new HttpParams()
+    .set('action', 'listar')
+    .set('idInstitucionEducativa', this.idInstitucionEducativa.toString());
 
-    this.http.get<any>(`${this.baseUrl}/estudiantes-con-docente`, { params })
-      .subscribe(res => {
-        let raw: any[] = [];
-        if (!res) raw = [];
-        else if (Array.isArray(res)) raw = res;
-        else if (res.ok && Array.isArray(res.data)) raw = res.data;
-        else if (Array.isArray(res.data)) raw = res.data;
-        else raw = [];
+  // Llamamos al mismo endpoint /docentes?action=listar y extraemos idestudiante(s)
+  this.http.get<{ ok: boolean, data: DocenteView[] }>(`${this.baseUrl}`, { params })
+    .subscribe(res => {
+      const rows = (res && res.data && Array.isArray(res.data)) ? res.data : [];
+      // extraer ids únicos de estudiantes que ya tienen docente
+      const ids = Array.from(new Set(rows
+        .map(r => r.idEstudiante)
+        .filter(n => n != null && !isNaN(Number(n)))
+        .map(n => Number(n))
+      ));
+      this.allAsignados = ids;
+      this.asignados = [...this.allAsignados];
+      this.isLoadingAsignados = false;
+      this.updateAvailableStudents();
+    }, err => {
+      console.error('Error cargando asignados:', err);
+      this.allAsignados = [];
+      this.asignados = [];
+      this.isLoadingAsignados = false;
+      this.updateAvailableStudents();
+    });
+}
 
-        const ids = raw.map((r: any) => {
-          if (typeof r === 'number') return r;
-          if (typeof r === 'string' && /^\d+$/.test(r)) return Number(r);
-          return r?.idEstudiante ?? r?.idestudiante ?? r?.id ?? null;
-        }).filter((n: any) => Number.isInteger(n)) as number[];
-
-        this.allAsignados = ids;
-        this.asignados = [...this.allAsignados];
-        this.isLoadingAsignados = false;
-
-        // actualizar disponibilidad cuando llegan las asignaciones
-        this.updateAvailableStudents();
-      }, err => {
-        console.error('Error cargando asignados:', err);
-        this.allAsignados = [];
-        this.asignados = [];
-        this.isLoadingAsignados = false;
-        this.updateAvailableStudents();
-      });
-  }
 
   // recalcula availableStudents usando estudiantes y allAsignados
   private updateAvailableStudents(): void {
@@ -582,6 +576,7 @@ export class DocentesPage {
       .join(', ');
   }
 
+  // ------------------ MODAL: SOLO ESTUDIANTES NO ASIGNADOS ------------------
 openStudentsModal(): void {
   // Asegura que la lista de disponibles esté actualizada
   this.updateAvailableStudents();
@@ -595,7 +590,6 @@ openStudentsModal(): void {
   // Mostrar modal
   this.showStudentsModal = true;
 }
-
 
 
   closeStudentsModal(): void {
