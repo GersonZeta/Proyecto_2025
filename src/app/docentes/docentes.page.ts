@@ -2,7 +2,7 @@
 import { Component } from '@angular/core';
 import { HttpClient, HttpParams } from '@angular/common/http';
 import { AlertController, ActionSheetController, NavController } from '@ionic/angular';
-import { forkJoin, Subscription, firstValueFrom } from 'rxjs';
+import { forkJoin, Subscription } from 'rxjs';
 import * as XLSX from 'xlsx';
 import { saveAs } from 'file-saver';
 import autoTable from 'jspdf-autotable';
@@ -60,16 +60,14 @@ export interface DocenteView {
   standalone: false,
 })
 export class DocentesPage {
+  // ahora apunta a la misma convención que usas en 'estudiantes'
   private baseUrl = environment.apiUrl + '/docentes';
   private idInstitucionEducativa = 0;
 
   docentes: DocenteView[] = [];
   docentesFiltrados: DocenteView[] = [];
   estudiantes: Student[] = [];
-  // allAsignados contiene los ids de estudiantes ya asignados a cualquier docente (global)
   allAsignados: number[] = [];
-
-  // (se mantiene por compatibilidad si en algún sitio se usa, pero ahora la lógica usa allAsignados)
   asignados: number[] = [];
 
   showStudentsModal = false;
@@ -109,8 +107,7 @@ export class DocentesPage {
   cerrarAlertaExportar(): void { this.mostrarAlertaExportar = false; }
   cerrarErrorCampos(): void { this.mostrarErrorCampos = false; }
 
-  // Aseguramos cargar asignados antes de permitir abrir modal; por eso ionViewWillEnter es async
-  async ionViewWillEnter(): Promise<void> {
+  ionViewWillEnter(): void {
     const stored = localStorage.getItem('idInstitucionEducativa');
     this.idInstitucionEducativa = stored ? +stored : 0;
     if (!this.idInstitucionEducativa) {
@@ -119,11 +116,8 @@ export class DocentesPage {
       return;
     }
     this.resetForm();
-
-    // cargamos estudiantes (no esperamos) pero SÍ esperamos a cargar allAsignados
-    // para que el modal use la lista correcta de asignados
     this.cargarEstudiantes();
-    await this.cargarAsignadosGlobal();
+    this.cargarAsignadosGlobal();
     this.cargarDocentes();
   }
 
@@ -153,12 +147,14 @@ export class DocentesPage {
   }
 
   private cargarEstudiantes(): void {
+    // usar el endpoint de estudiantes (misma convención que ya tienes)
     const params = new HttpParams()
       .set('action', 'listar')
       .set('idInstitucionEducativa', this.idInstitucionEducativa.toString());
 
     this.http.get<{ ok: boolean; data: any[] }>(`${environment.apiUrl}/estudiantes`, { params })
       .subscribe(res => {
+        // el endpoint de estudiantes del ejemplo devuelve data formateada.
         const list = (res?.data || []).map((r: any) => ({
           idEstudiante: r.idEstudiante ?? r.idestudiante,
           ApellidosNombres: r.ApellidosNombres ?? r.apellidosnombres,
@@ -171,27 +167,27 @@ export class DocentesPage {
       });
   }
 
-  // Ahora devuelve Promise y espera la primera respuesta para garantizar que allAsignados esté listo
-  private async cargarAsignadosGlobal(): Promise<void> {
+  private cargarAsignadosGlobal(): void {
+    // este endpoint debe devolver { ok: true, data: number[] } con ids de estudiantes asignados
     const params = new HttpParams()
       .set('action', 'listar')
       .set('idInstitucionEducativa', this.idInstitucionEducativa.toString());
 
-    try {
-      const res: any = await firstValueFrom(this.http.get<{ ok: boolean, data: number[] }>(`${environment.apiUrl}/estudiantes-con-docente`, { params }));
-      if (res && res.ok && Array.isArray(res.data)) {
-        this.allAsignados = res.data;
-        // mantener compatibilidad con el array asignados (si en algún sitio se usa)
-        this.asignados = [...res.data];
-      } else {
+    // Ajusta esta URL si tu endpoint es distinto; aquí uso '/estudiantes-con-docente'
+    this.http.get<{ ok: boolean, data: number[] }>(`${environment.apiUrl}/estudiantes-con-docente`, { params })
+      .subscribe(res => {
+        if (res.ok && Array.isArray(res.data)) {
+          this.allAsignados = res.data;
+          this.asignados = [...res.data];
+        } else {
+          this.allAsignados = [];
+          this.asignados = [];
+        }
+      }, err => {
+        console.error('Error cargando asignados:', err);
         this.allAsignados = [];
         this.asignados = [];
-      }
-    } catch (err) {
-      console.error('Error cargando asignados:', err);
-      this.allAsignados = [];
-      this.asignados = [];
-    }
+      });
   }
 
   // ------------------ BÚSQUEDA ------------------
@@ -221,6 +217,7 @@ export class DocentesPage {
       return;
     }
 
+    // si varios matches, mostrar lista
     this.docentesFiltrados = matches;
     this.buscandoDocente = true;
     this.datosCargados = false;
@@ -288,8 +285,7 @@ export class DocentesPage {
         this.buscandoDocente = false;
         this.searchLoading = false;
 
-        // No sobrescribimos allAsignados aquí; lo mantenemos global.
-        // Si quieres mostrar sólo 'disponibles' en algún control usa get estudiantesDisponibles()
+        this.asignados = this.allAsignados.filter(id => !Array.from(seen).includes(id));
         this.onEstudiantesChange();
         return;
       }
@@ -341,8 +337,7 @@ export class DocentesPage {
 
           this.datosCargados = true;
           this.buscandoDocente = false;
-
-          // no tocamos allAsignados; la lista global queda intacta
+          this.asignados = this.allAsignados.filter(id => !payload.idEstudiante.includes(id));
           this.onEstudiantesChange();
         },
         error: () => {
@@ -417,6 +412,7 @@ export class DocentesPage {
       return;
     }
 
+    // enviar un POST por cada relacion (igual que tu versión original)
     const reqs = this.docente.idEstudiante.map(id => {
       const payload = {
         idEstudiante: id,
@@ -521,6 +517,7 @@ export class DocentesPage {
     this.datosCargados = false;
     this.buscandoDocente = false;
     this.emailInvalid = false;
+    // no reasignar docentesFiltrados aquí
   }
 
   onEstudiantesChange(): void {
@@ -537,9 +534,8 @@ export class DocentesPage {
       (this.docente.idEstudiante || []).map((n: any) => Number(n)).filter((x: number) => !isNaN(x))
     );
 
-    // Mostrar sólo: estudiantes asignados al docente actual OR estudiantes que NO están en allAsignados (disponibles)
     this.allStudents = this.estudiantes
-      .filter(e => idsDocenteActual.has(e.idEstudiante) || !this.allAsignados.includes(e.idEstudiante))
+      .filter(e => idsDocenteActual.has(e.idEstudiante) || !this.asignados.includes(e.idEstudiante))
       .map(e => ({
         ...e,
         selected: idsDocenteActual.has(e.idEstudiante)
@@ -565,7 +561,7 @@ export class DocentesPage {
     const selNums = Array.from(new Set(seleccionados));
     this.docente.idEstudiante = selNums;
     this.onEstudiantesChange();
-    // No alteramos allAsignados localmente aquí (se actualizará tras el POST/PUT al servidor)
+    this.asignados = this.asignados.filter(id => !this.docente.idEstudiante.includes(id));
     this.closeStudentsModal();
   }
 
@@ -573,8 +569,7 @@ export class DocentesPage {
 
   get estudiantesDisponibles(): Student[] {
     const idsDocenteActual = this.docente.idEstudiante || [];
-    // disponible si no está asignado a nadie (no está en allAsignados) o si ya pertenece al docente actual
-    return this.estudiantes.filter(e => !this.allAsignados.includes(e.idEstudiante) || idsDocenteActual.includes(e.idEstudiante));
+    return this.estudiantes.filter(e => !this.asignados.includes(e.idEstudiante) || idsDocenteActual.includes(e.idEstudiante));
   }
 
   get docentesFiltradosIndexados(): Array<DocenteView & { index: number }> {
