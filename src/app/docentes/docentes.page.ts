@@ -582,7 +582,6 @@ export class DocentesPage {
       .join(', ');
   }
 
-  // ------------------ MODAL: SOLO ESTUDIANTES NO ASIGNADOS ------------------
 openStudentsModal(): void {
   // Asegura que la lista de disponibles esté actualizada
   this.updateAvailableStudents();
@@ -596,6 +595,7 @@ openStudentsModal(): void {
   // Mostrar modal
   this.showStudentsModal = true;
 }
+
 
 
   closeStudentsModal(): void {

@@ -116,10 +116,12 @@
   class="single-line-button"
   expand="block"
   color="tertiary"
+  [disabled]="estudiantesDisponibles.length === 0"
   (click)="openStudentsModal()"
 >
   Estudiantes
 </ion-button>
+
 
 </ion-col>
 

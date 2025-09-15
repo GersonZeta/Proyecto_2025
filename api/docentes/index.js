@@ -5,58 +5,69 @@ export default async function handler(req, res) {
   const { action } = req.query;
 
   try {
-    // --- LISTAR DOCENTES (una fila por relación: iddocente + idestudiante + NombreEstudiante)
-    if (action === "listar") {
-      if (req.method !== "GET")
-        return res.status(405).json({ ok: false, mensaje: "Método no permitido" });
+// --- LISTAR DOCENTES (ahora incluye todos los estudiantes, asignados o no)
+if (action === "listar") {
+  if (req.method !== "GET")
+    return res.status(405).json({ ok: false, mensaje: "Método no permitido" });
 
-      const idInstitucionEducativa = req.query.idInstitucionEducativa;
-      const nombreDocente = req.query.nombreDocente;
+  const idInstitucionEducativa = req.query.idInstitucionEducativa;
+  const nombreDocente = req.query.nombreDocente;
 
-      // Seleccionar solo columnas necesarias
-      let query = supabase
-        .from("docentes_estudiante")
-        .select("iddocente, idestudiante, nombredocente, dnidocente, email, telefono, gradoseccionlabora, idinstitucioneducativa");
+  if (!idInstitucionEducativa)
+    return res.status(400).json({ ok: false, mensaje: "Falta idInstitucionEducativa" });
 
-      if (idInstitucionEducativa) {
-        // usar nombre de columna que usas en tu BD (idinstitucioneducativa)
-        query = query.eq("idinstitucioneducativa", idInstitucionEducativa);
-      }
-      if (nombreDocente) {
-        query = query.ilike("nombredocente", `%${nombreDocente}%`);
-      }
+  // 1️⃣ Traer todos los estudiantes de la institución
+  const { data: estudiantes, error: errEst } = await supabase
+    .from("estudiantes")
+    .select("idestudiante, apellidosnombres")
+    .eq("idinstitucioneducativa", idInstitucionEducativa);
 
-      const { data: docs, error } = await query.order("dnidocente", { ascending: true }).order("idestudiante", { ascending: true });
-      if (error) throw error;
+  if (errEst) throw errEst;
 
-      const docsList = docs || [];
+  // 2️⃣ Traer todas las relaciones docentes-estudiantes de la institución
+  let query = supabase
+    .from("docentes_estudiante")
+    .select("iddocente, idestudiante, nombredocente, dnidocente, email, telefono, gradoseccionlabora, idinstitucioneducativa")
+    .eq("idinstitucioneducativa", idInstitucionEducativa);
 
-      // obtener nombres de estudiantes en batch
-      const studentIds = Array.from(new Set(docsList.map(d => d.idestudiante).filter(Boolean)));
-      let studentsMap = new Map();
-      if (studentIds.length) {
-        const { data: studs, error: errStuds } = await supabase
-          .from("estudiantes")
-          .select("idestudiante, apellidosnombres")
-          .in("idestudiante", studentIds);
-        if (errStuds) throw errStuds;
-        (studs || []).forEach(s => studentsMap.set(s.idestudiante, s.apellidosnombres));
-      }
+  if (nombreDocente) {
+    query = query.ilike("nombredocente", `%${nombreDocente}%`);
+  }
 
-      const result = docsList.map(d => ({
-        idDocente: d.iddocente,
-        idEstudiante: d.idestudiante,
-        NombreEstudiante: studentsMap.get(d.idestudiante) ?? null,
-        NombreDocente: d.nombredocente,
-        DNIDocente: d.dnidocente,
-        Email: d.email,
-        Telefono: d.telefono,
-        GradoSeccionLabora: d.gradoseccionlabora,
-        idInstitucionEducativa: d.idinstitucioneducativa,
-      }));
+  const { data: relaciones, error: errRel } = await query;
+  if (errRel) throw errRel;
 
-      return res.json({ ok: true, data: result });
-    }
+  // 3️⃣ Mapear relaciones por estudiante
+  const relMap = new Map();
+  (relaciones || []).forEach(r => {
+    relMap.set(r.idestudiante, {
+      idDocente: r.iddocente,
+      NombreDocente: r.nombredocente,
+      DNIDocente: r.dnidocente,
+      Email: r.email,
+      Telefono: r.telefono,
+      GradoSeccionLabora: r.gradoseccionlabora,
+      idInstitucionEducativa: r.idinstitucioneducativa
+    });
+  });
+
+  // 4️⃣ Combinar estudiantes con relaciones (si existe)
+  const result = (estudiantes || []).map(e => {
+    const rel = relMap.get(e.idestudiante);
+    return {
+      idEstudiante: e.idestudiante,
+      NombreEstudiante: e.apellidosnombres,
+      asignado: !!rel,
+      ...rel // si no hay relación, queda undefined
+    };
+  });
+
+  return res.json({ ok: true, data: result });
+}
+
+
+
+
 
     // --- REGISTRAR DOCENTE (inserta una fila por relacion docente->estudiante)
     if (action === "registrar") {
