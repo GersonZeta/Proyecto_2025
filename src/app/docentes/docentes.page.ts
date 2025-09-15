@@ -531,22 +531,21 @@ private cargarAsignadosGlobal(): void {
   }
 
 openStudentsModal(): void {
+  const idsDocenteActual = this.docente.idEstudiante || [];
+
   const disponibles = this.estudiantes.filter(
-    e => !this.allAsignados.includes(e.idEstudiante)
+    e => !this.allAsignados.includes(e.idEstudiante) || idsDocenteActual.includes(e.idEstudiante)
   );
 
   this.allStudents = disponibles.map(s => ({
     ...s,
-    selected: false
+    selected: idsDocenteActual.includes(s.idEstudiante) // marcar como seleccionados los del docente actual
   }));
 
   this.filteredStudents = [...this.allStudents];
   this.studentFilter = '';
   this.showStudentsModal = true;
 }
-
-
-
 
 
   closeStudentsModal(): void {
