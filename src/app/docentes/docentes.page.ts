@@ -227,7 +227,7 @@ buscarDocente(): void {
   const normalize = (s: string) => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   const normalizedRaw = normalize(raw);
 
-  // Filtrar todas las filas que contengan el término
+  // traer todas las filas de estudiantes cuyo NombreDocente contenga la búsqueda
   const matches = this.docentes.filter(d => normalize(d.NombreDocente).includes(normalizedRaw));
 
   if (!matches.length) {
@@ -235,26 +235,21 @@ buscarDocente(): void {
     return;
   }
 
-  // MOSTRAR TODAS LAS FILAS COINCIDENTES EN LA TABLA
-  const seen = new Set<number>();
-  const views: DocenteView[] = [];
-  matches.forEach(row => {
-    if (seen.has(row.idEstudiante)) return;
-    seen.add(row.idEstudiante);
-    views.push({
-      idDocente: row.idDocente ?? 0,
-      idEstudiante: row.idEstudiante,
-      NombreEstudiante: this.getEstudianteNombre(row.idEstudiante),
-      NombreDocente: row.NombreDocente,
-      DNIDocente: row.DNIDocente,
-      Email: row.Email,
-      Telefono: row.Telefono,
-      GradoSeccionLabora: row.GradoSeccionLabora,
-      displayId: row.displayId
-    });
-  });
+  // NO deduplicamos por docente ni por DNI, solo mostrar todos los estudiantes
+  const views: DocenteView[] = matches.map(row => ({
+    idDocente: row.idDocente ?? 0,
+    idEstudiante: row.idEstudiante,
+    NombreEstudiante: this.getEstudianteNombre(row.idEstudiante),
+    NombreDocente: row.NombreDocente,
+    DNIDocente: row.DNIDocente,
+    Email: row.Email,
+    Telefono: row.Telefono,
+    GradoSeccionLabora: row.GradoSeccionLabora,
+    displayId: row.displayId
+  }));
 
-  this.docentesFiltrados = views; // ✅ aquí se muestran todos los estudiantes
+  // Mostrar todos los estudiantes en la tabla
+  this.docentesFiltrados = views;
   this.datosCargados = true;
   this.buscandoDocente = false;
   this.searchLoading = false;
