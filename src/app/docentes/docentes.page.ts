@@ -227,7 +227,7 @@ buscarDocente(): void {
   const normalize = (s: string) => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   const normalizedRaw = normalize(raw);
 
-  // Filtrar TODOS los docentes cuyo nombre contenga la búsqueda
+  // 1. Filtrar TODOS los docentes cuyo nombre contenga la búsqueda
   const matches = this.docentes.filter(d => normalize(d.NombreDocente).includes(normalizedRaw));
 
   if (!matches.length) {
@@ -235,29 +235,30 @@ buscarDocente(): void {
     return;
   }
 
-  // Construir la lista completa de filas: cada estudiante de cada docente
+  // 2. Construir lista de coincidencias con TODOS los estudiantes de cada docente
   const allRows: DocenteView[] = [];
-  matches.forEach(row => {
+  matches.forEach(d => {
     allRows.push({
-      idDocente: row.idDocente ?? 0,
-      idEstudiante: row.idEstudiante,
-      NombreEstudiante: this.getEstudianteNombre(row.idEstudiante),
-      NombreDocente: row.NombreDocente,
-      DNIDocente: row.DNIDocente,
-      Email: row.Email,
-      Telefono: row.Telefono,
-      GradoSeccionLabora: row.GradoSeccionLabora,
-      displayId: row.displayId
+      idDocente: d.idDocente ?? 0,
+      idEstudiante: d.idEstudiante,
+      NombreEstudiante: this.getEstudianteNombre(d.idEstudiante),
+      NombreDocente: d.NombreDocente,
+      DNIDocente: d.DNIDocente,
+      Email: d.Email,
+      Telefono: d.Telefono,
+      GradoSeccionLabora: d.GradoSeccionLabora,
+      displayId: d.displayId
     });
   });
 
   this.docentesFiltrados = allRows;
   this.datosCargados = true;
-  this.buscandoDocente = false;
-  this.searchLoading = false;
+  this.buscandoDocente = matches.length > 1; // true si hay que elegir uno
 
-  // Después, el usuario elige la ID del docente para llenar los campos de detalle
-
+  // 3. Si hay solo una coincidencia exacta, la podemos seleccionar automáticamente
+  if (matches.length === 1) {
+    this.buscarPorId(matches[0]); // llena el formulario con todos sus estudiantes
+  }
 
   // --- 3. Lógica original para coincidencias exactas y elección de docente ---
   const exactMatches = matches.filter(d => normalize(d.NombreDocente) === normalizedRaw);
