@@ -227,7 +227,7 @@ buscarDocente(): void {
   const normalize = (s: string) => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   const normalizedRaw = normalize(raw);
 
-  // traer todas las filas de estudiantes cuyo NombreDocente contenga la búsqueda
+  // Traer todas las filas cuyo NombreDocente contenga la búsqueda
   const matches = this.docentes.filter(d => normalize(d.NombreDocente).includes(normalizedRaw));
 
   if (!matches.length) {
@@ -235,11 +235,11 @@ buscarDocente(): void {
     return;
   }
 
-  // NO deduplicamos por docente ni por DNI, solo mostrar todos los estudiantes
+  // Generar la vista de estudiantes sin deduplicar ni agrupar por docente
   const views: DocenteView[] = matches.map(row => ({
     idDocente: row.idDocente ?? 0,
     idEstudiante: row.idEstudiante,
-    NombreEstudiante: this.getEstudianteNombre(row.idEstudiante),
+    NombreEstudiante: row.NombreEstudiante || this.getEstudianteNombre(row.idEstudiante),
     NombreDocente: row.NombreDocente,
     DNIDocente: row.DNIDocente,
     Email: row.Email,
@@ -253,6 +253,7 @@ buscarDocente(): void {
   this.datosCargados = true;
   this.buscandoDocente = false;
   this.searchLoading = false;
+
 
   // --- 3. Lógica original para coincidencias exactas y elección de docente ---
   const exactMatches = matches.filter(d => normalize(d.NombreDocente) === normalizedRaw);
