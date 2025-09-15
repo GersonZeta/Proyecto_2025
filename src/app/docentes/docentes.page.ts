@@ -581,15 +581,56 @@ openStudentsModal(): void {
   // Asegura que la lista de disponibles esté actualizada
   this.updateAvailableStudents();
 
-  // Usa solo los no asignados
-  this.allStudents = [...this.availableStudents];
+  // Mapa temporal: key = idEstudiante, value = Student (con selected)
+  const map = new Map<number, Student & { selected?: boolean }>();
 
-  // Por defecto aplica filtro inicial
+  // 1) Añadir todos los estudiantes NO asignados (availableStudents) - por defecto NOT selected
+  this.availableStudents.forEach(s => {
+    map.set(Number(s.idEstudiante), { ...s, selected: false });
+  });
+
+  // 2) Si hay un docente seleccionado, añadir también SUS estudiantes asignados y marcarlos selected = true
+  if (this.docente && Array.isArray(this.docente.idEstudiante) && this.docente.idEstudiante.length) {
+    this.docente.idEstudiante.forEach(id => {
+      const num = Number(id);
+      if (isNaN(num)) return;
+
+      if (map.has(num)) {
+        // si ya está (porque no estaba asignado globalmente), marcar selected
+        const existing = map.get(num)!;
+        existing.selected = true;
+        map.set(num, existing);
+      } else {
+        // si no está en availableStudents, buscar en lista completa de estudiantes
+        const found = this.estudiantes.find(e => Number(e.idEstudiante) === num);
+        if (found) {
+          map.set(num, { ...found, selected: true });
+        } else {
+          // fallback: crear un placeholder si no existe en this.estudiantes
+          map.set(num, {
+            idEstudiante: num,
+            ApellidosNombres: '-',
+            idInstitucionEducativa: this.idInstitucionEducativa,
+            selected: true
+          });
+        }
+      }
+    });
+  }
+
+  // 3) Convertir a array y ordenar por nombre para mejor UX
+  const list = Array.from(map.values()).sort((a, b) =>
+    (a.ApellidosNombres || '').localeCompare(b.ApellidosNombres || '')
+  );
+
+  // 4) Preparar modal
+  this.allStudents = list;
   this.filteredStudents = [...this.allStudents];
 
   // Mostrar modal
   this.showStudentsModal = true;
 }
+
 
 
   closeStudentsModal(): void {
