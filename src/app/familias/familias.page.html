@@ -91,7 +91,9 @@
 <ion-button
   expand="block"
   color="tertiary"
-  (click)="openStudentsModal()">
+  (click)="openStudentsModal()"
+  [disabled]="!hayEstudiantesParaSeleccionar && !(familia.idestudiantes?.length > 0)"
+>
   Estudiantes
 </ion-button>
 

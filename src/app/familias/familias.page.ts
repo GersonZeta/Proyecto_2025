@@ -77,62 +77,73 @@ export class FamiliasPage {
     private navCtrl: NavController,
   ) {}
 
-ionViewWillEnter(): void {
-  const stored = localStorage.getItem('idInstitucionEducativa');
-  this.idInstitucionEducativa = stored ? +stored : 0;
-  if (!this.idInstitucionEducativa) {
-    this.mostrarAlerta('Error', 'Primero selecciona una institución.');
-    this.navCtrl.navigateRoot('/seleccion-instituciones');
-    return;
+  ionViewWillEnter(): void {
+    const stored = localStorage.getItem('idInstitucionEducativa');
+    this.idInstitucionEducativa = stored ? +stored : 0;
+    if (!this.idInstitucionEducativa) {
+      this.mostrarAlerta('Error', 'Primero selecciona una institución.');
+      this.navCtrl.navigateRoot('/seleccion-instituciones');
+      return;
+    }
+    this.resetForm();
+    this.cargarEstudiantes();
+    this.cargarAsignados();
+    this.cargarFamilias();
   }
 
-  this.resetForm();
-  this.cargarAsignados();   // 👈 primero asignados
-  this.cargarEstudiantes(); // 👈 luego estudiantes
-  this.cargarFamilias();
-}
-
-
 private cargarEstudiantes(): void {
-  const params = new HttpParams().set('idInstitucionEducativa', this.idInstitucionEducativa.toString());
-  this.http.get<{ idEstudiante: number; ApellidosNombres: string }[]>(this.studentsUrl, { params })
-    .subscribe(list => {
-      this.estudiantes = (list || []).map(s => ({
-        idEstudiante: Number((s as any).idEstudiante),
-        ApellidosNombres: (s as any).ApellidosNombres
-      }));
+  const params = new HttpParams()
+    .set('idInstitucionEducativa', this.idInstitucionEducativa.toString())
+    // algunos backends requieren 'action=listar' para devolver la lista de estudiantes
+    .set('action', 'listar');
 
-      // 👇 llenar allStudents y filteredStudents
-      this.allStudents = this.estudiantes.map(e => ({
-        ...e,
-        selected: false,
-        assignedToOther: false
-      }));
-      this.filteredStudents = [...this.allStudents];
-    }, () => {
-      this.estudiantes = [];
-      this.allStudents = [];
-      this.filteredStudents = [];
+  this.http.get<any>(this.studentsUrl, { params })
+    .subscribe({
+      next: res => {
+        // Normalizar distintas formas de respuesta:
+        // - puede venir un array directo
+        // - puede venir { ok: true, data: [...] }
+        // - o { ok: true, estudiantes: [...] }
+        let list: any[] = [];
+
+        if (Array.isArray(res)) {
+          list = res;
+        } else if (res?.ok && Array.isArray(res.data)) {
+          list = res.data;
+        } else if (res?.ok && Array.isArray(res.estudiantes)) {
+          list = res.estudiantes;
+        } else if (Array.isArray(res?.data)) {
+          list = res.data;
+        } else if (res?.data) {
+          // single object => convertir a array
+          list = Array.isArray(res.data) ? res.data : [res.data];
+        } else {
+          // si vino un objeto con claves distintas, intentar extraer array por heurística
+          // buscar primer valor que sea array
+          const vals = Object.values(res || {});
+          const firstArray = vals.find(v => Array.isArray(v));
+          if (firstArray) list = firstArray as any[];
+        }
+
+        // Mapeo robusto: aceptar idEstudiante / idestudiante / id
+        this.estudiantes = (list || []).map(s => {
+          const id = (s?.idEstudiante ?? s?.idestudiante ?? s?.id ?? s?.Id ?? s?.ID);
+          const name = (s?.ApellidosNombres ?? s?.apellidosnombres ?? s?.nombres ?? s?.nombre ?? s?.Nombre);
+          return {
+            idEstudiante: Number(id),
+            ApellidosNombres: String(name ?? '').trim()
+          };
+        }).filter(e => !isNaN(e.idEstudiante) && e.ApellidosNombres);
+
+        // debug
+        console.log('cargarEstudiantes -> estudiantes cargados:', this.estudiantes);
+      },
+      error: (err) => {
+        console.error('Error cargarEstudiantes:', err);
+        this.estudiantes = [];
+      }
     });
 }
-
-openStudentsModal(): void {
-  this.studentFilter = '';
-  const idsFamiliaActual = new Set(this.familia.idestudiantes || []);
-
-  this.filteredStudents = this.allStudents.filter(s =>
-    idsFamiliaActual.has(s.idEstudiante) || !this.allAsignados.includes(s.idEstudiante)
-  );
-
-  // marcar seleccionados
-  this.filteredStudents.forEach(s => {
-    s.selected = idsFamiliaActual.has(s.idEstudiante);
-  });
-
-  this.showStudentsModal = true;
-}
-
-
 
 
   // ahora guarda allAsignados y asignados (copia)
@@ -498,6 +509,38 @@ openStudentsModal(): void {
       });
   }
 
+openStudentsModal(): void {
+  this.studentFilter = '';
+
+  const idsFamiliaActual = new Set(
+    (this.familia.idestudiantes || []).map((n: any) => Number(n)).filter((x: number) => !isNaN(x))
+  );
+
+  // Si aún no cargaron estudiantes desde el servidor, intenta recargarlos rápido
+  if (!this.estudiantes || this.estudiantes.length === 0) {
+    console.warn('openStudentsModal: no hay estudiantes cargados, reintentando cargarEstudiantes() antes de abrir modal.');
+    this.cargarEstudiantes();
+    // pequeña espera no-bloqueante no permitida aquí — pero igual asignamos arrays vacíos y dejamos que el dev vea logs.
+  }
+
+  // Construimos allStudents basándonos en allAsignados (global) y los ids de la familia actual
+  this.allStudents = (this.estudiantes || [])
+    .filter(e => idsFamiliaActual.has(e.idEstudiante) || !this.allAsignados.includes(e.idEstudiante))
+    .map(e => ({
+      ...e,
+      selected: idsFamiliaActual.has(e.idEstudiante),
+      assignedToOther: this.allAsignados.includes(e.idEstudiante) && !idsFamiliaActual.has(e.idEstudiante)
+    }));
+
+  // debug
+  console.log('openStudentsModal -> idsFamiliaActual:', Array.from(idsFamiliaActual));
+  console.log('openStudentsModal -> allAsignados:', this.allAsignados);
+  console.log('openStudentsModal -> allStudents (filtrados):', this.allStudents);
+
+  this.filteredStudents = [...this.allStudents];
+  this.showStudentsModal = true;
+}
+
 
   filterStudents(): void {
     const txt = (this.studentFilter || '').trim().toLowerCase();
@@ -532,12 +575,11 @@ openStudentsModal(): void {
     this.closeStudentsModal();
   }
 
-  // helper que usa asignados y familia actual
-  get hayEstudiantesParaSeleccionar(): boolean {
-    const asignadosExcluyendoActual = this.allAsignados.filter(id => !this.familia.idestudiantes.includes(id));
-    const disponibles = this.estudiantes.filter(e => !asignadosExcluyendoActual.includes(e.idEstudiante));
-    return disponibles.length > 0;
-  }
+get hayEstudiantesParaSeleccionar(): boolean {
+  const asignadosExcluyendoActual = this.allAsignados.filter(id => !this.familia.idestudiantes.includes(id));
+  const disponibles = (this.estudiantes || []).filter(e => !asignadosExcluyendoActual.includes(e.idEstudiante));
+  return disponibles.length > 0 || (this.familia.idestudiantes && this.familia.idestudiantes.length > 0);
+}
 
   // Mostrar confirmación antes de eliminar
   async confirmEliminar(): Promise<void> {
