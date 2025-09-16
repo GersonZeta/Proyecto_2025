@@ -216,7 +216,6 @@ private cargarAsignadosGlobal(): void {
     this.availableStudents = this.estudiantes.filter(s => !assignedSet.has(Number(s.idEstudiante)));
   }
 
-  // ------------------ BÚSQUEDA ------------------
 buscarDocente(): void {
   const raw = this.nombreBusqueda.trim();
   if (!raw) {
@@ -227,7 +226,7 @@ buscarDocente(): void {
   const normalize = (s: string) => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
   const normalizedRaw = normalize(raw);
 
-  // 1. Filtrar todos los docentes cuyo nombre contenga la búsqueda
+  // Filtrar todos los docentes cuyo nombre contenga la búsqueda
   const matches = this.docentes.filter(d => normalize(d.NombreDocente).includes(normalizedRaw));
 
   if (!matches.length) {
@@ -235,7 +234,7 @@ buscarDocente(): void {
     return;
   }
 
-  // 2. Crear lista de todos los estudiantes relacionados a los docentes encontrados
+  // Construir lista de todos los estudiantes relacionados a los docentes encontrados
   const allRows: DocenteView[] = [];
   matches.forEach(d => {
     allRows.push({
@@ -254,53 +253,56 @@ buscarDocente(): void {
   this.docentesFiltrados = allRows;
   this.datosCargados = true;
 
-  // 3. Si hay solo una coincidencia exacta, seleccionarla automáticamente
+  // Filtrar coincidencias exactas
   const exactMatches = matches.filter(d => normalize(d.NombreDocente) === normalizedRaw);
 
-  if (exactMatches.length === 1) {
-    // Llenar automáticamente con todos los estudiantes de ese docente
-    const estudiantesIds = exactMatches.map(d => d.idEstudiante);
-    this.docente = {
-      idDocente: exactMatches[0].idDocente ?? 0,
-      DNIDocente: exactMatches[0].DNIDocente ?? '',
-      NombreDocente: exactMatches[0].NombreDocente,
-      Email: exactMatches[0].Email,
-      Telefono: exactMatches[0].Telefono,
-      GradoSeccionLabora: exactMatches[0].GradoSeccionLabora,
-      idEstudiante: estudiantesIds
-    };
-    this.asignados = this.allAsignados.filter(id => !estudiantesIds.includes(id));
-    this.onEstudiantesChange();
-    this.updateAvailableStudents();
-    this.allStudents = [];
-    this.filteredStudents = [];
-  } else if (exactMatches.length > 1) {
-    // Múltiples docentes con el mismo nombre: mostrar todos los estudiantes de todos ellos
-    const seenEstudiantes = new Set<number>();
-    const views: DocenteView[] = [];
+  if (exactMatches.length >= 1) {
+    // Agrupar por docente y traer **todos sus estudiantes**
+    const mapByDocente = new Map<number, DocenteView[]>();
     exactMatches.forEach(d => {
-      if (!seenEstudiantes.has(d.idEstudiante)) {
-        seenEstudiantes.add(d.idEstudiante);
-        views.push({
-          idDocente: d.idDocente ?? 0,
-          idEstudiante: d.idEstudiante,
-          NombreEstudiante: this.getEstudianteNombre(d.idEstudiante),
-          NombreDocente: d.NombreDocente,
-          DNIDocente: d.DNIDocente,
-          Email: d.Email,
-          Telefono: d.Telefono,
-          GradoSeccionLabora: d.GradoSeccionLabora,
-          displayId: d.displayId
-        });
-      }
+      const idDocente = d.idDocente ?? 0;
+      if (!mapByDocente.has(idDocente)) mapByDocente.set(idDocente, []);
+      mapByDocente.get(idDocente)!.push({
+        idDocente,
+        idEstudiante: d.idEstudiante,
+        NombreEstudiante: this.getEstudianteNombre(d.idEstudiante),
+        NombreDocente: d.NombreDocente,
+        DNIDocente: d.DNIDocente,
+        Email: d.Email,
+        Telefono: d.Telefono,
+        GradoSeccionLabora: d.GradoSeccionLabora,
+        displayId: d.displayId
+      });
     });
 
+    // Si hay solo un docente exacto, seleccionarlo automáticamente
+    if (mapByDocente.size === 1) {
+      const estudiantes = Array.from(mapByDocente.values())[0];
+      const estudiantesIds = estudiantes.map(e => e.idEstudiante);
+      const d = estudiantes[0];
+      this.docente = {
+        idDocente: d.idDocente,
+        DNIDocente: d.DNIDocente ?? '',
+        NombreDocente: d.NombreDocente,
+        Email: d.Email,
+        Telefono: d.Telefono,
+        GradoSeccionLabora: d.GradoSeccionLabora,
+        idEstudiante: estudiantesIds
+      };
+      this.asignados = this.allAsignados.filter(id => !estudiantesIds.includes(id));
+      this.onEstudiantesChange();
+      this.updateAvailableStudents();
+      this.allStudents = [];
+      this.filteredStudents = [];
+    }
+
+    // Mostrar todos los estudiantes de todos los docentes exactos
+    const views: DocenteView[] = [];
+    mapByDocente.forEach(arr => views.push(...arr));
     this.docentesFiltrados = views;
-    this.buscandoDocente = true;
-    this.datosCargados = true;
+    this.buscandoDocente = mapByDocente.size > 1;
   }
 }
-
 
 
 buscarPorId(d: DocenteView | (DocenteView & { index: number })): void {
