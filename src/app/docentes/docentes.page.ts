@@ -234,10 +234,15 @@ buscarDocente(): void {
     return;
   }
 
-  // Construir lista de todos los estudiantes relacionados a los docentes encontrados
-  const allRows: DocenteView[] = [];
-  matches.forEach(d => {
-    allRows.push({
+  // Filtrar coincidencias exactas
+  const exactMatches = matches.filter(d => normalize(d.NombreDocente) === normalizedRaw);
+
+  // Agrupar por DNIDocente para saber si son realmente distintos docentes
+  const mapByDNI = new Map<string, DocenteView[]>();
+  exactMatches.forEach(d => {
+    const dni = (d.DNIDocente || '').toString().trim();
+    if (!mapByDNI.has(dni)) mapByDNI.set(dni, []);
+    mapByDNI.get(dni)!.push({
       idDocente: d.idDocente ?? 0,
       idEstudiante: d.idEstudiante,
       NombreEstudiante: this.getEstudianteNombre(d.idEstudiante),
@@ -250,59 +255,39 @@ buscarDocente(): void {
     });
   });
 
-  this.docentesFiltrados = allRows;
-  this.datosCargados = true;
-
-  // Filtrar coincidencias exactas
-  const exactMatches = matches.filter(d => normalize(d.NombreDocente) === normalizedRaw);
-
-  if (exactMatches.length >= 1) {
-    // Agrupar por docente y traer **todos sus estudiantes**
-    const mapByDocente = new Map<number, DocenteView[]>();
-    exactMatches.forEach(d => {
-      const idDocente = d.idDocente ?? 0;
-      if (!mapByDocente.has(idDocente)) mapByDocente.set(idDocente, []);
-      mapByDocente.get(idDocente)!.push({
-        idDocente,
-        idEstudiante: d.idEstudiante,
-        NombreEstudiante: this.getEstudianteNombre(d.idEstudiante),
-        NombreDocente: d.NombreDocente,
-        DNIDocente: d.DNIDocente,
-        Email: d.Email,
-        Telefono: d.Telefono,
-        GradoSeccionLabora: d.GradoSeccionLabora,
-        displayId: d.displayId
-      });
-    });
-
-    // Si hay solo un docente exacto, seleccionarlo automáticamente
-    if (mapByDocente.size === 1) {
-      const estudiantes = Array.from(mapByDocente.values())[0];
-      const estudiantesIds = estudiantes.map(e => e.idEstudiante);
-      const d = estudiantes[0];
-      this.docente = {
-        idDocente: d.idDocente,
-        DNIDocente: d.DNIDocente ?? '',
-        NombreDocente: d.NombreDocente,
-        Email: d.Email,
-        Telefono: d.Telefono,
-        GradoSeccionLabora: d.GradoSeccionLabora,
-        idEstudiante: estudiantesIds
-      };
-      this.asignados = this.allAsignados.filter(id => !estudiantesIds.includes(id));
-      this.onEstudiantesChange();
-      this.updateAvailableStudents();
-      this.allStudents = [];
-      this.filteredStudents = [];
-    }
-
-    // Mostrar todos los estudiantes de todos los docentes exactos
-    const views: DocenteView[] = [];
-    mapByDocente.forEach(arr => views.push(...arr));
-    this.docentesFiltrados = views;
-    this.buscandoDocente = mapByDocente.size > 1;
+  // Si solo hay un docente exacto (mismo DNI), seleccionamos automáticamente todos sus estudiantes
+  if (mapByDNI.size === 1) {
+    const estudiantes = Array.from(mapByDNI.values())[0];
+    const estudiantesIds = estudiantes.map(e => e.idEstudiante);
+    const d = estudiantes[0];
+    this.docente = {
+      idDocente: d.idDocente,
+      DNIDocente: d.DNIDocente ?? '',
+      NombreDocente: d.NombreDocente,
+      Email: d.Email,
+      Telefono: d.Telefono,
+      GradoSeccionLabora: d.GradoSeccionLabora,
+      idEstudiante: estudiantesIds
+    };
+    this.asignados = this.allAsignados.filter(id => !estudiantesIds.includes(id));
+    this.onEstudiantesChange();
+    this.updateAvailableStudents();
+    this.allStudents = [];
+    this.filteredStudents = [];
+    this.docentesFiltrados = estudiantes; // Mostrar todos sus estudiantes
+    this.datosCargados = true;
+    this.buscandoDocente = false; // NO pedir elección
+    return;
   }
+
+  // Si hay varios DNIs diferentes con el mismo nombre: mostrar todos los estudiantes agrupados por docente
+  const allStudents: DocenteView[] = [];
+  mapByDNI.forEach(arr => allStudents.push(...arr));
+  this.docentesFiltrados = allStudents;
+  this.datosCargados = true;
+  this.buscandoDocente = true; // Solo aquí pedimos elegir, porque son docentes distintos
 }
+
 
 
 buscarPorId(d: DocenteView | (DocenteView & { index: number })): void {
