@@ -575,6 +575,13 @@ openStudentsModal(): void {
     this.closeStudentsModal();
   }
 
+// en la clase FamiliasPage
+canOpenStudentsButton(): boolean {
+  const tieneHijosAsignados = Array.isArray(this.familia?.idestudiantes) && this.familia.idestudiantes.length > 0;
+  return tieneHijosAsignados || this.hayEstudiantesParaSeleccionar;
+}
+
+
 get hayEstudiantesParaSeleccionar(): boolean {
   const asignadosExcluyendoActual = this.allAsignados.filter(id => !this.familia.idestudiantes.includes(id));
   const disponibles = (this.estudiantes || []).filter(e => !asignadosExcluyendoActual.includes(e.idEstudiante));
