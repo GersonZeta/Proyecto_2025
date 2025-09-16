@@ -88,15 +88,15 @@
         </ion-col>
 
         <ion-col size="1.5" class="ion-text-center">
-<!-- opción recomendada -->
 <ion-button
   expand="block"
   color="tertiary"
   (click)="openStudentsModal()"
-  [disabled]="estudiantes.length === 0 || !hayEstudiantesParaSeleccionar"
+  [disabled]="datosCargados && (!familia.idestudiantes || familia.idestudiantes.length === 0) && estudiantesDisponibles.length === 0"
 >
   Estudiantes
 </ion-button>
+
 
 
         </ion-col>

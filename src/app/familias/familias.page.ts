@@ -468,44 +468,24 @@ export class FamiliasPage {
 openStudentsModal(): void {
   this.studentFilter = '';
 
-  // Si no hay estudiantes cargados, avisar (evita modal vacío)
-  if (!this.estudiantes || this.estudiantes.length === 0) {
-    this.mostrarAlerta('Aviso', 'No hay estudiantes cargados.');
-    return;
-  }
-
-  // ids de la familia actual (set para búsquedas rápidas)
   const idsFamiliaActual = new Set(
     (this.familia.idestudiantes || []).map((n: any) => Number(n)).filter((x: number) => !isNaN(x))
   );
 
-  // Construir lista de asignados EXCLUYENDO los de la familia actual
-  // (allAsignados contiene todos los estudiantes con familia)
-  const asignadosExcluyendoActual = (this.allAsignados || [])
-    .map((n: any) => Number(n))
-    .filter((n: number) => !isNaN(n) && !idsFamiliaActual.has(n));
-
-  // Mostrar sólo:
-  //  - los estudiantes que ya están en la familia actual (idsFamiliaActual),
-  //  - o los estudiantes que NO están en asignadosExcluyendoActual (es decir: no asignados a otras familias)
-  this.allStudents = (this.estudiantes || [])
-    .filter(e => idsFamiliaActual.has(e.idEstudiante) || !asignadosExcluyendoActual.includes(e.idEstudiante))
+  // Filtrar estudiantes
+  this.allStudents = this.estudiantes
+    .filter(e =>
+      idsFamiliaActual.has(e.idEstudiante) || // mostrar los de esta familia
+      !this.allAsignados.includes(e.idEstudiante) // mostrar solo los NO asignados
+    )
     .map(e => ({
       ...e,
       selected: idsFamiliaActual.has(e.idEstudiante)
     }));
 
   this.filteredStudents = [...this.allStudents];
-
-  // Si no hay ninguno para mostrar, avisar en vez de abrir modal vacío
-  if (this.allStudents.length === 0) {
-    this.mostrarAlerta('Aviso', 'No hay estudiantes disponibles (todos ya están asignados).');
-    return;
-  }
-
   this.showStudentsModal = true;
 }
-
 
 
 
