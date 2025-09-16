@@ -122,42 +122,57 @@ export class FamiliasPage {
       });
   }
 
-  private cargarFamilias(callback?: () => void): void {
-    const params = new HttpParams()
-      .set('idInstitucionEducativa', this.idInstitucionEducativa.toString())
-      .set('action', 'listar');
+private cargarFamilias(callback?: () => void): void {
+  const params = new HttpParams()
+    .set('idInstitucionEducativa', this.idInstitucionEducativa.toString())
+    .set('action', 'listar');
 
-    this.http.get<any>(this.baseUrl, { params })
-      .subscribe({
-        next: res => {
-          const arr = res?.ok ? (res.data || []) : (res || []);
-          this.familias = (arr || []).map((f: any, i: number) => ({
-            ...f,
-            idestudiantes: Array.isArray((f as any).idestudiantes)
-              ? (f as any).idestudiantes.map((v: any) => Number(v)).filter((n: number) => !isNaN(n))
-              : (typeof (f as any).idestudiante === 'number' ? [(f as any).idestudiante] : []),
-            // displayId VISUAL: siempre índice + 1 (1..N)
-            displayId: i + 1,
-            nombremadreapoderado: f.nombremadreapoderado ?? '',
-            dni: f.dni ?? '',
-            direccion: f.direccion ?? null,
-            telefono: f.telefono ?? null,
-            ocupacion: f.ocupacion ?? null,
-            NombreEstudiante: f.NombreEstudiante ?? ''
-          })) as Familia[];
+  this.http.get<any>(this.baseUrl, { params })
+    .subscribe({
+      next: res => {
+        const arr = res?.ok ? (res.data || []) : (res || []);
+        this.familias = (arr || []).map((f: any, i: number) => ({
+          ...f,
+          idestudiantes: Array.isArray((f as any).idestudiantes)
+            ? (f as any).idestudiantes.map((v: any) => Number(v)).filter((n: number) => !isNaN(n))
+            : (typeof (f as any).idestudiante === 'number' ? [(f as any).idestudiante] :
+               (f && f.idestudiante ? [Number(f.idestudiante)] : [])),
+          // displayId VISUAL: siempre índice + 1 (1..N)
+          displayId: i + 1,
+          nombremadreapoderado: f.nombremadreapoderado ?? '',
+          dni: f.dni ?? '',
+          direccion: f.direccion ?? null,
+          telefono: f.telefono ?? null,
+          ocupacion: f.ocupacion ?? null,
+          NombreEstudiante: f.NombreEstudiante ?? ''
+        })) as Familia[];
 
-          // recalcula para mantener secuencia consistente después de transformaciones
-          this.recalcularDisplayIds();
-          this.familiasFiltradas = [...this.familias];
-          if (callback) callback();
-        },
-        error: () => {
-          this.familias = [];
-          this.familiasFiltradas = [];
-          if (callback) callback();
-        }
-      });
-  }
+        // --- NUEVO: calcular todos los IDs asignados globalmente a partir de las familias ---
+        this.allAsignados = Array.from(new Set(
+          this.familias
+            .flatMap(fam => fam.idestudiantes || [])
+            .map((v: any) => Number(v))
+            .filter((n: number) => !isNaN(n))
+        ));
+        // copia de trabajo (se usa para excluir los de la familia actual cuando editas)
+        this.asignados = [...this.allAsignados];
+        // -------------------------------------------------------------------------------
+
+        // recalcula para mantener secuencia consistente después de transformaciones
+        this.recalcularDisplayIds();
+        this.familiasFiltradas = [...this.familias];
+        if (callback) callback();
+      },
+      error: () => {
+        this.familias = [];
+        this.familiasFiltradas = [];
+        this.allAsignados = [];
+        this.asignados = [];
+        if (callback) callback();
+      }
+    });
+}
+
 
 
   // Este getter determina si se muestran en el modal los estudiantes ya de la familia + no asignados
@@ -465,28 +480,28 @@ export class FamiliasPage {
       });
   }
 
-  openStudentsModal(): void {
-    this.studentFilter = '';
+openStudentsModal(): void {
+  this.studentFilter = '';
 
-    const idsFamiliaActual = new Set(
-      (this.familia.idestudiantes || []).map((n: any) => Number(n)).filter((x: number) => !isNaN(x))
-    );
+  const idsFamiliaActual = new Set(
+    (this.familia.idestudiantes || []).map((n: any) => Number(n)).filter((x: number) => !isNaN(x))
+  );
 
-    // Mostrar SOLO:
-    // - estudiantes que ya pertenecen a esta familia (idsFamiliaActual)
-    // - O estudiantes que NO están asignados globalmente (no están en allAsignados)
-    this.allStudents = this.estudiantes
-      .filter(e => idsFamiliaActual.has(e.idEstudiante) || !this.allAsignados.includes(e.idEstudiante))
-      .map(e => ({
-        ...e,
-        selected: idsFamiliaActual.has(e.idEstudiante),
-        // optional flag if you want to show diference in UI
-        assignedToOther: this.allAsignados.includes(e.idEstudiante) && !idsFamiliaActual.has(e.idEstudiante)
-      }));
+  // Mostrar solo:
+  // - Estudiantes de esta familia
+  // - Estudiantes que NO estén en allAsignados
+  this.allStudents = this.estudiantes
+    .filter(e =>
+      idsFamiliaActual.has(e.idEstudiante) || !this.allAsignados.includes(e.idEstudiante)
+    )
+    .map(e => ({
+      ...e,
+      selected: idsFamiliaActual.has(e.idEstudiante)
+    }));
 
-    this.filteredStudents = [...this.allStudents];
-    this.showStudentsModal = true;
-  }
+  this.filteredStudents = [...this.allStudents];
+  this.showStudentsModal = true;
+}
 
 
   filterStudents(): void {
