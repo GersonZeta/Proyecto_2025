@@ -122,20 +122,19 @@ openStudentsModal(): void {
     (this.familia.idestudiantes || []).map((n: any) => Number(n)).filter((x: number) => !isNaN(x))
   );
 
-  // Filtrar estudiantes
-  this.allStudents = this.estudiantes
-    .filter(e =>
-      idsFamiliaActual.has(e.idEstudiante) || // mostrar los de esta familia
-      !this.allAsignados.includes(e.idEstudiante) // mostrar solo los NO asignados
-    )
-    .map(e => ({
-      ...e,
-      selected: idsFamiliaActual.has(e.idEstudiante)
-    }));
+  // Filtrar estudiantes disponibles = los que ya son de esta familia o los no asignados
+  this.allStudents.forEach(s => {
+    s.selected = idsFamiliaActual.has(s.idEstudiante);
+    s.assignedToOther = this.allAsignados.includes(s.idEstudiante) && !idsFamiliaActual.has(s.idEstudiante);
+  });
 
-  this.filteredStudents = [...this.allStudents];
+  this.filteredStudents = this.allStudents.filter(s =>
+    s.selected || !s.assignedToOther
+  );
+
   this.showStudentsModal = true;
 }
+
 
 
 
