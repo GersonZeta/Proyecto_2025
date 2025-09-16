@@ -77,19 +77,21 @@ export class FamiliasPage {
     private navCtrl: NavController,
   ) {}
 
-  ionViewWillEnter(): void {
-    const stored = localStorage.getItem('idInstitucionEducativa');
-    this.idInstitucionEducativa = stored ? +stored : 0;
-    if (!this.idInstitucionEducativa) {
-      this.mostrarAlerta('Error', 'Primero selecciona una institución.');
-      this.navCtrl.navigateRoot('/seleccion-instituciones');
-      return;
-    }
-    this.resetForm();
-    this.cargarEstudiantes();
-    this.cargarAsignados();
-    this.cargarFamilias();
+ionViewWillEnter(): void {
+  const stored = localStorage.getItem('idInstitucionEducativa');
+  this.idInstitucionEducativa = stored ? +stored : 0;
+  if (!this.idInstitucionEducativa) {
+    this.mostrarAlerta('Error', 'Primero selecciona una institución.');
+    this.navCtrl.navigateRoot('/seleccion-instituciones');
+    return;
   }
+
+  this.resetForm();
+  this.cargarAsignados();   // 👈 primero asignados
+  this.cargarEstudiantes(); // 👈 luego estudiantes
+  this.cargarFamilias();
+}
+
 
 private cargarEstudiantes(): void {
   const params = new HttpParams().set('idInstitucionEducativa', this.idInstitucionEducativa.toString());
@@ -114,27 +116,21 @@ private cargarEstudiantes(): void {
     });
 }
 
-
 openStudentsModal(): void {
   this.studentFilter = '';
-
-  const idsFamiliaActual = new Set(
-    (this.familia.idestudiantes || []).map((n: any) => Number(n)).filter((x: number) => !isNaN(x))
-  );
-
-  // Filtrar estudiantes disponibles = los que ya son de esta familia o los no asignados
-  this.allStudents.forEach(s => {
-    s.selected = idsFamiliaActual.has(s.idEstudiante);
-    s.assignedToOther = this.allAsignados.includes(s.idEstudiante) && !idsFamiliaActual.has(s.idEstudiante);
-  });
+  const idsFamiliaActual = new Set(this.familia.idestudiantes || []);
 
   this.filteredStudents = this.allStudents.filter(s =>
-    s.selected || !s.assignedToOther
+    idsFamiliaActual.has(s.idEstudiante) || !this.allAsignados.includes(s.idEstudiante)
   );
+
+  // marcar seleccionados
+  this.filteredStudents.forEach(s => {
+    s.selected = idsFamiliaActual.has(s.idEstudiante);
+  });
 
   this.showStudentsModal = true;
 }
-
 
 
 
