@@ -284,56 +284,64 @@ actualizarEstudiante(): void {
 }
 
 
-  async confirmEliminar() {
-    const localFlag = localStorage.getItem('noMostrarEliminar');
-    if (localFlag === 'true') {
-      this.eliminarEstudiante();
-      return;
-    }
+  // async confirmEliminar() {
+  //   const localFlag = localStorage.getItem('noMostrarEliminar');
+  //   if (localFlag === 'true') {
+  //     this.eliminarEstudiante();
+  //     return;
+  //   }
 
-    const alert = await this.alertCtrl.create({
-      header: 'Confirmación',
-      message: '¿Estás seguro de eliminar este estudiante?',
-      inputs: [
-        {
-          name: 'noMostrar',
-          type: 'checkbox',
-          label: 'No volver a mostrar este mensaje',
-          value: 'noMostrar',
-        },
-      ],
-      buttons: [
-        { text: 'No', role: 'cancel' },
-        {
-          text: 'Sí',
-          handler: (data: any) => {
-            if (
-              Array.isArray(data)
-                ? data.includes('noMostrar')
-                : data?.noMostrar === 'noMostrar'
-            ) {
-              localStorage.setItem('noMostrarEliminar', 'true');
-            }
-            this.eliminarEstudiante();
-          },
-        },
-      ],
+  //   const alert = await this.alertCtrl.create({
+  //     header: 'Confirmación',
+  //     message: '¿Estás seguro de eliminar este estudiante?',
+  //     inputs: [
+  //       {
+  //         name: 'noMostrar',
+  //         type: 'checkbox',
+  //         label: 'No volver a mostrar este mensaje',
+  //         value: 'noMostrar',
+  //       },
+  //     ],
+  //     buttons: [
+  //       { text: 'No', role: 'cancel' },
+  //       {
+  //         text: 'Sí',
+  //         handler: (data: any) => {
+  //           if (
+  //             Array.isArray(data)
+  //               ? data.includes('noMostrar')
+  //               : data?.noMostrar === 'noMostrar'
+  //           ) {
+  //             localStorage.setItem('noMostrarEliminar', 'true');
+  //           }
+  //           this.eliminarEstudiante();
+  //         },
+  //       },
+  //     ],
+  //   });
+  //   await alert.present();
+  // }
+
+
+  // Eliminar directamente sin confirmar ni mostrar alertas
+confirmEliminar() {
+  this.eliminarEstudiante();
+}
+
+
+private eliminarEstudiante() {
+  if (!this.alumno.id) return;
+  this.http
+    .delete(`${this.baseUrl}?action=eliminar&id=${this.alumno.id}`)
+    .subscribe({
+      next: () => {
+        this.resetForm();
+        this.cargarEstudiantes();
+      },
+      error: () => this.mostrarAlerta('Error', 'No fue posible eliminar'),
     });
-    await alert.present();
-  }
+}
 
-  private eliminarEstudiante() {
-    if (!this.alumno.id) return;
-    this.http
-      .delete(`${this.baseUrl}?action=eliminar&id=${this.alumno.id}`)
-      .subscribe({
-        next: () => {
-          this.resetForm();
-          this.cargarEstudiantes();
-        },
-        error: () => this.mostrarAlerta('Error', 'No fue posible eliminar'),
-      });
-  }
 
   resetForm(): void {
     this.alumno = {};
