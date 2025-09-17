@@ -171,7 +171,7 @@ buscarEstudiante(): void {
   );
 
   if (!matches.length) {
-    this.mensajeErrorCampos = 'Estudiante no encontrado, vuelve a intentar.';
+    this.mensajeErrorCampos = 'Estudiante no encontrado.';
     this.mostrarErrorCampos = true;
     // ❌ no vaciar la tabla, solo mostrar alerta
     return;
