@@ -726,34 +726,24 @@ closeStudentsModal(): void {
   }
 
 applyStudentsSelection(): void {
-  // Mantener los que ya estaban asignados
-  const yaAsignados = new Set(this.docente.idEstudiante);
-
-  // Estudiantes seleccionados en el modal
-  const seleccionados = this.allStudents
-    .filter(s => s.selected)
-    .map(s => s.idEstudiante);
-
-  // Combinar: los que ya estaban + los nuevos seleccionados
-  const union = new Set([...yaAsignados, ...seleccionados]);
-
-  this.docente.idEstudiante = Array.from(union);
-
-  // Refrescar la vista de la tabla
-  this.docentesFiltrados = this.docente.idEstudiante.map(id => ({
-    idDocente: this.docente.idDocente ?? 0,
-    idEstudiante: id,
-    NombreEstudiante: this.getEstudianteNombre(id),
-    NombreDocente: this.docente.NombreDocente,
-    DNIDocente: this.docente.DNIDocente,
-    Email: this.docente.Email,
-    Telefono: this.docente.Telefono,
-    GradoSeccionLabora: this.docente.GradoSeccionLabora,
-    displayId: 0
+  // Actualizar el estado de selección según los checkboxes del modal
+  this.allStudents = this.allStudents.map(s => ({
+    ...s,
+    selected: !!s.selected
   }));
 
-  this.showStudentsModal = false;
+  // Actualizar el docente SOLO con los seleccionados
+  this.docente.idEstudiante = this.allStudents
+    .filter(s => s.selected)
+    .map(s => Number(s.idEstudiante));
+
+  // Refrescar nombres visibles (para la lista del docente)
+  this.onEstudiantesChange();
+
+  // Cerrar modal
+  this.closeStudentsModal();
 }
+
 
 
 
