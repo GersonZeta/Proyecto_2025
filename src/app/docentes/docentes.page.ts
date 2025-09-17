@@ -724,17 +724,29 @@ closeStudentsModal(): void {
       (s.ApellidosNombres || '').toLowerCase().includes(term)
     );
   }
+
 applyStudentsSelection(): void {
+  // Mantener siempre los que ya tenía el docente
+  const prevIds = new Set(this.docente.idEstudiante);
+
+  // Guardar el estado actual del modal
   this.allStudents = this.allStudents.map(s => ({
     ...s,
     selected: !!s.selected
   }));
 
-  this.docente.idEstudiante = this.allStudents
+  // Lista de seleccionados en este momento
+  const selectedIds = this.allStudents
     .filter(s => s.selected)
     .map(s => Number(s.idEstudiante));
 
+  // Unir: los que ya tenía el docente + los que siguen seleccionados
+  this.docente.idEstudiante = Array.from(new Set([...prevIds, ...selectedIds]));
+
+  // Refrescar nombres
   this.onEstudiantesChange();
+
+  // Cerrar modal
   this.closeStudentsModal();
 }
 
