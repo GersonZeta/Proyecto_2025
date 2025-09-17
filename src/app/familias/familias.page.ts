@@ -445,70 +445,63 @@ openStudentsModal(): void {
     (this.familia.idestudiantes || []).map((n: any) => Number(n)).filter((x: number) => !isNaN(x))
   );
 
-  // Mostrar SOLO:
-  // - estudiantes que ya pertenecen a esta familia (idsFamiliaActual)
-  // - O estudiantes que NO están asignados globalmente (no están en allAsignados)
-  this.allStudents = this.estudiantes
-    .filter(e => idsFamiliaActual.has(e.idEstudiante) || !this.allAsignados.includes(e.idEstudiante))
-    .map(e => ({
+  // Mostrar SIEMPRE:
+  // - los estudiantes de esta familia (para que no desaparezcan)
+  // - los que NO están asignados globalmente
+  this.allStudents = this.estudiantes.map(e => {
+    const esDeFamilia = idsFamiliaActual.has(e.idEstudiante);
+    const asignadoOtro = this.allAsignados.includes(e.idEstudiante) && !esDeFamilia;
+
+    return {
       ...e,
-      selected: idsFamiliaActual.has(e.idEstudiante),
-      // optional flag if you want to show diference in UI
-      assignedToOther: this.allAsignados.includes(e.idEstudiante) && !idsFamiliaActual.has(e.idEstudiante)
-    }));
+      selected: esDeFamilia,
+      assignedToOther: asignadoOtro
+    };
+  }).filter(s => s.selected || !s.assignedToOther);
+  // 👆 mantiene los de la familia y descarta los asignados a otras familias
 
   this.filteredStudents = [...this.allStudents];
   this.showStudentsModal = true;
 }
 
 
-filterStudents(): void {
-  const q = (this.studentFilter || '').toLowerCase().trim();
-  if (!q) {
-    this.filteredStudents = [...this.allStudents];
-    return;
+  filterStudents(): void {
+    const txt = (this.studentFilter || '').trim().toLowerCase();
+    if (!txt) {
+      this.filteredStudents = [...this.allStudents];
+      return;
+    }
+    this.filteredStudents = this.allStudents.filter(s =>
+      (s.ApellidosNombres || '').toLowerCase().includes(txt)
+    );
   }
-  this.filteredStudents = this.allStudents.filter(s =>
-    (s.ApellidosNombres || '').toLowerCase().includes(q)
-  );
-}
 
 closeStudentsModal(): void {
   this.showStudentsModal = false;
-  this.filteredStudents = [];
 }
 
 
 applyStudentsSelection(): void {
-  // 1) Obtener seleccionados del modal
+  // Obtener seleccionados del modal
   const seleccionados = this.allStudents
     .filter(s => !!s.selected)
-    .map(s => Number(s.idEstudiante));
+    .map(s => Number(s.idEstudiante))
+    .filter(n => !isNaN(n));
 
-  // 2) Actualizar familia.idestudiantes
-  this.familia.idestudiantes = [...seleccionados];
+  // Quitar duplicados
+  this.familia.idestudiantes = Array.from(new Set(seleccionados));
 
-  // 3) Actualizar nombres concatenados
-  this.selectedStudentNames = this.estudiantes
-    .filter(e => this.familia.idestudiantes.includes(e.idEstudiante))
-    .map(e => e.ApellidosNombres)
+  // Actualizar nombres
+  this.selectedStudentNames = this.allStudents
+    .filter(s => s.selected)
+    .map(s => s.ApellidosNombres)
     .join(', ');
 
-  // 4) Ajustar asignados (los que no pertenecen a la familia quedan bloqueados)
-  this.asignados = this.allAsignados.filter(
-    id => !this.familia.idestudiantes.includes(id)
-  );
+  // recalcular asignados igual que en docentes
+  this.asignados = this.allAsignados.filter(id => !this.familia.idestudiantes.includes(id));
 
-  // 5) Cerrar modal
   this.closeStudentsModal();
 }
-
-canOpenStudentsButton(): boolean {
-  // habilita el botón solo si el campo madre/apoderado no está vacío
-  return !!this.familia.nombremadreapoderado?.trim();
-}
-
-
   // helper que usa asignados y familia actual
   get hayEstudiantesParaSeleccionar(): boolean {
     const asignadosExcluyendoActual = this.allAsignados.filter(id => !this.familia.idestudiantes.includes(id));
