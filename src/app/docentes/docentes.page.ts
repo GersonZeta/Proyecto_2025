@@ -82,6 +82,7 @@ export class DocentesPage {
   buscandoDocente = false;
   mostrarAlertaExportar = false;
   mostrarErrorCampos = false;
+   mostrarErrorDocenteNoEncontrado = false; // 🔹 NUEVA bandera
 
 
   nombreBusqueda = '';
@@ -112,6 +113,7 @@ export class DocentesPage {
 
   cerrarAlertaExportar(): void { this.mostrarAlertaExportar = false; }
   cerrarErrorCampos(): void { this.mostrarErrorCampos = false; }
+  cerrarErrorDocenteNoEncontrado(): void { this.mostrarErrorDocenteNoEncontrado = false; } // 🔹 NUEVO método
 
   ionViewWillEnter(): void {
     const stored = localStorage.getItem('idInstitucionEducativa');
@@ -239,7 +241,7 @@ buscarDocente(): void {
   );
 
   if (!matches.length) {
-    this.mostrarAlerta('Error', 'Docente no encontrado, vuelve a intentar');
+    this.mostrarErrorDocenteNoEncontrado = true; // 🔹 Mensaje: "Docente no encontrado, vuelve a intentar"
     return;
   }
 
@@ -300,6 +302,7 @@ buscarDocente(): void {
   this.datosCargados = true;
   this.buscandoDocente = true; // Solo aquí pedimos elegir, porque son docentes distintos
 }
+
 
 
 

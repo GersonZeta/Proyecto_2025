@@ -317,3 +317,11 @@
       <button class="btn-ok" (click)="cerrarErrorCampos()">OK</button>
     </div>
   </div>
+
+  <div class="error-overlay" *ngIf="mostrarErrorDocenteNoEncontrado">
+  <div class="error-box">
+    <h2 class="error-title">Error</h2>
+    <p class="error-message">Docente no encontrado, vuelve a intentar</p>
+    <button class="btn-ok" (click)="cerrarErrorDocenteNoEncontrado()">OK</button>
+  </div>
+</div>
