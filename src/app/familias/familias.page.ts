@@ -502,6 +502,17 @@ applyStudentsSelection(): void {
 
   this.closeStudentsModal();
 }
+
+canOpenStudentsButton(): boolean {
+  // Solo permitir abrir el modal si hay datos de la familia cargados
+  return !!(
+    this.familia &&
+    this.familia.nombremadreapoderado &&
+    this.familia.dni
+  );
+}
+
+
   // helper que usa asignados y familia actual
   get hayEstudiantesParaSeleccionar(): boolean {
     const asignadosExcluyendoActual = this.allAsignados.filter(id => !this.familia.idestudiantes.includes(id));
