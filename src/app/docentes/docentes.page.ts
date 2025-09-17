@@ -726,29 +726,35 @@ closeStudentsModal(): void {
   }
 
 applyStudentsSelection(): void {
-  // Mantener siempre los que ya tenía el docente
-  const prevIds = new Set(this.docente.idEstudiante);
+  // Mantener los que ya estaban asignados
+  const yaAsignados = new Set(this.docente.idEstudiante);
 
-  // Guardar el estado actual del modal
-  this.allStudents = this.allStudents.map(s => ({
-    ...s,
-    selected: !!s.selected
+  // Estudiantes seleccionados en el modal
+  const seleccionados = this.allStudents
+    .filter(s => s.selected)
+    .map(s => s.idEstudiante);
+
+  // Combinar: los que ya estaban + los nuevos seleccionados
+  const union = new Set([...yaAsignados, ...seleccionados]);
+
+  this.docente.idEstudiante = Array.from(union);
+
+  // Refrescar la vista de la tabla
+  this.docentesFiltrados = this.docente.idEstudiante.map(id => ({
+    idDocente: this.docente.idDocente ?? 0,
+    idEstudiante: id,
+    NombreEstudiante: this.getEstudianteNombre(id),
+    NombreDocente: this.docente.NombreDocente,
+    DNIDocente: this.docente.DNIDocente,
+    Email: this.docente.Email,
+    Telefono: this.docente.Telefono,
+    GradoSeccionLabora: this.docente.GradoSeccionLabora,
+    displayId: 0
   }));
 
-  // Lista de seleccionados en este momento
-  const selectedIds = this.allStudents
-    .filter(s => s.selected)
-    .map(s => Number(s.idEstudiante));
-
-  // Unir: los que ya tenía el docente + los que siguen seleccionados
-  this.docente.idEstudiante = Array.from(new Set([...prevIds, ...selectedIds]));
-
-  // Refrescar nombres
-  this.onEstudiantesChange();
-
-  // Cerrar modal
-  this.closeStudentsModal();
+  this.showStudentsModal = false;
 }
+
 
 
   goTo(page: string): void { this.navCtrl.navigateRoot(`/${page}`); }
