@@ -520,26 +520,27 @@ openStudentsModal(): void {
   if (!this.estudiantes || this.estudiantes.length === 0) {
     console.warn('openStudentsModal: no hay estudiantes cargados, reintentando cargarEstudiantes() antes de abrir modal.');
     this.cargarEstudiantes();
-    // pequeña espera no-bloqueante no permitida aquí — pero igual asignamos arrays vacíos y dejamos que el dev vea logs.
   }
 
-  // Construimos allStudents basándonos en allAsignados (global) y los ids de la familia actual
-  this.allStudents = (this.estudiantes || [])
-    .filter(e => idsFamiliaActual.has(e.idEstudiante) || !this.allAsignados.includes(e.idEstudiante))
-    .map(e => ({
-      ...e,
-      selected: idsFamiliaActual.has(e.idEstudiante),
-      assignedToOther: this.allAsignados.includes(e.idEstudiante) && !idsFamiliaActual.has(e.idEstudiante)
-    }));
+  // 🔥 CAMBIO CLAVE:
+  // ya no filtramos con "|| !this.allAsignados.includes(...)"
+  // porque eso hacía que desaparecieran los desmarcados.
+  // Ahora SIEMPRE mostramos todos los estudiantes cargados.
+  this.allStudents = (this.estudiantes || []).map(e => ({
+    ...e,
+    selected: idsFamiliaActual.has(e.idEstudiante),
+    assignedToOther: this.allAsignados.includes(e.idEstudiante) && !idsFamiliaActual.has(e.idEstudiante)
+  }));
 
   // debug
   console.log('openStudentsModal -> idsFamiliaActual:', Array.from(idsFamiliaActual));
   console.log('openStudentsModal -> allAsignados:', this.allAsignados);
-  console.log('openStudentsModal -> allStudents (filtrados):', this.allStudents);
+  console.log('openStudentsModal -> allStudents (TODOS):', this.allStudents);
 
   this.filteredStudents = [...this.allStudents];
   this.showStudentsModal = true;
 }
+
 
 
   filterStudents(): void {
