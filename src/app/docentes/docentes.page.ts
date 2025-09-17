@@ -722,25 +722,25 @@ filterStudents(): void {
 
 
 applyStudentsSelection(): void {
+  // 1. Tomar todos los que quedaron seleccionados en el modal
   const seleccionados = this.allStudents
     .filter(s => !!s.selected)
     .map(s => Number(s.idEstudiante))
     .filter(n => !isNaN(n));
 
-  const selNums = Array.from(new Set(seleccionados));
-  this.docente.idEstudiante = selNums;
+  // 2. Actualizar lista del docente
+  this.docente.idEstudiante = Array.from(new Set(seleccionados));
+
+  // 3. Refrescar nombres en el campo de texto
   this.onEstudiantesChange();
 
-  // ❌ NO tocar allStudents, availableStudents ni filteredStudents aquí
-  // porque eso hace que desaparezcan los desmarcados
+  // 4. (opcional) Mantener availableStudents actualizado
+  this.updateAvailableStudents();
 
-  // recalcular asignados visual (no tocar allAsignados hasta que el servidor confirme)
-  this.asignados = this.allAsignados.filter(
-    id => !this.docente.idEstudiante.includes(id)
-  );
-
+  // 5. Cerrar modal
   this.closeStudentsModal();
 }
+
 
   goTo(page: string): void { this.navCtrl.navigateRoot(`/${page}`); }
 
