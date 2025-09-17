@@ -68,6 +68,7 @@ export class EstudiantesPage implements AfterViewInit, OnDestroy {
   // Overlay flags
   mostrarAlertaExportar = false;
   mostrarErrorCampos = false;
+  mensajeErrorCampos = 'Completa todos los campos requeridos';
 
   private resizeListener!: () => void;
 
@@ -146,45 +147,48 @@ export class EstudiantesPage implements AfterViewInit, OnDestroy {
   }
 
 
-  buscarEstudiante(): void {
-    this.seleccionMultiple = false;
-    this.datosCargados = false;
-    this.hoverActivo = false;
+buscarEstudiante(): void {
+  this.seleccionMultiple = false;
+  this.datosCargados = false;
+  this.hoverActivo = false;
 
-    const raw = this.nombreBusqueda.trim();
-    if (!raw) {
-      this.mostrarAlerta('Error', 'Ingresa un nombre para buscar.');
-      return;
-    }
-
-    const normalize = (s: string) =>
-      s
-        ? s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
-        : '';
-
-    const q = normalize(raw);
-
-    const matches = this.estudiantes.filter((e) =>
-      normalize(e.ApellidosNombres).startsWith(q)
-    );
-
-    if (!matches.length) {
-      this.mostrarAlerta('Error', 'No hay estudiantes con ese nombre.');
-      this.estudiantesFiltrados = [];
-      return;
-    }
-
-    this.estudiantesFiltrados = matches;
-
-    if (matches.length > 1) {
-      this.seleccionMultiple = true;
-      this.hoverActivo = true;
-    } else {
-      this.alumno = { ...matches[0] };
-      this.datosCargados = true;
-      this.hoverActivo = false;
-    }
+  const raw = this.nombreBusqueda.trim();
+  if (!raw) {
+    this.mensajeErrorCampos = 'Ingresa un nombre para buscar.';
+    this.mostrarErrorCampos = true;
+    return;
   }
+
+  const normalize = (s: string) =>
+    s
+      ? s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase()
+      : '';
+
+  const q = normalize(raw);
+
+  const matches = this.estudiantes.filter((e) =>
+    normalize(e.ApellidosNombres).startsWith(q)
+  );
+
+  if (!matches.length) {
+    this.mensajeErrorCampos = 'No hay estudiantes con ese nombre.';
+    this.mostrarErrorCampos = true;
+    this.estudiantesFiltrados = [];
+    return;
+  }
+
+  this.estudiantesFiltrados = matches;
+
+  if (matches.length > 1) {
+    this.seleccionMultiple = true;
+    this.hoverActivo = true;
+  } else {
+    this.alumno = { ...matches[0] };
+    this.datosCargados = true;
+    this.hoverActivo = false;
+  }
+}
+
 
   seleccionarEstudiante(est: EstudianteLocal): void {
     this.alumno = { ...est };
@@ -194,17 +198,19 @@ export class EstudiantesPage implements AfterViewInit, OnDestroy {
     this.hoverActivo = false;
   }
 
-  private async validarCampos(): Promise<boolean> {
-    if (
-      !this.alumno.ApellidosNombres ||
-      !this.alumno.FechaNacimiento ||
-      !this.alumno.DNI
-    ) {
-      this.mostrarErrorCampos = true;
-      return false;
-    }
-    return true;
+private async validarCampos(): Promise<boolean> {
+  if (
+    !this.alumno.ApellidosNombres ||
+    !this.alumno.FechaNacimiento ||
+    !this.alumno.DNI
+  ) {
+    this.mensajeErrorCampos = 'Completa todos los campos requeridos';
+    this.mostrarErrorCampos = true;
+    return false;
   }
+  return true;
+}
+
 
   cerrarErrorCampos() {
     this.mostrarErrorCampos = false;
