@@ -721,29 +721,26 @@ filterStudents(): void {
 }
 
 
-  applyStudentsSelection(): void {
-    const seleccionados = this.allStudents
-      .filter(s => !!s.selected)
-      .map(s => Number(s.idEstudiante))
-      .filter(n => !isNaN(n));
+applyStudentsSelection(): void {
+  const seleccionados = this.allStudents
+    .filter(s => !!s.selected)
+    .map(s => Number(s.idEstudiante))
+    .filter(n => !isNaN(n));
 
-    const selNums = Array.from(new Set(seleccionados));
-    this.docente.idEstudiante = selNums;
-    this.onEstudiantesChange();
+  const selNums = Array.from(new Set(seleccionados));
+  this.docente.idEstudiante = selNums;
+  this.onEstudiantesChange();
 
-    // actualizar listas locales para que los seleccionados ya no aparezcan como disponibles
-    if (selNums.length) {
-      const selSet = new Set(selNums);
-      this.availableStudents = this.availableStudents.filter(s => !selSet.has(s.idEstudiante));
-      this.allStudents = this.allStudents.filter(s => !selSet.has(s.idEstudiante));
-      this.filteredStudents = this.filteredStudents.filter(s => !selSet.has(s.idEstudiante));
-    }
+  // ❌ NO tocar allStudents, availableStudents ni filteredStudents aquí
+  // porque eso hace que desaparezcan los desmarcados
 
-    // recalcular asignados visual (no tocar allAsignados hasta que el servidor confirme)
-    this.asignados = this.allAsignados.filter(id => !this.docente.idEstudiante.includes(id));
+  // recalcular asignados visual (no tocar allAsignados hasta que el servidor confirme)
+  this.asignados = this.allAsignados.filter(
+    id => !this.docente.idEstudiante.includes(id)
+  );
 
-    this.closeStudentsModal();
-  }
+  this.closeStudentsModal();
+}
 
   goTo(page: string): void { this.navCtrl.navigateRoot(`/${page}`); }
 
