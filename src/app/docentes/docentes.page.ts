@@ -703,14 +703,26 @@ export class DocentesPage {
     this.showStudentsModal = true;
   }
 
-  closeStudentsModal(): void {
-    // No eliminamos nada aquí. Solo ocultamos el modal y dejamos el estado de allStudents como quedó.
-    this.showStudentsModal = false;
+closeStudentsModal(): void {
+  this.showStudentsModal = false;
+  this.studentFilter = '';
 
-    // limpiar filtro visual pero mantener allStudents para que la próxima vez se reconstruya
-    this.studentFilter = '';
-    this.filteredStudents = [...this.allStudents];
-  }
+  // NO eliminar a los que ya estaban en el docente
+  const currentIds = new Set(this.docente.idEstudiante);
+
+  // Tomar los seleccionados del modal
+  const selectedIds = this.allStudents
+    .filter(s => s.selected)
+    .map(s => s.idEstudiante);
+
+  // Unir ambos (mantener los del docente aunque estén desmarcados en el modal)
+  const merged = new Set([...currentIds, ...selectedIds]);
+
+  this.docente.idEstudiante = Array.from(merged);
+
+  this.onEstudiantesChange();
+}
+
 
   filterStudents(): void {
     const term = this.studentFilter.trim().toLowerCase();
@@ -723,74 +735,29 @@ export class DocentesPage {
     );
   }
 
-applyStudentsSelection(): void {
-  // 1) snapshot de lo que tenía el docente antes
-  const prevAssigned = Array.isArray(this.docente.idEstudiante)
-    ? this.docente.idEstudiante.map(n => Number(n)).filter(n => !isNaN(n))
-    : [];
+  applyStudentsSelection(): void {
+    // Sin eliminar elementos de arrays locales.
+    // 1) Asegurar que this.allStudents refleje los checkboxes actuales
+    this.allStudents = this.allStudents.map(s => ({ ...s, selected: !!s.selected }));
 
-  // 2) asegurar que los flags de allStudents reflejen la UI (checkboxes)
-  this.allStudents = this.allStudents.map(s => ({ ...s, selected: !!s.selected }));
+    // 2) Obtener IDs seleccionados
+    const seleccionados = this.allStudents
+      .filter(s => !!s.selected)
+      .map(s => Number(s.idEstudiante))
+      .filter(n => !isNaN(n));
 
-  // 3) nuevos seleccionados desde el modal
-  const seleccionados = this.allStudents
-    .filter(s => !!s.selected)
-    .map(s => Number(s.idEstudiante))
-    .filter(n => !isNaN(n));
-  const selNums = Array.from(new Set(seleccionados));
+    const selNums = Array.from(new Set(seleccionados));
 
-  // 4) actualizar docente localmente y mostrar nombres
-  this.docente.idEstudiante = selNums;
-  this.onEstudiantesChange();
+    // 3) Actualizar al docente (UI local). No tocar allAsignados ni availableStudents aquí.
+    this.docente.idEstudiante = selNums;
+    this.onEstudiantesChange();
 
-  // 5) reconstruir availableStudents de forma mínima:
-  //    incluir estudiantes que NO están en allAsignados
-  //    o que estaban previamente asignados a este docente (prevAssigned)
-  //    o que ahora están asignados al docente (selNums)
-  const prevSet = new Set(prevAssigned);
-  const selSet = new Set(selNums);
-  this.availableStudents = this.estudiantes.filter(s => {
-    const id = Number(s.idEstudiante);
-    if (isNaN(id)) return false;
-    // si no está globalmente asignado -> disponible
-    if (!this.allAsignados.includes(id)) return true;
-    // si estaba asignado previamente a este docente -> mostrarlo como disponible localmente
-    if (prevSet.has(id) && !selSet.has(id)) return true;
-    // si ahora está asignado al docente -> mostrarlo también (como seleccionado)
-    if (selSet.has(id)) return true;
-    return false;
-  });
+    // 4) recalcular asignados visual (no tocar allAsignados hasta que el servidor confirme)
+    this.asignados = this.allAsignados.filter(id => !this.docente.idEstudiante.includes(id));
 
-  // 6) reconstruir la lista del modal (allStudents/filteredStudents)
-  //    Prioridad: mostrar primero los actualmente asignados al docente (selected=true)
-  const map = new Map<number, Student & { selected?: boolean }>();
-  // añadir available (selected = false por defecto)
-  this.availableStudents.forEach(s => map.set(Number(s.idEstudiante), { ...s, selected: false }));
-  // añadir asignados actuales (selected = true)
-  (this.docente.idEstudiante || []).forEach(id => {
-    const num = Number(id);
-    if (isNaN(num)) return;
-    const found = this.estudiantes.find(e => Number(e.idEstudiante) === num);
-    if (found) map.set(num, { ...found, selected: true });
-    else map.set(num, { idEstudiante: num, ApellidosNombres: '-', idInstitucionEducativa: this.idInstitucionEducativa, selected: true } as Student & { selected?: boolean });
-  });
-
-  const list = Array.from(map.values()).sort((a, b) => {
-    const aSel = a.selected ? 1 : 0;
-    const bSel = b.selected ? 1 : 0;
-    if (aSel !== bSel) return bSel - aSel; // selected primero
-    return (a.ApellidosNombres || '').localeCompare(b.ApellidosNombres || '');
-  });
-
-  this.allStudents = list;
-  this.filteredStudents = [...this.allStudents];
-
-  // 7) recalcular asignados visual (no tocar allAsignados hasta confirmar con servidor)
-  this.asignados = this.allAsignados.filter(id => !this.docente.idEstudiante.includes(id));
-
-  // 8) cerrar modal
-  this.closeStudentsModal();
-}
+    // 5) cerrar modal
+    this.closeStudentsModal();
+  }
 
   goTo(page: string): void { this.navCtrl.navigateRoot(`/${page}`); }
 
