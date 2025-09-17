@@ -722,57 +722,24 @@ filterStudents(): void {
 
 
 applyStudentsSelection(): void {
-  // Obtener los ids seleccionados en el modal
   const seleccionados = this.allStudents
     .filter(s => !!s.selected)
     .map(s => Number(s.idEstudiante))
     .filter(n => !isNaN(n));
 
   const selNums = Array.from(new Set(seleccionados));
-
-  // Asignar al docente actual
   this.docente.idEstudiante = selNums;
-
-  // 🔹 Actualizar texto mostrado
   this.onEstudiantesChange();
 
-  // 🔹 Actualizar lista global de asignados (quitar los que se desmarcaron)
-  this.allAsignados = this.allAsignados.filter(
-    id => !this.estudiantes.some(e => Number(e.idEstudiante) === id && !selNums.includes(id))
-  );
+  // ❌ NO los elimines de availableStudents, allStudents, filteredStudents
+  // Mantén la lista completa, solo cambia el estado de selección.
+  // Así al desmarcar siguen apareciendo, pero desmarcados.
 
-  // Añadir los recién seleccionados
-  this.allAsignados.push(...selNums);
+  // recalcular asignados visual (no tocar allAsignados hasta que el servidor confirme)
+  this.asignados = this.allAsignados.filter(id => !this.docente.idEstudiante.includes(id));
 
-  // 🔹 Quitar duplicados
-  this.allAsignados = Array.from(new Set(this.allAsignados));
-
-  // 🔹 Recalcular disponibles
-  this.updateAvailableStudents();
-
-  // 🔹 Reconstruir listas del modal
-  const map = new Map<number, Student & { selected?: boolean }>();
-  this.availableStudents.forEach(s => map.set(Number(s.idEstudiante), { ...s, selected: false }));
-  this.docente.idEstudiante.forEach(id => {
-    const num = Number(id);
-    const found = this.estudiantes.find(e => Number(e.idEstudiante) === num);
-    map.set(num, { ...(found || { idEstudiante: num, ApellidosNombres: '-', idInstitucionEducativa: this.idInstitucionEducativa }), selected: true });
-  });
-
-  const list = Array.from(map.values()).sort((a, b) => {
-    const aSel = a.selected ? 1 : 0;
-    const bSel = b.selected ? 1 : 0;
-    if (aSel !== bSel) return bSel - aSel;
-    return (a.ApellidosNombres || '').localeCompare(b.ApellidosNombres || '');
-  });
-
-  this.allStudents = list;
-  this.filteredStudents = [...this.allStudents];
-
-  // 🔹 Cerrar modal
   this.closeStudentsModal();
 }
-
 
 
   goTo(page: string): void { this.navCtrl.navigateRoot(`/${page}`); }
