@@ -523,25 +523,32 @@ openStudentsModal(): void {
     this.cargarEstudiantes();
   }
 
-  // ✅ Mostrar solo los de esta familia + los no registrados
   this.allStudents = (this.estudiantes || [])
-    .filter(e =>
-      idsFamiliaActual.has(e.idEstudiante) || // ya asignados a este docente
-      !this.allAsignados.includes(e.idEstudiante) // no registrados en ningún otro
-    )
-    .map(e => ({
-      ...e,
-      selected: idsFamiliaActual.has(e.idEstudiante),
-      assignedToOther: this.allAsignados.includes(e.idEstudiante) && !idsFamiliaActual.has(e.idEstudiante)
-    }));
+    .filter(e => {
+      // 🔑 mantener SIEMPRE a los de esta familia
+      if (idsFamiliaActual.has(e.idEstudiante)) return true;
+      // incluir solo los no registrados en ninguna familia
+      return !this.allAsignados.includes(e.idEstudiante);
+    })
+    .map(e => {
+      const esDeFamilia = idsFamiliaActual.has(e.idEstudiante);
+      const asignadoEnOtra = this.allAsignados.includes(e.idEstudiante) && !esDeFamilia;
+      return {
+        ...e,
+        selected: esDeFamilia,
+        assignedToOther: asignadoEnOtra
+      };
+    });
+
+  this.filteredStudents = [...this.allStudents];
 
   console.log('openStudentsModal -> idsFamiliaActual:', Array.from(idsFamiliaActual));
   console.log('openStudentsModal -> allAsignados:', this.allAsignados);
-  console.log('openStudentsModal -> allStudents (filtrados):', this.allStudents);
+  console.log('openStudentsModal -> allStudents (final):', this.allStudents);
 
-  this.filteredStudents = [...this.allStudents];
   this.showStudentsModal = true;
 }
+
 
 
   filterStudents(): void {
