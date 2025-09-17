@@ -102,7 +102,6 @@ export class DocentesPage {
   searchLoading = false;
   isLoadingAsignados = false;
 
-
   constructor(
     private http: HttpClient,
     private alertCtrl: AlertController,
