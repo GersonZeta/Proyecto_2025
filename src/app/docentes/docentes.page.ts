@@ -724,22 +724,25 @@ closeStudentsModal(): void {
       (s.ApellidosNombres || '').toLowerCase().includes(term)
     );
   }
-
 applyStudentsSelection(): void {
-  // Tomar exactamente lo que está seleccionado en el modal
-  const seleccionados = this.allStudents
-    .filter(s => s.selected)  // solo los que tienen check
+  // Guardar el estado real de cada estudiante según el modal
+  this.allStudents = this.allStudents.map(s => ({
+    ...s,
+    selected: !!s.selected // queda true o false según el checkbox
+  }));
+
+  // Actualizar los IDs seleccionados en el docente
+  this.docente.idEstudiante = this.allStudents
+    .filter(s => s.selected)
     .map(s => Number(s.idEstudiante));
 
-  // Guardar en el docente SOLO lo que quedó seleccionado
-  this.docente.idEstudiante = seleccionados;
-
-  // Actualizar nombres visibles
+  // Refrescar la vista de nombres
   this.onEstudiantesChange();
 
   // Cerrar modal
   this.closeStudentsModal();
 }
+
 
 
 
