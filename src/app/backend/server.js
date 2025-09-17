@@ -1053,464 +1053,454 @@
 //   }
 // });
 
-
-
-
-// DELETE familia en Supabase
-app.delete('/eliminar-familia/:id', async (req, res) => {
-  const idFamilia = parseInt(req.params.id, 10);
-
-  if (isNaN(idFamilia)) return res.status(400).json({ error: 'ID inválido' });
-
-  try {
-    // Actualizar estudiantes
-    await supabase
-      .from('estudiantes')       // <--- asegúrate que esta tabla exista
-      .update({ idfamilia: null })
-      .eq('idfamilia', idFamilia);
-
-    // Eliminar familia de la tabla correcta
-    const { error } = await supabase
-      .from('familia_estudiante')   // <--- usa el nombre correcto
-      .delete()
-      .eq('idfamilia', idFamilia);
-
-    if (error) throw error;
-
-    res.json({ success: true, message: 'Familia eliminada y estudiantes liberados' });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-
-
-
-app.get('/familias-estudiante', async (req, res) => {
-  const { idInstitucionEducativa } = req.query;
-  try {
-    let query = supabase
-      .from('familia_estudiante')
-      .select(`
-        idfamilia,
-        idestudiante,
-        nombremadreapoderado,
-        dni,
-        direccion,
-        telefono,
-        ocupacion,
-        idinstitucioneducativa
-      `);
-
-    if (idInstitucionEducativa) {
-      query = query.eq('idinstitucioneducativa', idInstitucionEducativa);
-    }
-
-    // Orden estable: agrupar por DNI (familia), luego por idfamilia y luego por estudiante
-    query = query
-      .order('dni', { ascending: true })
-      .order('idfamilia', { ascending: true })
-      .order('idestudiante', { ascending: true });
-
-    const { data: familias, error: familiasError } = await query;
-
-    if (familiasError) throw familiasError;
-
-    // resto sin cambios...
-    const estudiantesIds = familias.map(f => f.idestudiante);
-    const { data: estudiantes, error: estudiantesError } = await supabase
-      .from('estudiantes')
-      .select('idestudiante, apellidosnombres')
-      .in('idestudiante', estudiantesIds);
-
-    if (estudiantesError) throw estudiantesError;
-
-    const familiasConEstudiantes = familias.map(f => {
-      const estudiante = estudiantes.find(e => e.idestudiante === f.idestudiante);
-      return {
-        ...f,
-        NombreEstudiante: estudiante ? estudiante.apellidosnombres : 'No asignado'
-      };
-    });
-
-    res.status(200).json(familiasConEstudiantes);
-  } catch (err) {
-    console.error('Error al obtener familias:', err);
-    return res.status(500).json({ error: 'Error al obtener familias' });
-  }
-});
-
-
-
-app.post('/registrar-familia', async (req, res) => {
-  const {
-    idEstudiante,        // compatibilidad con petición antigua (único)
-    idEstudiantes,       // nuevo: array de ids
-    NombreMadreApoderado,
-    DNI,
-    Direccion,
-    Telefono,
-    Ocupacion,
-    idInstitucionEducativa // opcional: viene del frontend si lo envías
-  } = req.body;
-
-  try {
-    // ---- Caso: array de estudiantes ----
-    if (Array.isArray(idEstudiantes) && idEstudiantes.length > 0) {
-      if (!NombreMadreApoderado || !DNI) {
-        return res.status(400).json({ error: 'Faltan campos obligatorios (NombreMadreApoderado o DNI)' });
-      }
-
-      // Verificar que los estudiantes existan y obtener sus instituciones
-      const { data: students, error: studentsError } = await supabase
-        .from('estudiantes')
-        .select('idestudiante, idinstitucioneducativa')
-        .in('idestudiante', idEstudiantes);
-
-      if (studentsError) {
-        console.error('Error al consultar estudiantes:', studentsError);
-        return res.status(500).json({ error: 'Error interno al validar estudiantes' });
-      }
-
-      if (!students || students.length !== idEstudiantes.length) {
-        return res.status(404).json({ error: 'Algún estudiante no fue encontrado' });
-      }
-
-      // Si no enviaste idInstitucionEducativa, inferir y validar que todos coincidan
-      let idInst = idInstitucionEducativa;
-      if (!idInst) {
-        const uniq = [...new Set(students.map(s => s.idinstitucioneducativa))];
-        if (uniq.length > 1) {
-          return res.status(400).json({ error: 'Los estudiantes pertenecen a distintas instituciones. Proporciona idInstitucionEducativa o usa estudiantes de la misma institución.' });
-        }
-        idInst = uniq[0];
-      }
-
-      // Preparar filas (una fila por estudiante — repite datos del apoderado)
-      const rows = idEstudiantes.map(id => ({
-        idestudiante: id,
-        nombremadreapoderado: NombreMadreApoderado,
-        dni: DNI,
-        direccion: Direccion || null,
-        telefono: Telefono || null,
-        ocupacion: Ocupacion || null,
-        idinstitucioneducativa: idInst
-      }));
-
-      const { data: inserted, error: insertError } = await supabase
-        .from('familia_estudiante')
-        .insert(rows)
-        .select();
-
-      if (insertError) {
-        console.error('Error al insertar familias:', insertError);
-        return res.status(500).json({ error: 'Error interno al registrar familias' });
-      }
-
-      // Devuelve los registros insertados
-      return res.status(201).json({ inserted: inserted.length, familias: inserted });
-    }
-
-    // ---- Caso: único estudiante (compatibilidad hacia atrás) ----
-    if (!idEstudiante || !NombreMadreApoderado || !DNI) {
-      return res.status(400).json({ error: 'Faltan campos obligatorios' });
-    }
-
-    const { data: estudiante, error: errEstudiante } = await supabase
-      .from('estudiantes')
-      .select('idinstitucioneducativa')
-      .eq('idestudiante', idEstudiante)
-      .single();
-
-    if (errEstudiante) {
-      console.error('Error obteniendo institución del estudiante:', errEstudiante);
-      return res.status(500).json({ error: 'Error interno al obtener institución' });
-    }
-
-    if (!estudiante) {
-      return res.status(404).json({ error: 'Estudiante no encontrado' });
-    }
-
-    const { idinstitucioneducativa } = estudiante;
-
-    const { data, error: errInsert } = await supabase
-      .from('familia_estudiante')
-      .insert([{
-        idestudiante: idEstudiante,
-        nombremadreapoderado: NombreMadreApoderado,
-        dni: DNI,
-        direccion: Direccion || null,
-        telefono: Telefono || null,
-        ocupacion: Ocupacion || null,
-        idinstitucioneducativa
-      }])
-      .select();
-
-    if (errInsert) {
-      console.error('Error al registrar familia:', errInsert);
-      return res.status(500).json({ error: 'Error interno al registrar familia' });
-    }
-
-    return res.status(201).json({ idFamilia: data[0].idfamilia });
-  } catch (err) {
-    console.error('Error al registrar familia (catch):', err);
-    return res.status(500).json({ error: 'Error interno al registrar familia' });
-  }
-});
-
-
-// ---- reemplaza sólo el handler PUT /actualizar-familia ----
-app.put('/actualizar-familia', async (req, res) => {
-  try {
-    const idFamilia = req.body.idFamilia || req.body.idfamilia || null;
-    const idEstudiantes = req.body.idEstudiantes || req.body.idestudiantes;
-    const NombreMadreApoderado = req.body.NombreMadreApoderado || req.body.nombremadreapoderado;
-    const DNI = req.body.DNI || req.body.dni;
-    const Direccion = req.body.Direccion || req.body.direccion || null;
-    const Telefono = req.body.Telefono || req.body.telefono || null;
-    const Ocupacion = req.body.Ocupacion || req.body.ocupacion || null;
-    const idInstitucionEducativa = req.body.idInstitucionEducativa || req.body.idinstitucioneducativa || null;
-
-    if (!idEstudiantes || !Array.isArray(idEstudiantes) || !NombreMadreApoderado || !DNI) {
-      return res.status(400).json({ error: 'Faltan campos obligatorios o idEstudiantes no es array' });
-    }
-
-    // Normalizar ids a números y filtrar NaN
-    const validIds = idEstudiantes
-      .map(i => (typeof i === 'string' ? i.trim() : i))
-      .map(i => Number(i))
-      .filter(id => id != null && !isNaN(id));
-
-    if (validIds.length === 0) {
-      return res.status(400).json({ error: 'No hay estudiantes válidos para asignar' });
-    }
-
-    // 0) Determinar la "clave" que agrupa las filas de la familia.
-    // Preferimos usar el idFamilia (si nos lo pasan) para obtener el DNI actual en la BD,
-    // luego usamos ese DNI para encontrar todas las filas relacionadas.
-    let dniClave = (DNI || '').toString().trim();
-
-    if (idFamilia) {
-      const { data: rowById, error: errRow } = await supabase
-        .from('familia_estudiante')
-        .select('dni, idinstitucioneducativa')
-        .eq('idfamilia', idFamilia)
-        .maybeSingle();
-
-      if (errRow) {
-        console.error('[PUT /actualizar-familia] err fetching by idFamilia:', errRow);
-        // no abortamos aún: fallback a usar DNI del body
-      } else if (rowById) {
-        // usamos el DNI que está en la BD como clave de agrupación (permite cambiar DNI en el body)
-        dniClave = (rowById.dni || '').toString().trim();
-      }
-    }
-
-    if (!dniClave) {
-      return res.status(400).json({ error: 'No se pudo determinar el DNI clave para agrupar la familia' });
-    }
-
-    // Condición adicional para scoping por institución (si se proporcionó)
-    const scopeEq = idInstitucionEducativa ? { idinstitucioneducativa: idInstitucionEducativa } : {};
-
-    // 1) Actualizar los datos comunes en todas las filas que pertenezcan a esa familia (según dniClave)
-    let updQuery = supabase.from('familia_estudiante').update({
-      nombremadreapoderado: NombreMadreApoderado,
-      dni: DNI, // actualizamos al nuevo DNI llegado (si el usuario lo cambió)
-      direccion: Direccion,
-      telefono: Telefono,
-      ocupacion: Ocupacion
-    }).eq('dni', dniClave);
-
-    if (idInstitucionEducativa) updQuery = updQuery.eq('idinstitucioneducativa', idInstitucionEducativa);
-
-    const { error: errUpdate } = await updQuery;
-
-    if (errUpdate) {
-      console.error('[PUT /actualizar-familia] errUpdate:', errUpdate);
-      return res.status(500).json({ error: 'Error al actualizar datos de la familia', detail: errUpdate.message || errUpdate });
-    }
-
-    // 2) Leer filas actuales (cada fila tiene idestudiante)
-    let selectQuery = supabase
-      .from('familia_estudiante')
-      .select('idfamilia, idestudiante')
-      .eq('dni', dniClave);
-
-    if (idInstitucionEducativa) selectQuery = selectQuery.eq('idinstitucioneducativa', idInstitucionEducativa);
-
-    const { data: currentRows, error: errSelect } = await selectQuery;
-
-    if (errSelect) {
-      console.error('[PUT /actualizar-familia] errSelect:', errSelect);
-      return res.status(500).json({ error: 'Error al leer relaciones actuales', detail: errSelect.message || errSelect });
-    }
-
-    // Normalizar currentIds
-    const currentIds = Array.isArray(currentRows)
-      ? currentRows.map(r => Number(r.idestudiante)).filter(n => !isNaN(n))
-      : [];
-
-    // 3) Calcular qué relaciones eliminar e insertar
-    const toDeleteIds = currentIds.filter(id => !validIds.includes(id));
-    const toInsertIds = validIds.filter(id => !currentIds.includes(id));
-
-    // 4) Eliminar relaciones que ya no pertenecen (delete by dniClave + idestudiante IN ...)
-    if (toDeleteIds.length > 0) {
-      let delQ = supabase.from('familia_estudiante')
-        .delete()
-        .eq('dni', dniClave)
-        .in('idestudiante', toDeleteIds);
-
-      if (idInstitucionEducativa) delQ = delQ.eq('idinstitucioneducativa', idInstitucionEducativa);
-
-      const { error: errDel } = await delQ;
-      if (errDel) {
-        console.error('[PUT /actualizar-familia] errDel:', errDel);
-        return res.status(500).json({ error: 'Error al eliminar relaciones antiguas', detail: errDel.message || errDel });
-      }
-    }
-
-    // 5) Insertar nuevas relaciones (una fila por estudiante nuevo)
-    if (toInsertIds.length > 0) {
-      const insertData = toInsertIds.map(idEst => ({
-        idestudiante: idEst,
-        nombremadreapoderado: NombreMadreApoderado,
-        dni: DNI, // guardamos el DNI actualizado
-        direccion: Direccion,
-        telefono: Telefono,
-        ocupacion: Ocupacion,
-        idinstitucioneducativa: idInstitucionEducativa
-      }));
-
-      const { error: errIns } = await supabase
-        .from('familia_estudiante')
-        .insert(insertData);
-
-      if (errIns) {
-        console.error('[PUT /actualizar-familia] errIns:', errIns);
-        return res.status(500).json({ error: 'Error al insertar nuevas relaciones', detail: errIns.message || errIns });
-      }
-    }
-
-    return res.status(200).json({ message: 'Familia actualizada con éxito' });
-  } catch (err) {
-    console.error('Error al actualizar familia (catch):', err);
-    return res.status(500).json({ error: 'Error interno al actualizar familia', detail: err?.message || err });
-  }
-});
-
-
-
-
-app.get('/buscar-familia', async (req, res) => {
-  try {
-    const { nombreMadreApoderado, idInstitucionEducativa } = req.query;
-    if (!nombreMadreApoderado || !idInstitucionEducativa) {
-      return res.status(400).send('Falta nombreMadreApoderado o idInstitucionEducativa');
-    }
-
-    // 1) obtener idfamilia del primer registro
-    const { data: baseRows, error: errBase } = await supabase
-      .from('familia_estudiante')
-      .select('idfamilia')
-      .eq('nombremadreapoderado', nombreMadreApoderado)
-      .eq('idinstitucioneducativa', idInstitucionEducativa)
-      .limit(1);
-
-    if (errBase) {
-      console.error('Error en buscar-familia (base):', errBase);
-      return res.status(500).json({ error: 'Error interno' });
-    }
-    if (!baseRows || baseRows.length === 0) {
-      return res.status(404).send('Familia no encontrada');
-    }
-
-    const idfamilia = baseRows[0].idfamilia;
-
-    // 2) traer todas las filas con ese idfamilia
-    const { data: rows, error: errAll } = await supabase
-      .from('familia_estudiante')
-      .select(`
-        idfamilia,
-        idestudiante,
-        estudiantes(apellidosnombres),
-        nombremadreapoderado,
-        dni,
-        direccion,
-        telefono,
-        ocupacion
-      `)
-      .eq('idfamilia', idfamilia);
-
-    if (errAll) {
-      console.error('Error en buscar-familia (all):', errAll);
-      return res.status(500).json({ error: 'Error interno' });
-    }
-    if (!rows || rows.length === 0) {
-      return res.status(404).send('Familia no encontrada');
-    }
-
-    // Tomar la info común de la familia (madre, dni, dirección, etc.)
-    const any = rows[0];
-    // Mapear los nombres de estudiantes (si existen relaciones)
-    const estudiantes = rows.map(r => {
-      if (Array.isArray(r.estudiantes)) {
-        return r.estudiantes[0]?.apellidosnombres ?? null;
-      }
-      return r.estudiantes?.apellidosnombres ?? null;
-    }).filter(Boolean);
-
-    return res.json({
-      idfamilia: any.idfamilia,
-      NombreMadreApoderado: any.nombremadreapoderado,
-      DNI: any.dni,
-      Direccion: any.direccion,
-      Telefono: any.telefono,
-      Ocupacion: any.ocupacion,
-      idEstudiantes: rows.map(r => r.idestudiante),
-      Estudiantes: estudiantes
-    });
-  } catch (err) {
-    console.error('Excepción buscar-familia:', err);
-    return res.status(500).json({ error: 'Error interno' });
-  }
-});
-
-// En lugar de usar .distinct(), haz la consulta normal
-app.get('/estudiantes-con-familia', async (req, res) => {
-  const { idInstitucionEducativa } = req.query;
-
-  let query = supabase.from('familia_estudiante').select('idestudiante');
-
-  if (idInstitucionEducativa) {
-    query = query.eq('idinstitucioneducativa', idInstitucionEducativa);
-  }
-
-  try {
-    const { data, error } = await query;
-    if (error) {
-      console.error('Error al obtener estudiantes con familia:', error);
-      return res.status(500).json({ error: 'Error interno' });
-    }
-
-    // Elimina duplicados manualmente si es necesario
-    const estudiantesUnicos = [...new Set(data.map(f => f.idestudiante))];
-
-    res.json(estudiantesUnicos);
-  } catch (err) {
-    console.error('Error al obtener estudiantes con familia:', err);
-    return res.status(500).json({ error: 'Error interno' });
-  }
-});
-
-
-
-
-
-
-
+// // DELETE familia en Supabase
+// app.delete('/eliminar-familia/:id', async (req, res) => {
+//   const idFamilia = parseInt(req.params.id, 10);
+
+//   if (isNaN(idFamilia)) return res.status(400).json({ error: 'ID inválido' });
+
+//   try {
+//     // Actualizar estudiantes
+//     await supabase
+//       .from('estudiantes')       // <--- asegúrate que esta tabla exista
+//       .update({ idfamilia: null })
+//       .eq('idfamilia', idFamilia);
+
+//     // Eliminar familia de la tabla correcta
+//     const { error } = await supabase
+//       .from('familia_estudiante')   // <--- usa el nombre correcto
+//       .delete()
+//       .eq('idfamilia', idFamilia);
+
+//     if (error) throw error;
+
+//     res.json({ success: true, message: 'Familia eliminada y estudiantes liberados' });
+//   } catch (err) {
+//     console.error(err);
+//     res.status(500).json({ error: err.message });
+//   }
+// });
+
+
+
+
+// app.get('/familias-estudiante', async (req, res) => {
+//   const { idInstitucionEducativa } = req.query;
+//   try {
+//     let query = supabase
+//       .from('familia_estudiante')
+//       .select(`
+//         idfamilia,
+//         idestudiante,
+//         nombremadreapoderado,
+//         dni,
+//         direccion,
+//         telefono,
+//         ocupacion,
+//         idinstitucioneducativa
+//       `);
+
+//     if (idInstitucionEducativa) {
+//       query = query.eq('idinstitucioneducativa', idInstitucionEducativa);
+//     }
+
+//     // Orden estable: agrupar por DNI (familia), luego por idfamilia y luego por estudiante
+//     query = query
+//       .order('dni', { ascending: true })
+//       .order('idfamilia', { ascending: true })
+//       .order('idestudiante', { ascending: true });
+
+//     const { data: familias, error: familiasError } = await query;
+
+//     if (familiasError) throw familiasError;
+
+//     // resto sin cambios...
+//     const estudiantesIds = familias.map(f => f.idestudiante);
+//     const { data: estudiantes, error: estudiantesError } = await supabase
+//       .from('estudiantes')
+//       .select('idestudiante, apellidosnombres')
+//       .in('idestudiante', estudiantesIds);
+
+//     if (estudiantesError) throw estudiantesError;
+
+//     const familiasConEstudiantes = familias.map(f => {
+//       const estudiante = estudiantes.find(e => e.idestudiante === f.idestudiante);
+//       return {
+//         ...f,
+//         NombreEstudiante: estudiante ? estudiante.apellidosnombres : 'No asignado'
+//       };
+//     });
+
+//     res.status(200).json(familiasConEstudiantes);
+//   } catch (err) {
+//     console.error('Error al obtener familias:', err);
+//     return res.status(500).json({ error: 'Error al obtener familias' });
+//   }
+// });
+
+
+
+// app.post('/registrar-familia', async (req, res) => {
+//   const {
+//     idEstudiante,        // compatibilidad con petición antigua (único)
+//     idEstudiantes,       // nuevo: array de ids
+//     NombreMadreApoderado,
+//     DNI,
+//     Direccion,
+//     Telefono,
+//     Ocupacion,
+//     idInstitucionEducativa // opcional: viene del frontend si lo envías
+//   } = req.body;
+
+//   try {
+//     // ---- Caso: array de estudiantes ----
+//     if (Array.isArray(idEstudiantes) && idEstudiantes.length > 0) {
+//       if (!NombreMadreApoderado || !DNI) {
+//         return res.status(400).json({ error: 'Faltan campos obligatorios (NombreMadreApoderado o DNI)' });
+//       }
+
+//       // Verificar que los estudiantes existan y obtener sus instituciones
+//       const { data: students, error: studentsError } = await supabase
+//         .from('estudiantes')
+//         .select('idestudiante, idinstitucioneducativa')
+//         .in('idestudiante', idEstudiantes);
+
+//       if (studentsError) {
+//         console.error('Error al consultar estudiantes:', studentsError);
+//         return res.status(500).json({ error: 'Error interno al validar estudiantes' });
+//       }
+
+//       if (!students || students.length !== idEstudiantes.length) {
+//         return res.status(404).json({ error: 'Algún estudiante no fue encontrado' });
+//       }
+
+//       // Si no enviaste idInstitucionEducativa, inferir y validar que todos coincidan
+//       let idInst = idInstitucionEducativa;
+//       if (!idInst) {
+//         const uniq = [...new Set(students.map(s => s.idinstitucioneducativa))];
+//         if (uniq.length > 1) {
+//           return res.status(400).json({ error: 'Los estudiantes pertenecen a distintas instituciones. Proporciona idInstitucionEducativa o usa estudiantes de la misma institución.' });
+//         }
+//         idInst = uniq[0];
+//       }
+
+//       // Preparar filas (una fila por estudiante — repite datos del apoderado)
+//       const rows = idEstudiantes.map(id => ({
+//         idestudiante: id,
+//         nombremadreapoderado: NombreMadreApoderado,
+//         dni: DNI,
+//         direccion: Direccion || null,
+//         telefono: Telefono || null,
+//         ocupacion: Ocupacion || null,
+//         idinstitucioneducativa: idInst
+//       }));
+
+//       const { data: inserted, error: insertError } = await supabase
+//         .from('familia_estudiante')
+//         .insert(rows)
+//         .select();
+
+//       if (insertError) {
+//         console.error('Error al insertar familias:', insertError);
+//         return res.status(500).json({ error: 'Error interno al registrar familias' });
+//       }
+
+//       // Devuelve los registros insertados
+//       return res.status(201).json({ inserted: inserted.length, familias: inserted });
+//     }
+
+//     // ---- Caso: único estudiante (compatibilidad hacia atrás) ----
+//     if (!idEstudiante || !NombreMadreApoderado || !DNI) {
+//       return res.status(400).json({ error: 'Faltan campos obligatorios' });
+//     }
+
+//     const { data: estudiante, error: errEstudiante } = await supabase
+//       .from('estudiantes')
+//       .select('idinstitucioneducativa')
+//       .eq('idestudiante', idEstudiante)
+//       .single();
+
+//     if (errEstudiante) {
+//       console.error('Error obteniendo institución del estudiante:', errEstudiante);
+//       return res.status(500).json({ error: 'Error interno al obtener institución' });
+//     }
+
+//     if (!estudiante) {
+//       return res.status(404).json({ error: 'Estudiante no encontrado' });
+//     }
+
+//     const { idinstitucioneducativa } = estudiante;
+
+//     const { data, error: errInsert } = await supabase
+//       .from('familia_estudiante')
+//       .insert([{
+//         idestudiante: idEstudiante,
+//         nombremadreapoderado: NombreMadreApoderado,
+//         dni: DNI,
+//         direccion: Direccion || null,
+//         telefono: Telefono || null,
+//         ocupacion: Ocupacion || null,
+//         idinstitucioneducativa
+//       }])
+//       .select();
+
+//     if (errInsert) {
+//       console.error('Error al registrar familia:', errInsert);
+//       return res.status(500).json({ error: 'Error interno al registrar familia' });
+//     }
+
+//     return res.status(201).json({ idFamilia: data[0].idfamilia });
+//   } catch (err) {
+//     console.error('Error al registrar familia (catch):', err);
+//     return res.status(500).json({ error: 'Error interno al registrar familia' });
+//   }
+// });
+
+
+// // ---- reemplaza sólo el handler PUT /actualizar-familia ----
+// app.put('/actualizar-familia', async (req, res) => {
+//   try {
+//     const idFamilia = req.body.idFamilia || req.body.idfamilia || null;
+//     const idEstudiantes = req.body.idEstudiantes || req.body.idestudiantes;
+//     const NombreMadreApoderado = req.body.NombreMadreApoderado || req.body.nombremadreapoderado;
+//     const DNI = req.body.DNI || req.body.dni;
+//     const Direccion = req.body.Direccion || req.body.direccion || null;
+//     const Telefono = req.body.Telefono || req.body.telefono || null;
+//     const Ocupacion = req.body.Ocupacion || req.body.ocupacion || null;
+//     const idInstitucionEducativa = req.body.idInstitucionEducativa || req.body.idinstitucioneducativa || null;
+
+//     if (!idEstudiantes || !Array.isArray(idEstudiantes) || !NombreMadreApoderado || !DNI) {
+//       return res.status(400).json({ error: 'Faltan campos obligatorios o idEstudiantes no es array' });
+//     }
+
+//     // Normalizar ids a números y filtrar NaN
+//     const validIds = idEstudiantes
+//       .map(i => (typeof i === 'string' ? i.trim() : i))
+//       .map(i => Number(i))
+//       .filter(id => id != null && !isNaN(id));
+
+//     if (validIds.length === 0) {
+//       return res.status(400).json({ error: 'No hay estudiantes válidos para asignar' });
+//     }
+
+//     // 0) Determinar la "clave" que agrupa las filas de la familia.
+//     // Preferimos usar el idFamilia (si nos lo pasan) para obtener el DNI actual en la BD,
+//     // luego usamos ese DNI para encontrar todas las filas relacionadas.
+//     let dniClave = (DNI || '').toString().trim();
+
+//     if (idFamilia) {
+//       const { data: rowById, error: errRow } = await supabase
+//         .from('familia_estudiante')
+//         .select('dni, idinstitucioneducativa')
+//         .eq('idfamilia', idFamilia)
+//         .maybeSingle();
+
+//       if (errRow) {
+//         console.error('[PUT /actualizar-familia] err fetching by idFamilia:', errRow);
+//         // no abortamos aún: fallback a usar DNI del body
+//       } else if (rowById) {
+//         // usamos el DNI que está en la BD como clave de agrupación (permite cambiar DNI en el body)
+//         dniClave = (rowById.dni || '').toString().trim();
+//       }
+//     }
+
+//     if (!dniClave) {
+//       return res.status(400).json({ error: 'No se pudo determinar el DNI clave para agrupar la familia' });
+//     }
+
+//     // Condición adicional para scoping por institución (si se proporcionó)
+//     const scopeEq = idInstitucionEducativa ? { idinstitucioneducativa: idInstitucionEducativa } : {};
+
+//     // 1) Actualizar los datos comunes en todas las filas que pertenezcan a esa familia (según dniClave)
+//     let updQuery = supabase.from('familia_estudiante').update({
+//       nombremadreapoderado: NombreMadreApoderado,
+//       dni: DNI, // actualizamos al nuevo DNI llegado (si el usuario lo cambió)
+//       direccion: Direccion,
+//       telefono: Telefono,
+//       ocupacion: Ocupacion
+//     }).eq('dni', dniClave);
+
+//     if (idInstitucionEducativa) updQuery = updQuery.eq('idinstitucioneducativa', idInstitucionEducativa);
+
+//     const { error: errUpdate } = await updQuery;
+
+//     if (errUpdate) {
+//       console.error('[PUT /actualizar-familia] errUpdate:', errUpdate);
+//       return res.status(500).json({ error: 'Error al actualizar datos de la familia', detail: errUpdate.message || errUpdate });
+//     }
+
+//     // 2) Leer filas actuales (cada fila tiene idestudiante)
+//     let selectQuery = supabase
+//       .from('familia_estudiante')
+//       .select('idfamilia, idestudiante')
+//       .eq('dni', dniClave);
+
+//     if (idInstitucionEducativa) selectQuery = selectQuery.eq('idinstitucioneducativa', idInstitucionEducativa);
+
+//     const { data: currentRows, error: errSelect } = await selectQuery;
+
+//     if (errSelect) {
+//       console.error('[PUT /actualizar-familia] errSelect:', errSelect);
+//       return res.status(500).json({ error: 'Error al leer relaciones actuales', detail: errSelect.message || errSelect });
+//     }
+
+//     // Normalizar currentIds
+//     const currentIds = Array.isArray(currentRows)
+//       ? currentRows.map(r => Number(r.idestudiante)).filter(n => !isNaN(n))
+//       : [];
+
+//     // 3) Calcular qué relaciones eliminar e insertar
+//     const toDeleteIds = currentIds.filter(id => !validIds.includes(id));
+//     const toInsertIds = validIds.filter(id => !currentIds.includes(id));
+
+//     // 4) Eliminar relaciones que ya no pertenecen (delete by dniClave + idestudiante IN ...)
+//     if (toDeleteIds.length > 0) {
+//       let delQ = supabase.from('familia_estudiante')
+//         .delete()
+//         .eq('dni', dniClave)
+//         .in('idestudiante', toDeleteIds);
+
+//       if (idInstitucionEducativa) delQ = delQ.eq('idinstitucioneducativa', idInstitucionEducativa);
+
+//       const { error: errDel } = await delQ;
+//       if (errDel) {
+//         console.error('[PUT /actualizar-familia] errDel:', errDel);
+//         return res.status(500).json({ error: 'Error al eliminar relaciones antiguas', detail: errDel.message || errDel });
+//       }
+//     }
+
+//     // 5) Insertar nuevas relaciones (una fila por estudiante nuevo)
+//     if (toInsertIds.length > 0) {
+//       const insertData = toInsertIds.map(idEst => ({
+//         idestudiante: idEst,
+//         nombremadreapoderado: NombreMadreApoderado,
+//         dni: DNI, // guardamos el DNI actualizado
+//         direccion: Direccion,
+//         telefono: Telefono,
+//         ocupacion: Ocupacion,
+//         idinstitucioneducativa: idInstitucionEducativa
+//       }));
+
+//       const { error: errIns } = await supabase
+//         .from('familia_estudiante')
+//         .insert(insertData);
+
+//       if (errIns) {
+//         console.error('[PUT /actualizar-familia] errIns:', errIns);
+//         return res.status(500).json({ error: 'Error al insertar nuevas relaciones', detail: errIns.message || errIns });
+//       }
+//     }
+
+//     return res.status(200).json({ message: 'Familia actualizada con éxito' });
+//   } catch (err) {
+//     console.error('Error al actualizar familia (catch):', err);
+//     return res.status(500).json({ error: 'Error interno al actualizar familia', detail: err?.message || err });
+//   }
+// });
+
+
+
+
+// app.get('/buscar-familia', async (req, res) => {
+//   try {
+//     const { nombreMadreApoderado, idInstitucionEducativa } = req.query;
+//     if (!nombreMadreApoderado || !idInstitucionEducativa) {
+//       return res.status(400).send('Falta nombreMadreApoderado o idInstitucionEducativa');
+//     }
+
+//     // 1) obtener idfamilia del primer registro
+//     const { data: baseRows, error: errBase } = await supabase
+//       .from('familia_estudiante')
+//       .select('idfamilia')
+//       .eq('nombremadreapoderado', nombreMadreApoderado)
+//       .eq('idinstitucioneducativa', idInstitucionEducativa)
+//       .limit(1);
+
+//     if (errBase) {
+//       console.error('Error en buscar-familia (base):', errBase);
+//       return res.status(500).json({ error: 'Error interno' });
+//     }
+//     if (!baseRows || baseRows.length === 0) {
+//       return res.status(404).send('Familia no encontrada');
+//     }
+
+//     const idfamilia = baseRows[0].idfamilia;
+
+//     // 2) traer todas las filas con ese idfamilia
+//     const { data: rows, error: errAll } = await supabase
+//       .from('familia_estudiante')
+//       .select(`
+//         idfamilia,
+//         idestudiante,
+//         estudiantes(apellidosnombres),
+//         nombremadreapoderado,
+//         dni,
+//         direccion,
+//         telefono,
+//         ocupacion
+//       `)
+//       .eq('idfamilia', idfamilia);
+
+//     if (errAll) {
+//       console.error('Error en buscar-familia (all):', errAll);
+//       return res.status(500).json({ error: 'Error interno' });
+//     }
+//     if (!rows || rows.length === 0) {
+//       return res.status(404).send('Familia no encontrada');
+//     }
+
+//     // Tomar la info común de la familia (madre, dni, dirección, etc.)
+//     const any = rows[0];
+//     // Mapear los nombres de estudiantes (si existen relaciones)
+//     const estudiantes = rows.map(r => {
+//       if (Array.isArray(r.estudiantes)) {
+//         return r.estudiantes[0]?.apellidosnombres ?? null;
+//       }
+//       return r.estudiantes?.apellidosnombres ?? null;
+//     }).filter(Boolean);
+
+//     return res.json({
+//       idfamilia: any.idfamilia,
+//       NombreMadreApoderado: any.nombremadreapoderado,
+//       DNI: any.dni,
+//       Direccion: any.direccion,
+//       Telefono: any.telefono,
+//       Ocupacion: any.ocupacion,
+//       idEstudiantes: rows.map(r => r.idestudiante),
+//       Estudiantes: estudiantes
+//     });
+//   } catch (err) {
+//     console.error('Excepción buscar-familia:', err);
+//     return res.status(500).json({ error: 'Error interno' });
+//   }
+// });
+
+// // En lugar de usar .distinct(), haz la consulta normal
+// app.get('/estudiantes-con-familia', async (req, res) => {
+//   const { idInstitucionEducativa } = req.query;
+
+//   let query = supabase.from('familia_estudiante').select('idestudiante');
+
+//   if (idInstitucionEducativa) {
+//     query = query.eq('idinstitucioneducativa', idInstitucionEducativa);
+//   }
+
+//   try {
+//     const { data, error } = await query;
+//     if (error) {
+//       console.error('Error al obtener estudiantes con familia:', error);
+//       return res.status(500).json({ error: 'Error interno' });
+//     }
+
+//     // Elimina duplicados manualmente si es necesario
+//     const estudiantesUnicos = [...new Set(data.map(f => f.idestudiante))];
+
+//     res.json(estudiantesUnicos);
+//   } catch (err) {
+//     console.error('Error al obtener estudiantes con familia:', err);
+//     return res.status(500).json({ error: 'Error interno' });
+//   }
+// });
 
 
 
@@ -1641,8 +1631,6 @@ app.get('/estadisticas/ocupacion-familia', async (req, res) => {
     res.status(500).json({ error: 'Error interno' });
   }
 });
-
-
 
 
 // Iniciar servidor

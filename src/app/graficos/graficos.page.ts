@@ -37,7 +37,8 @@ export class GraficosPage implements OnInit, AfterViewInit, OnDestroy {
   @ViewChild('chartInst') chartInstRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('chartFam') chartFamRef!: ElementRef<HTMLCanvasElement>;
 
-  private baseUrl = 'http://localhost:3000';
+  // ruta relativa al index.js de graficos
+  private baseUrl = '/api/graficos';
 
   instituciones: InstSeleccion[] = [];
   institucionesFiltradas: InstSeleccion[] = [];
@@ -63,42 +64,63 @@ export class GraficosPage implements OnInit, AfterViewInit, OnDestroy {
     this.loadInstituciones();
   }
 
+  /** Helper: intenta normalizar la respuesta del endpoint { ok, data } o un array directo */
+  private unwrap<T>(res: any): T | null {
+    if (!res) return null;
+    if (res?.ok !== undefined) {
+      return res.ok ? (res.data as T) : null;
+    }
+    if (res?.data !== undefined) return res.data as T;
+    return (res as T);
+  }
+
+  private safeGetContext(ref?: ElementRef<HTMLCanvasElement>) {
+    try {
+      return ref?.nativeElement?.getContext('2d') ?? null;
+    } catch {
+      return null;
+    }
+  }
+
   private loadDiscapacidad() {
     const sub = this.http
-      .get<EtiquetaValor[]>(`${this.baseUrl}/estadisticas/discapacidad`)
-      .subscribe(data => {
-        const safeData = data || []; // <- cambio: evitar map sobre undefined
+      .get<any>(`${this.baseUrl}?action=discapacidad`)
+      .subscribe(resp => {
+        const data = this.unwrap<EtiquetaValor[]>(resp) || [];
+        const labels = data.map(d => d.label);
+        const values = data.map(d => d.value);
+
         const cfg: ChartConfiguration = {
           type: 'bar',
           data: {
-            labels: safeData.map(d => d.label),
-            datasets: [{ data: safeData.map(d => d.value), label: 'Cantidad' }]
+            labels,
+            datasets: [{ data: values, label: 'Cantidad' }]
           },
           options: {
             responsive: true,
             plugins: { legend: { onClick: () => {} } }
           }
         };
-        // destruir gráfico anterior si existe (evita duplicados)
-        if (this.chartDisc) this.chartDisc.destroy();
-        this.chartDisc = new Chart(
-          this.chartDiscRef.nativeElement.getContext('2d')!,
-          cfg
-        );
+
+        if (this.chartDisc) try { this.chartDisc.destroy(); } catch (e) { /* ignore */ }
+        const ctx = this.safeGetContext(this.chartDiscRef);
+        if (ctx) this.chartDisc = new Chart(ctx, cfg);
+      }, err => {
+        console.error('Error loadDiscapacidad:', err);
       });
     this.subs.push(sub);
   }
 
   private loadIppPep() {
     const sub = this.http
-      .get<{ ippSi: number; ippNo: number; pepSi: number; pepNo: number }>(
-        `${this.baseUrl}/estadisticas/ipp-pep`
-      )
-      .subscribe(r => {
-        const ippSi = (r && typeof r.ippSi === 'number') ? r.ippSi : 0; // <- cambio: defaults
-        const ippNo = (r && typeof r.ippNo === 'number') ? r.ippNo : 0;
-        const pepSi = (r && typeof r.pepSi === 'number') ? r.pepSi : 0;
-        const pepNo = (r && typeof r.pepNo === 'number') ? r.pepNo : 0;
+      .get<any>(`${this.baseUrl}?action=ipp-pep`)
+      .subscribe(resp => {
+        const data = this.unwrap<any>(resp) || {};
+        // El backend devuelve { ippSi, ippNo, ippNoEspecificado, pepSi, pepNo, pepNoEspecificado }
+        const ippSi = (typeof data.ippSi === 'number') ? data.ippSi : (data?.data?.ippSi ?? 0);
+        const ippNo = (typeof data.ippNo === 'number') ? data.ippNo : (data?.data?.ippNo ?? 0);
+        const pepSi = (typeof data.pepSi === 'number') ? data.pepSi : (data?.data?.pepSi ?? 0);
+        const pepNo = (typeof data.pepNo === 'number') ? data.pepNo : (data?.data?.pepNo ?? 0);
 
         const cfg: ChartConfiguration = {
           type: 'bar',
@@ -114,60 +136,70 @@ export class GraficosPage implements OnInit, AfterViewInit, OnDestroy {
             plugins: { legend: { onClick: () => {} } }
           }
         };
-        if (this.chartIppPep) this.chartIppPep.destroy();
-        this.chartIppPep = new Chart(
-          this.chartIppPepRef.nativeElement.getContext('2d')!,
-          cfg
-        );
+
+        if (this.chartIppPep) try { this.chartIppPep.destroy(); } catch (e) { /* ignore */ }
+        const ctx = this.safeGetContext(this.chartIppPepRef);
+        if (ctx) this.chartIppPep = new Chart(ctx, cfg);
+      }, err => {
+        console.error('Error loadIppPep:', err);
       });
     this.subs.push(sub);
   }
 
   private loadFamilias() {
     const sub = this.http
-      .get<EtiquetaValor[]>(`${this.baseUrl}/estadisticas/ocupacion-familia`)
-      .subscribe(data => {
-        const safeData = data || []; // <- cambio: evitar map sobre undefined
+      .get<any>(`${this.baseUrl}?action=ocupacion-familia`)
+      .subscribe(resp => {
+        const data = this.unwrap<EtiquetaValor[]>(resp) || [];
+        const labels = data.map(d => d.label);
+        const values = data.map(d => d.value);
+
         const cfg: ChartConfiguration = {
           type: 'bar',
           data: {
-            labels: safeData.map(d => d.label),
-            datasets: [{ data: safeData.map(d => d.value), label: 'Familias' }]
+            labels,
+            datasets: [{ data: values, label: 'Familias' }]
           },
           options: {
             responsive: true,
             plugins: { legend: { onClick: () => {} } }
           }
         };
-        if (this.chartFam) this.chartFam.destroy();
-        this.chartFam = new Chart(
-          this.chartFamRef.nativeElement.getContext('2d')!,
-          cfg
-        );
+
+        if (this.chartFam) try { this.chartFam.destroy(); } catch (e) { /* ignore */ }
+        const ctx = this.safeGetContext(this.chartFamRef);
+        if (ctx) this.chartFam = new Chart(ctx, cfg);
+      }, err => {
+        console.error('Error loadFamilias:', err);
       });
     this.subs.push(sub);
   }
 
   private loadInstituciones() {
     const sub = this.http
-      .get<EtiquetaValor[]>(`${this.baseUrl}/estadisticas/instituciones`)
-      .subscribe(data => {
-        const safeData = data || []; // <- cambio: evitar map sobre undefined
-        this.instituciones = safeData.map((d, i) => ({
+      .get<any>(`${this.baseUrl}?action=instituciones`)
+      .subscribe(resp => {
+        const data = this.unwrap<EtiquetaValor[]>(resp) || [];
+        // asignar colores y checked por defecto
+        this.instituciones = data.map((d, i) => ({
           label: d.label,
           value: d.value,
           checked: true,
-          color: `hsl(${(i * 137.5) % 360}, 70%, 70%)`
+          color: `hsl(${(i * 137.5) % 360} 70% 60%)`
         }));
         this.institucionesFiltradas = [...this.instituciones];
+
+        const labels = this.instituciones.map(i => i.label);
+        const values = this.instituciones.map(i => i.value);
+        const colors = this.instituciones.map(i => i.color);
 
         const cfg: ChartConfiguration = {
           type: 'pie',
           data: {
-            labels: this.instituciones.map(i => i.label),
+            labels,
             datasets: [{
-              data: this.instituciones.map(i => i.value),
-              backgroundColor: this.instituciones.map(i => i.color)
+              data: values,
+              backgroundColor: colors as any
             }]
           },
           options: {
@@ -175,37 +207,37 @@ export class GraficosPage implements OnInit, AfterViewInit, OnDestroy {
             plugins: { legend: { display: false } }
           }
         };
-        if (this.chartInst) this.chartInst.destroy();
-        this.chartInst = new Chart(
-          this.chartInstRef.nativeElement.getContext('2d')!,
-          cfg
-        );
 
+        if (this.chartInst) try { this.chartInst.destroy(); } catch (e) { /* ignore */ }
+        const ctx = this.safeGetContext(this.chartInstRef);
+        if (ctx) this.chartInst = new Chart(ctx, cfg);
+
+        // construir leyenda si existe el contenedor
         this.buildLegend();
+      }, err => {
+        console.error('Error loadInstituciones:', err);
       });
     this.subs.push(sub);
   }
 
   private buildLegend() {
     const legendContainer = document.getElementById('legendInst');
-    // <- cambio: proteger si no existe el elemento o el chart aún no fue creado
     if (!legendContainer || !this.chartInst || !this.chartInst.data.labels) return;
 
-    const items = (this.chartInst.data.labels || []).map((label, idx) => ({
-      text: label as string,
-      fillStyle: (this.chartInst!.data.datasets![0].backgroundColor as string[])[idx]
-    }));
+    const bg = this.chartInst!.data.datasets?.[0].backgroundColor as string[] | undefined;
+    const labels = this.chartInst.data.labels || [];
     let html = '<ul class="chartjs-legend">';
-    items.forEach(item => {
-      html += `<li>
+    (labels as string[]).forEach((label, idx) => {
+      const color = bg?.[idx] ?? '#ccc';
+      html += `<li style="margin-bottom:6px;cursor:default;">
         <span style="
           display:inline-block;
           width:12px;
           height:12px;
           margin-right:6px;
-          background:${item.fillStyle};
+          background:${color};
           vertical-align:middle;">
-        </span>${item.text}
+        </span>${label}
       </li>`;
     });
     html += '</ul>';
@@ -213,13 +245,12 @@ export class GraficosPage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   updateInstitucionesChart() {
-    // <- cambio: proteger si chartInst no existe
     if (!this.chartInst) return;
 
     const sel = this.instituciones.filter(i => i.checked);
     this.chartInst.data.labels = sel.map(i => i.label);
-    this.chartInst.data.datasets![0].data = sel.map(i => i.value);
-    this.chartInst.data.datasets![0].backgroundColor = sel.map(i => i.color);
+    this.chartInst.data.datasets![0].data = sel.map(i => i.value) as any;
+    this.chartInst.data.datasets![0].backgroundColor = sel.map(i => i.color) as any;
     this.chartInst.update();
     this.buildLegend();
   }
@@ -237,12 +268,12 @@ export class GraficosPage implements OnInit, AfterViewInit, OnDestroy {
   }
 
   buscarInst() {
-    const txt = this.nombreInstBusqueda
+    const txt = (this.nombreInstBusqueda || '')
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
       .toLowerCase();
     this.institucionesFiltradas = this.instituciones.filter(i =>
-      i.label
+      (i.label || '')
         .normalize('NFD')
         .replace(/[\u0300-\u036f]/g, '')
         .toLowerCase()
