@@ -721,7 +721,7 @@ filterStudents(): void {
 }
 
 applyStudentsSelection(): void {
-  // obtener los estudiantes seleccionados en el modal
+  // 1) Obtener seleccionados del modal
   const seleccionados = this.allStudents
     .filter(s => !!s.selected)
     .map(s => Number(s.idEstudiante))
@@ -729,26 +729,49 @@ applyStudentsSelection(): void {
 
   const selNums = Array.from(new Set(seleccionados));
 
-  // actualizar el docente con los ids seleccionados
+  // 2) Antes: docente.idEstudiante cambia (lo que verá el formulario)
+  const prevAssigned = Array.isArray(this.docente.idEstudiante) ? [...this.docente.idEstudiante] : [];
   this.docente.idEstudiante = selNums;
   this.onEstudiantesChange();
 
-  // 🔑 en vez de borrar estudiantes de la lista, solo actualizamos el estado de selección
+  // 3) Actualizar estado de selection en la lista del modal (no borrar items)
   this.allStudents.forEach(s => {
     s.selected = selNums.includes(Number(s.idEstudiante));
   });
-
-  // actualizar la lista filtrada también (para que quede coherente)
   this.filteredStudents = [...this.allStudents];
 
-  // recalcular asignados visual (pero sin eliminar estudiantes)
-  this.asignados = this.allAsignados.filter(
-    id => !this.docente.idEstudiante.includes(id)
-  );
+  // 4) SINCRONIZAR allAsignados (estado global en UI)
+  //    - Quitar los ids que antes estaban en el docente y ahora NO están (desasignados)
+  //    - Añadir los ids que ahora están pero antes no (nuevas asignaciones)
+  const prevSet = new Set(prevAssigned.map(n => Number(n)));
+  const newSet = new Set(selNums.map(n => Number(n)));
 
-  // cerrar el modal
+  // quitar desasignados de allAsignados
+  prevAssigned.forEach(id => {
+    const num = Number(id);
+    if (!newSet.has(num)) {
+      // remover de allAsignados si existe
+      const idx = this.allAsignados.indexOf(num);
+      if (idx !== -1) this.allAsignados.splice(idx, 1);
+    }
+  });
+
+  // añadir nuevas asignaciones a allAsignados (si no están)
+  selNums.forEach(id => {
+    const num = Number(id);
+    if (!this.allAsignados.includes(num)) this.allAsignados.push(num);
+  });
+
+  // 5) Recalcular availableStudents a partir de estudiantes - allAsignados
+  this.updateAvailableStudents();
+
+  // 6) Recalcular 'asignados' (vista temporal)
+  this.asignados = this.allAsignados.filter(id => !this.docente.idEstudiante.includes(id));
+
+  // 7) Cerrar modal
   this.closeStudentsModal();
 }
+
 
 
   goTo(page: string): void { this.navCtrl.navigateRoot(`/${page}`); }
