@@ -731,12 +731,8 @@ applyStudentsSelection(): void {
   this.docente.idEstudiante = selNums;
   this.onEstudiantesChange();
 
-  // 🔑 Ya no borramos nada de allStudents ni availableStudents
-  // Solo recalculamos asignados para la UI
-  this.asignados = this.allAsignados.filter(
-    id => !this.docente.idEstudiante.includes(id)
-  );
-
+  // ❌ Ya no filtramos (no eliminar estudiantes de las listas)
+  // Solo cerramos el modal, los checkboxes se quedan como están.
   this.closeStudentsModal();
 }
 
