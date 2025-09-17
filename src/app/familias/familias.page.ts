@@ -221,28 +221,32 @@ private cargarEstudiantes(): void {
   }
 
   // ------------------------ BUSCAR FAMILIA ------------------------
-  buscarFamilia(): void {
-    this.seleccionMultiple = false;
-    this.datosCargados = false;
-    this.hoverActivo = false;
-    this.busquedaRealizada = false;
+buscarFamilia(): void {
+  this.seleccionMultiple = false;
+  this.datosCargados = false;
+  this.hoverActivo = false;
+  this.busquedaRealizada = true; // 👈 marcar búsqueda como realizada siempre
 
-    const raw = (this.busquedaMadre ?? '').trim();
-    if (!raw) {
-      this.mostrarAlerta('Error', 'Ingresa parte del nombre de la Madre/Apoderado');
-      return;
-    }
+  const raw = (this.busquedaMadre ?? '').trim();
+  if (!raw) {
+    this.familiasFiltradas = [];
+    return;
+  }
 
-    const normalize = (s: string) => (s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-    const q = normalize(raw);
+  const normalize = (s: string) =>
+    (s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const q = normalize(raw);
 
-    // Filtrar familias ya cargadas
-    const matches = this.familias.filter(f => (normalize(f.nombremadreapoderado) || '').includes(q) );
+  const matches = this.familias.filter(f =>
+    (normalize(f.nombremadreapoderado) || '').includes(q)
+  );
 
-    if (!matches.length) {
-      this.buscarFamiliaBackend(raw);
-      return;
-    }
+  if (!matches.length) {
+    this.familiasFiltradas = []; // 👈 aseguramos lista vacía para activar "no encontrado"
+    this.buscarFamiliaBackend(raw);
+    return;
+  }
+
 
     // Generar filas individuales por estudiante
     const filas: Familia[] = [];
