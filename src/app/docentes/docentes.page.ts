@@ -707,13 +707,27 @@ closeStudentsModal(): void {
   this.showStudentsModal = false;
   this.studentFilter = '';
 
-  // Tomar únicamente los que están seleccionados en el modal
-  this.docente.idEstudiante = this.allStudents
-    .filter(s => s.selected)
-    .map(s => s.idEstudiante);
+  // Mantener TODOS los estudiantes que ya estaban asignados al docente
+  const actuales = new Set(this.docente.idEstudiante);
+
+  this.allStudents.forEach(s => {
+    if (s.selected) {
+      // si está marcado lo añadimos
+      actuales.add(s.idEstudiante);
+    } else {
+      // si estaba desmarcado pero ya era del docente, lo dejamos
+      if (this.docente.idEstudiante.includes(s.idEstudiante)) {
+        actuales.add(s.idEstudiante);
+      }
+    }
+  });
+
+  // Volvemos a asignar los ids sin perder los desmarcados
+  this.docente.idEstudiante = Array.from(actuales);
 
   this.onEstudiantesChange();
 }
+
 
 
 
