@@ -171,7 +171,7 @@ buscarEstudiante(): void {
   );
 
   if (!matches.length) {
-    this.mensajeErrorCampos = 'No hay estudiantes con ese nombre.';
+    this.mensajeErrorCampos = 'Docente no encontrado, vuelve a intentar.';
     this.mostrarErrorCampos = true;
     this.estudiantesFiltrados = [];
     return;
