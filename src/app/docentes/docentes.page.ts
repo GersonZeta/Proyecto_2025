@@ -722,24 +722,29 @@ filterStudents(): void {
 
 
 applyStudentsSelection(): void {
-  // tomar seleccionados
-  const seleccionados = this.filteredStudents.filter(s => s.selected);
+  // obtener seleccionados
+  const seleccionados = this.allStudents
+    .filter(s => !!s.selected)
+    .map(s => Number(s.idEstudiante))
+    .filter(n => !isNaN(n));
 
-  // actualizar solo los ids en el form
-  this.docente.idEstudiante = seleccionados.map(s => s.idEstudiante);
+  // actualizar ids en el docente
+  this.docente.idEstudiante = Array.from(new Set(seleccionados));
+  this.onEstudiantesChange();
 
-  // actualizar nombres seleccionados (si los usas en UI)
-  this.selectedStudentNames = seleccionados.map(s => s.ApellidosNombres).join(', ');
+  // 🔑 en vez de borrarlos, recorremos todos y actualizamos su estado
+  this.allStudents.forEach(s => {
+    s.selected = this.docente.idEstudiante.includes(Number(s.idEstudiante));
+  });
 
-  // recalcular asignados pero sin borrar docentesFiltrados
+  // recalcular asignados visual
   this.asignados = this.allAsignados.filter(
     id => !this.docente.idEstudiante.includes(id)
   );
-  this.updateAvailableStudents();
 
-  // cerrar modal
-  this.showStudentsModal = false;
+  this.closeStudentsModal();
 }
+
 
 
 
