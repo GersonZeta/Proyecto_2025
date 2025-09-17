@@ -1,4 +1,5 @@
 // src/app/graficos/graficos.page.ts
+
 import {
   Component,
   OnInit,
@@ -81,7 +82,6 @@ export class GraficosPage implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
-  /** 📊 Discapacidad */
   private loadDiscapacidad() {
     const sub = this.http
       .get<any>(`${this.baseUrl}?action=discapacidad`)
@@ -98,19 +98,11 @@ export class GraficosPage implements OnInit, AfterViewInit, OnDestroy {
           },
           options: {
             responsive: true,
-            plugins: { legend: { onClick: () => {} } },
-            scales: {
-              y: {
-                beginAtZero: true,
-                ticks: { stepSize: 1 } // ✅ reemplaza a precision
-              }
-            }
+            plugins: { legend: { onClick: () => {} } }
           }
         };
 
-        if (this.chartDisc) {
-          try { this.chartDisc.destroy(); } catch (e) {}
-        }
+        if (this.chartDisc) try { this.chartDisc.destroy(); } catch (e) { /* ignore */ }
         const ctx = this.safeGetContext(this.chartDiscRef);
         if (ctx) this.chartDisc = new Chart(ctx, cfg);
       }, err => {
@@ -119,12 +111,12 @@ export class GraficosPage implements OnInit, AfterViewInit, OnDestroy {
     this.subs.push(sub);
   }
 
-  /** 📊 IPP vs PEP */
   private loadIppPep() {
     const sub = this.http
       .get<any>(`${this.baseUrl}?action=ipp-pep`)
       .subscribe(resp => {
         const data = this.unwrap<any>(resp) || {};
+        // El backend devuelve { ippSi, ippNo, ippNoEspecificado, pepSi, pepNo, pepNoEspecificado }
         const ippSi = (typeof data.ippSi === 'number') ? data.ippSi : (data?.data?.ippSi ?? 0);
         const ippNo = (typeof data.ippNo === 'number') ? data.ippNo : (data?.data?.ippNo ?? 0);
         const pepSi = (typeof data.pepSi === 'number') ? data.pepSi : (data?.data?.pepSi ?? 0);
@@ -145,9 +137,7 @@ export class GraficosPage implements OnInit, AfterViewInit, OnDestroy {
           }
         };
 
-        if (this.chartIppPep) {
-          try { this.chartIppPep.destroy(); } catch (e) {}
-        }
+        if (this.chartIppPep) try { this.chartIppPep.destroy(); } catch (e) { /* ignore */ }
         const ctx = this.safeGetContext(this.chartIppPepRef);
         if (ctx) this.chartIppPep = new Chart(ctx, cfg);
       }, err => {
@@ -156,7 +146,6 @@ export class GraficosPage implements OnInit, AfterViewInit, OnDestroy {
     this.subs.push(sub);
   }
 
-  /** 📊 Familias por ocupación */
   private loadFamilias() {
     const sub = this.http
       .get<any>(`${this.baseUrl}?action=ocupacion-familia`)
@@ -177,9 +166,7 @@ export class GraficosPage implements OnInit, AfterViewInit, OnDestroy {
           }
         };
 
-        if (this.chartFam) {
-          try { this.chartFam.destroy(); } catch (e) {}
-        }
+        if (this.chartFam) try { this.chartFam.destroy(); } catch (e) { /* ignore */ }
         const ctx = this.safeGetContext(this.chartFamRef);
         if (ctx) this.chartFam = new Chart(ctx, cfg);
       }, err => {
@@ -188,12 +175,12 @@ export class GraficosPage implements OnInit, AfterViewInit, OnDestroy {
     this.subs.push(sub);
   }
 
-  /** 📊 Alumnos por institución */
   private loadInstituciones() {
     const sub = this.http
       .get<any>(`${this.baseUrl}?action=instituciones`)
       .subscribe(resp => {
         const data = this.unwrap<EtiquetaValor[]>(resp) || [];
+        // asignar colores y checked por defecto
         this.instituciones = data.map((d, i) => ({
           label: d.label,
           value: d.value,
@@ -221,12 +208,11 @@ export class GraficosPage implements OnInit, AfterViewInit, OnDestroy {
           }
         };
 
-        if (this.chartInst) {
-          try { this.chartInst.destroy(); } catch (e) {}
-        }
+        if (this.chartInst) try { this.chartInst.destroy(); } catch (e) { /* ignore */ }
         const ctx = this.safeGetContext(this.chartInstRef);
         if (ctx) this.chartInst = new Chart(ctx, cfg);
 
+        // construir leyenda si existe el contenedor
         this.buildLegend();
       }, err => {
         console.error('Error loadInstituciones:', err);
@@ -260,6 +246,7 @@ export class GraficosPage implements OnInit, AfterViewInit, OnDestroy {
 
   updateInstitucionesChart() {
     if (!this.chartInst) return;
+
     const sel = this.instituciones.filter(i => i.checked);
     this.chartInst.data.labels = sel.map(i => i.label);
     this.chartInst.data.datasets![0].data = sel.map(i => i.value) as any;
@@ -304,16 +291,18 @@ export class GraficosPage implements OnInit, AfterViewInit, OnDestroy {
     }
   }
 
+  /** Limpieza de charts y suscripciones cuando salimos de la página */
   private cleanup() {
     [this.chartDisc, this.chartIppPep, this.chartInst, this.chartFam].forEach(c => {
       if (c) {
-        try { c.destroy(); } catch (e) {}
+        try { c.destroy(); } catch (e) { /* ignorar */ }
       }
     });
     this.subs.forEach(s => s.unsubscribe());
     this.subs = [];
   }
 
+  /** Ionic lifecycle hook */
   ionViewWillLeave() {
     this.cleanup();
   }

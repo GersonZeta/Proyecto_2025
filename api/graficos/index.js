@@ -7,31 +7,30 @@ export default async function handler(req, res) {
 
   try {
     // --- 1) Discapacidad ---
-// --- 1) Discapacidad ---
-if (action === "discapacidad") {
-  if (req.method !== "GET")
-    return res.status(405).json({ ok: false, mensaje: "Método no permitido" });
+    if (action === "discapacidad") {
+      if (req.method !== "GET")
+        return res.status(405).json({ ok: false, mensaje: "Método no permitido" });
 
-  // pedimos ambas variantes por si la columna está capitalizada de forma distinta
-  let query = supabase.from("estudiantes").select("tipodiscapacidad, TipoDiscapacidad, idinstitucioneducativa");
-  if (idInst) query = query.eq("idinstitucioneducativa", idInst);
+      let query = supabase.from("estudiantes").select("tipodiscapacidad,TipoDiscapacidad,idinstitucioneducativa");
+      if (idInst) query = query.eq("idinstitucioneducativa", idInst);
 
-  const { data, error } = await query;
-  if (error) throw error;
+      const { data, error } = await query;
+      if (error) throw error;
 
-  const counts = new Map();
-  (data || []).forEach(row => {
-    const raw = row.tipodiscapacidad ?? row.TipoDiscapacidad ?? '';
-    const key = String(raw).trim() || 'Sin especificar';
-    counts.set(key, (counts.get(key) || 0) + 1);
-  });
+      const counts = new Map();
+      (data || []).forEach(row => {
+        // tratar distintas capitalizaciones y valores vacíos
+        const raw = (row.tipodiscapacidad ?? row.TipoDiscapacidad ?? "").toString().trim();
+        const key = raw ? raw : "Sin especificar";
+        counts.set(key, (counts.get(key) || 0) + 1);
+      });
 
-  const result = Array.from(counts.entries())
-    .map(([label, value]) => ({ label, value }))
-    .sort((a, b) => b.value - a.value);
+      const result = Array.from(counts.entries())
+        .map(([label, value]) => ({ label, value }))
+        .sort((a, b) => b.value - a.value);
 
-  return res.json({ ok: true, data: result });
-}
+      return res.json({ ok: true, data: result });
+    }
 
     // --- 2) IPP vs PEP ---
     if (action === "ipp-pep") {
