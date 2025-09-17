@@ -722,40 +722,43 @@ filterStudents(): void {
 
 
 applyStudentsSelection(): void {
-  // obtener ids seleccionados actualmente en el modal
+  // obtener los ids seleccionados (los que están marcados en el modal)
   const seleccionados = this.allStudents
-    .filter(s => !!s.selected)
-    .map(s => Number(s.idEstudiante))
-    .filter(n => !isNaN(n));
+    .filter(s => s.selected)
+    .map(s => Number(s.idEstudiante));
 
-  const selNums = Array.from(new Set(seleccionados));
-  const selSet = new Set<number>(selNums);
+  const selSet = new Set(seleccionados);
 
-  // actualizar el modelo del docente (ids escogidos)
-  this.docente.idEstudiante = selNums;
+  // actualizar docente con lo seleccionado
+  this.docente.idEstudiante = seleccionados;
   this.onEstudiantesChange();
 
-  // RECONSTRUIR availableStudents correctamente: incluir todos los estudiantes que
-  // no estén asignados globalmente a otro docente y que no estén actualmente seleccionados
-  const assignedGlobalSet = new Set<number>(this.allAsignados.map(n => Number(n)));
+  // 🔴 CORRECCIÓN: en lugar de quitar estudiantes, solo actualizo "selected"
+  this.allStudents = this.allStudents.map(s => ({
+    ...s,
+    selected: selSet.has(Number(s.idEstudiante))
+  }));
+
+  this.filteredStudents = this.filteredStudents.map(s => ({
+    ...s,
+    selected: selSet.has(Number(s.idEstudiante))
+  }));
+
+  // recalcular disponibles → aquí tampoco elimino nada, solo filtro visual
+  const assignedGlobalSet = new Set(this.allAsignados.map(id => Number(id)));
   this.availableStudents = this.estudiantes.filter(s => {
     const id = Number(s.idEstudiante);
-    // si está globalmente asignado a otro docente *y* no está seleccionado por el docente actual -> excluir
     if (assignedGlobalSet.has(id) && !selSet.has(id)) return false;
-    // si está seleccionado por el docente actual -> no debe aparecer como disponible
     return !selSet.has(id);
   });
 
-  // ACTUALIZAR flags selected en las listas del modal (para que sigan apareciendo, marcados o no)
-  this.allStudents = this.allStudents.map(s => ({ ...s, selected: selSet.has(Number(s.idEstudiante)) }));
-  this.filteredStudents = this.filteredStudents.map(s => ({ ...s, selected: selSet.has(Number(s.idEstudiante)) }));
+  // recalcular asignados visual
+  this.asignados = this.allAsignados.filter(id => !seleccionados.includes(id));
 
-  // recalcular asignados visual (sin tocar allAsignados)
-  this.asignados = this.allAsignados.filter(id => !this.docente.idEstudiante.includes(id));
-
-  // cerramos modal
+  // cerrar modal
   this.closeStudentsModal();
 }
+
 
 
   goTo(page: string): void { this.navCtrl.navigateRoot(`/${page}`); }
