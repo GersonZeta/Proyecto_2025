@@ -720,35 +720,35 @@ filterStudents(): void {
   );
 }
 
-
 applyStudentsSelection(): void {
-  // obtener los estudiantes seleccionados
+  // obtener los estudiantes seleccionados en el modal
   const seleccionados = this.allStudents
     .filter(s => !!s.selected)
     .map(s => Number(s.idEstudiante))
     .filter(n => !isNaN(n));
 
   const selNums = Array.from(new Set(seleccionados));
+
+  // actualizar el docente con los ids seleccionados
   this.docente.idEstudiante = selNums;
   this.onEstudiantesChange();
 
-  // 🔑 Aquí estaba el problema: estabas borrando con filter.
-  // ❌ NUNCA borres de allStudents, availableStudents, filteredStudents.
-  // ✅ Solo actualiza el estado selected de cada uno.
+  // 🔑 en vez de borrar estudiantes de la lista, solo actualizamos el estado de selección
   this.allStudents.forEach(s => {
     s.selected = selNums.includes(Number(s.idEstudiante));
   });
 
-  // recalcular asignados visual (sin borrar nada)
+  // actualizar la lista filtrada también (para que quede coherente)
+  this.filteredStudents = [...this.allStudents];
+
+  // recalcular asignados visual (pero sin eliminar estudiantes)
   this.asignados = this.allAsignados.filter(
     id => !this.docente.idEstudiante.includes(id)
   );
 
+  // cerrar el modal
   this.closeStudentsModal();
 }
-
-
-
 
 
   goTo(page: string): void { this.navCtrl.navigateRoot(`/${page}`); }
