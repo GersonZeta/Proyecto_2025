@@ -390,11 +390,10 @@ private cargarEstudiantes(): void {
             return { ...g, idestudiantes: uniqueIds, NombreEstudiante: uniqueNames.join(', ') };
           });
 
-if (!res?.ok) {
-  this.mostrarAlerta('Aviso', 'Familia no encontrado.');
-  return;
-}
-
+          if (resultado.length === 0) {
+            this.mostrarAlerta('Aviso', 'No se encontró la familia.');
+            return;
+          }
 
           if (resultado.length === 1) {
             const fam = resultado[0];
@@ -525,14 +524,10 @@ openStudentsModal(): void {
   if (!this.estudiantes || this.estudiantes.length === 0) {
     console.warn('openStudentsModal: no hay estudiantes cargados, reintentando cargarEstudiantes() antes de abrir modal.');
     this.cargarEstudiantes();
-    // no esperamos, pero la lista se actualizará cuando carguen los estudiantes
+    // pequeña espera no-bloqueante no permitida aquí — pero igual asignamos arrays vacíos y dejamos que el dev vea logs.
   }
 
-  // Construimos allStudents:
-  // - siempre mostramos los estudiantes de la familia actual (idsFamiliaActual)
-  // - además mostramos los estudiantes que NO están en allAsignados (libres)
-  // Esto garantiza que si antes quitaste (desmarcaste) a alguien y lo removimos de allAsignados,
-  // seguirá apareciendo (desmarcado) en la lista.
+  // Construimos allStudents basándonos en allAsignados (global) y los ids de la familia actual
   this.allStudents = (this.estudiantes || [])
     .filter(e => idsFamiliaActual.has(e.idEstudiante) || !this.allAsignados.includes(e.idEstudiante))
     .map(e => ({
@@ -615,82 +610,85 @@ canOpenStudentsButton(): boolean {
   }
 
   // Actualizar familia (HTTP PUT)
-// Actualizar familia (HTTP PUT)
-actualizarFamilia(): void {
-  // Intentar obtener idFamilia confiable
-  let idFamilia = this.familia?.idfamilia;
+  actualizarFamilia(): void {
+    // Intentar obtener idFamilia confiable
+    let idFamilia = this.familia?.idfamilia;
 
-  // Si no viene, intentar resolverlo buscando por dni + nombre en el listado cargado
-  if (!idFamilia) {
-    const match = this.familias.find(f => (f.dni ?? '').toString().trim() === (this.familia.dni ?? '').toString().trim() && (f.nombremadreapoderado ?? '').toString().trim() === (this.familia.nombremadreapoderado ?? '').toString().trim() );
-    if (match && match.idfamilia) {
-      idFamilia = match.idfamilia;
-      // also set locally so future ops have it
-      this.familia.idfamilia = match.idfamilia;
-    }
-  }
-
-  if (!idFamilia) {
-    // Mensaje claro: no podemos actualizar si no tenemos id de familia
-    this.mostrarAlerta('Error', 'No se puede actualizar porque falta el ID de la familia. Selecciona una familia válida desde la lista y vuelve a intentar.');
-    return;
-  }
-
-  // Validación mínima
-  if (
-    !this.familia.nombremadreapoderado?.trim() ||
-    !this.familia.dni?.trim() ||
-    !Array.isArray(this.familia.idestudiantes) || this.familia.idestudiantes.length === 0
-  ) {
-    this.mostrarErrorCampos = true;
-    return;
-  }
-
-  // Construir payload con números
-  const payload = {
-    idFamilia: Number(idFamilia),
-    idEstudiantes: (this.familia.idestudiantes || []).map((v: any) => Number(v)).filter((n: number) => !isNaN(n)),
-    NombreMadreApoderado: this.familia.nombremadreapoderado,
-    DNI: this.familia.dni,
-    Direccion: this.familia.direccion || null,
-    Telefono: this.familia.telefono || null,
-    Ocupacion: this.familia.ocupacion || null,
-    idInstitucionEducativa: this.idInstitucionEducativa
-  };
-
-  const params = new HttpParams().set('action', 'actualizar');
-  this.http.put<any>(this.baseUrl, payload, { params })
-    .subscribe({
-      next: () => {
-        // Primero recargamos datos maestros desde el servidor
-        this.cargarAsignados();
-        this.cargarFamilias(() => {
-          // Después de recargar, limpiamos TODO localmente para que quede "como nuevo"
-          this.resetForm();
-
-          // Asegurar estados/arrays auxiliares limpios
-          this.allStudents = [];
-          this.filteredStudents = [];
-          this.selectedStudentNames = '';
-          this.showStudentsModal = false;
-          this.datosCargados = false;
-
-          // sincronizar asignados locales con los recargados
-          this.asignados = [...this.allAsignados];
-
-          // Refrescar la vista filtrada con lo que nos trajo el servidor
-          this.familiasFiltradas = [...this.familias];
-
-          // Finalmente notificar al usuario
-          this.mostrarAlerta('Éxito', 'Familia actualizada correctamente.');
-        });
-      },
-      error: err => {
-        console.error('Error al actualizar familia (cliente):', err);
-        this.mostrarAlerta('Error', err.error?.error || 'No se pudo actualizar la familia. Revisa la consola y el backend.');
+    // Si no viene, intentar resolverlo buscando por dni + nombre en el listado cargado
+    if (!idFamilia) {
+      const match = this.familias.find(f => (f.dni ?? '').toString().trim() === (this.familia.dni ?? '').toString().trim() && (f.nombremadreapoderado ?? '').toString().trim() === (this.familia.nombremadreapoderado ?? '').toString().trim() );
+      if (match && match.idfamilia) {
+        idFamilia = match.idfamilia;
+        // also set locally so future ops have it
+        this.familia.idfamilia = match.idfamilia;
       }
-    });
-}
+    }
+
+    if (!idFamilia) {
+      // Mensaje claro: no podemos actualizar si no tenemos id de familia
+      this.mostrarAlerta('Error', 'No se puede actualizar porque falta el ID de la familia. Selecciona una familia válida desde la lista y vuelve a intentar.');
+      return;
+    }
+
+    // Validación mínima
+    if (
+      !this.familia.nombremadreapoderado?.trim() ||
+      !this.familia.dni?.trim() ||
+      !Array.isArray(this.familia.idestudiantes) || this.familia.idestudiantes.length === 0
+    ) {
+      this.mostrarErrorCampos = true;
+      return;
+    }
+
+    // Construir payload con números
+    const payload = {
+      idFamilia: Number(idFamilia),
+      idEstudiantes: (this.familia.idestudiantes || []).map((v: any) => Number(v)).filter((n: number) => !isNaN(n)),
+      NombreMadreApoderado: this.familia.nombremadreapoderado,
+      DNI: this.familia.dni,
+      Direccion: this.familia.direccion || null,
+      Telefono: this.familia.telefono || null,
+      Ocupacion: this.familia.ocupacion || null,
+      idInstitucionEducativa: this.idInstitucionEducativa
+    };
+
+    const params = new HttpParams().set('action', 'actualizar');
+    this.http.put<any>(this.baseUrl, payload, { params })
+      .subscribe({
+        next: () => {
+          this.mostrarAlerta('Éxito', 'Familia actualizada correctamente.');
+
+          // Guardamos la clave para re-selección (preferir idfamilia si la tienes, sino DNI)
+          const savedIdFamilia = Number(this.familia.idfamilia) || null;
+          const savedDni = (this.familia.dni || '').toString().trim();
+
+          // recargar asignados y familias, y luego re-seleccionar y resetear formulario
+          this.cargarAsignados();
+          this.cargarFamilias(() => {
+            // intentar re-seleccionar por idfamilia
+            let found: any = null;
+            if (savedIdFamilia) found = this.familias.find(f => f.idfamilia === savedIdFamilia);
+            if (!found && savedDni) found = this.familias.find(f => (f.dni || '').toString().trim() === savedDni);
+            if (found) {
+              // si quieres abrir la familia en el formulario en vez de resetear
+              this.familia = { ...found, idestudiantes: Array.isArray(found.idestudiantes) ? found.idestudiantes : [found.idestudiantes] };
+              this.selectedStudentNames = this.estudiantes
+                .filter(e => this.familia.idestudiantes.includes(e.idEstudiante))
+                .map(e => e.ApellidosNombres).join(', ');
+              this.asignados = this.allAsignados.filter(id => !this.familia.idestudiantes.includes(id));
+              this.datosCargados = true;
+            } else {
+              // si no lo encontramos, limpias (mantén esto si quieres cerrar el formulario)
+              this.resetForm();
+            }
+          });
+        },
+        error: err => {
+          console.error('Error al actualizar familia (cliente):', err);
+          this.mostrarAlerta('Error', err.error?.error || 'No se pudo actualizar la familia. Revisa la consola y el backend.');
+        }
+      });
+  }
 
   // Exportaciones
   showExportOptions(): void { this.mostrarAlertaExportar = true; }
