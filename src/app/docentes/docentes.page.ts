@@ -722,24 +722,25 @@ filterStudents(): void {
 
 
 applyStudentsSelection(): void {
-  const seleccionados = this.allStudents
-    .filter(s => !!s.selected)
-    .map(s => Number(s.idEstudiante))
-    .filter(n => !isNaN(n));
+  // tomar seleccionados
+  const seleccionados = this.filteredStudents.filter(s => s.selected);
 
-  const selNums = Array.from(new Set(seleccionados));
-  this.docente.idEstudiante = selNums;
-  this.onEstudiantesChange();
+  // actualizar solo los ids en el form
+  this.docente.idEstudiante = seleccionados.map(s => s.idEstudiante);
 
-  // ❌ NO los elimines de availableStudents, allStudents, filteredStudents
-  // Mantén la lista completa, solo cambia el estado de selección.
-  // Así al desmarcar siguen apareciendo, pero desmarcados.
+  // actualizar nombres seleccionados (si los usas en UI)
+  this.selectedStudentNames = seleccionados.map(s => s.ApellidosNombres).join(', ');
 
-  // recalcular asignados visual (no tocar allAsignados hasta que el servidor confirme)
-  this.asignados = this.allAsignados.filter(id => !this.docente.idEstudiante.includes(id));
+  // recalcular asignados pero sin borrar docentesFiltrados
+  this.asignados = this.allAsignados.filter(
+    id => !this.docente.idEstudiante.includes(id)
+  );
+  this.updateAvailableStudents();
 
-  this.closeStudentsModal();
+  // cerrar modal
+  this.showStudentsModal = false;
 }
+
 
 
   goTo(page: string): void { this.navCtrl.navigateRoot(`/${page}`); }
