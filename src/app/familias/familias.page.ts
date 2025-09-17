@@ -462,51 +462,46 @@ openStudentsModal(): void {
 }
 
 
-  filterStudents(): void {
-    const txt = (this.studentFilter || '').trim().toLowerCase();
-    if (!txt) {
-      this.filteredStudents = [...this.allStudents];
-      return;
-    }
-    this.filteredStudents = this.allStudents.filter(s =>
-      (s.ApellidosNombres || '').toLowerCase().includes(txt)
-    );
+filterStudents(): void {
+  const q = (this.studentFilter || '').toLowerCase().trim();
+  if (!q) {
+    this.filteredStudents = [...this.allStudents];
+    return;
   }
+  this.filteredStudents = this.allStudents.filter(s =>
+    (s.ApellidosNombres || '').toLowerCase().includes(q)
+  );
+}
 
 closeStudentsModal(): void {
   this.showStudentsModal = false;
+  this.filteredStudents = [];
 }
 
 
 applyStudentsSelection(): void {
   // 1) Obtener seleccionados del modal
   const seleccionados = this.allStudents
-    .filter(s => !!s.selected) // solo los que tienen check
-    .map(s => Number(s.idEstudiante)) // convertir a número
-    .filter(n => !isNaN(n)); // descartar NaN
+    .filter(s => !!s.selected)
+    .map(s => Number(s.idEstudiante));
 
-  // 2) Quitar duplicados
-  const selNums = Array.from(new Set(seleccionados));
+  // 2) Actualizar familia.idestudiantes
+  this.familia.idestudiantes = [...seleccionados];
 
-  // 3) Guardar en familia actual
-  this.familia.idestudiantes = selNums;
-
-  // 4) Actualizar string de nombres
-  this.selectedStudentNames = this.allStudents
-    .filter(s => s.selected)
-    .map(s => s.ApellidosNombres)
+  // 3) Actualizar nombres concatenados
+  this.selectedStudentNames = this.estudiantes
+    .filter(e => this.familia.idestudiantes.includes(e.idEstudiante))
+    .map(e => e.ApellidosNombres)
     .join(', ');
 
-  // 5) Recalcular asignados:
-  //    los que están en allAsignados, pero no en esta familia
+  // 4) Ajustar asignados (los que no pertenecen a la familia quedan bloqueados)
   this.asignados = this.allAsignados.filter(
     id => !this.familia.idestudiantes.includes(id)
   );
 
-  // 6) Cerrar modal
+  // 5) Cerrar modal
   this.closeStudentsModal();
 }
-
 
   // helper que usa asignados y familia actual
   get hayEstudiantesParaSeleccionar(): boolean {
