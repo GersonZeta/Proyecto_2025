@@ -171,9 +171,9 @@ buscarEstudiante(): void {
   );
 
   if (!matches.length) {
-    this.mensajeErrorCampos = 'Docente no encontrado, vuelve a intentar.';
+    this.mensajeErrorCampos = 'Estudiante no encontrado, vuelve a intentar.';
     this.mostrarErrorCampos = true;
-    this.estudiantesFiltrados = [];
+    // ❌ no vaciar la tabla, solo mostrar alerta
     return;
   }
 
@@ -188,6 +188,7 @@ buscarEstudiante(): void {
     this.hoverActivo = false;
   }
 }
+
 
 
   seleccionarEstudiante(est: EstudianteLocal): void {
