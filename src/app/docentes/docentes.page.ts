@@ -72,7 +72,7 @@ export class DocentesPage {
   // modal / selección
   showStudentsModal = false;
   studentFilter = '';
-  allStudents: Student[] = [];     // items actuales en modal (solo disponibles + asignados al docente)
+  allStudents: Student[] = [];     // items actuales en modal (disponibles + asignados al docente)
   filteredStudents: Student[] = []; // filtrado por búsqueda en modal
 
   // helper: lista calculada de estudiantes NO asignados (disponibles)
@@ -724,11 +724,10 @@ export class DocentesPage {
   }
 
   applyStudentsSelection(): void {
-    // Sin eliminar elementos de arrays locales.
-    // 1) Asegurar que this.allStudents refleje los checkboxes actuales
+    // 1) Asegurarnos que los flags selected reflejen la UI del modal
     this.allStudents = this.allStudents.map(s => ({ ...s, selected: !!s.selected }));
 
-    // 2) Obtener IDs seleccionados
+    // 2) obtener ids seleccionados
     const seleccionados = this.allStudents
       .filter(s => !!s.selected)
       .map(s => Number(s.idEstudiante))
@@ -736,14 +735,86 @@ export class DocentesPage {
 
     const selNums = Array.from(new Set(seleccionados));
 
-    // 3) Actualizar al docente (UI local). No tocar allAsignados ni availableStudents aquí.
+    // 3) calcular prevAssigned (copiar antes de sobrescribir)
+    const prevAssigned = Array.isArray(this.docente.idEstudiante) ? this.docente.idEstudiante.map(n => Number(n)) : [];
+    const prevSet = new Set(prevAssigned.filter(n => !isNaN(n)));
+    const selSet = new Set(selNums);
+
+    // IDs que fueron removidos: estaban antes y ahora ya no
+    const removed = prevAssigned.filter(id => !selSet.has(Number(id))).map(Number).filter(n => !isNaN(n));
+
+    // 4) actualizar docente localmente
     this.docente.idEstudiante = selNums;
     this.onEstudiantesChange();
 
-    // 4) recalcular asignados visual (no tocar allAsignados hasta que el servidor confirme)
+    // 5) REINCORPORAR localmente los estudiantes que se quitaron del docente
+    if (removed.length) {
+      removed.forEach(id => {
+        // encontrar en la lista maestra de estudiantes
+        const found = this.estudiantes.find(e => Number(e.idEstudiante) === Number(id));
+        if (found) {
+          // añadir a availableStudents si no existe
+          if (!this.availableStudents.some(s => Number(s.idEstudiante) === Number(id))) {
+            this.availableStudents.push({ ...found });
+          }
+          // asegurarnos esté en allStudents (modal) con selected = false
+          const idx = this.allStudents.findIndex(s => Number(s.idEstudiante) === Number(id));
+          if (idx === -1) {
+            this.allStudents.push({ ...found, selected: false });
+          } else {
+            this.allStudents[idx].selected = false;
+          }
+          // también en filteredStudents si aplica
+          if (!this.filteredStudents.some(s => Number(s.idEstudiante) === Number(id))) {
+            this.filteredStudents.push({ ...found, selected: false });
+          } else {
+            const idx2 = this.filteredStudents.findIndex(s => Number(s.idEstudiante) === Number(id));
+            if (idx2 >= 0) this.filteredStudents[idx2].selected = false;
+          }
+        } else {
+          // Si no se encuentra en la lista maestra, crear placeholder en available/allStudents
+          if (!this.availableStudents.some(s => Number(s.idEstudiante) === Number(id))) {
+            this.availableStudents.push({
+              idEstudiante: id,
+              ApellidosNombres: '-',
+              idInstitucionEducativa: this.idInstitucionEducativa
+            } as Student);
+          }
+          if (!this.allStudents.some(s => Number(s.idEstudiante) === Number(id))) {
+            this.allStudents.push({
+              idEstudiante: id,
+              ApellidosNombres: '-',
+              idInstitucionEducativa: this.idInstitucionEducativa,
+              selected: false
+            } as Student);
+          }
+          if (!this.filteredStudents.some(s => Number(s.idEstudiante) === Number(id))) {
+            this.filteredStudents.push({
+              idEstudiante: id,
+              ApellidosNombres: '-',
+              idInstitucionEducativa: this.idInstitucionEducativa,
+              selected: false
+            } as Student);
+          }
+        }
+      });
+    }
+
+    // 6) Normalizar arrays (eliminar duplicados) y ordenar para UX
+    const uniqueById = (arr: Student[]) => Array.from(new Map(arr.map(s => [String(s.idEstudiante), s])).values());
+    this.availableStudents = uniqueById(this.availableStudents).sort((a, b) => (a.ApellidosNombres || '').localeCompare(b.ApellidosNombres || ''));
+    this.allStudents = uniqueById(this.allStudents).sort((a, b) => {
+      const aSel = a.selected ? 1 : 0;
+      const bSel = b.selected ? 1 : 0;
+      if (aSel !== bSel) return bSel - aSel;
+      return (a.ApellidosNombres || '').localeCompare(b.ApellidosNombres || '');
+    });
+    this.filteredStudents = [...this.allStudents];
+
+    // 7) recalcular asignados visual (no tocar allAsignados hasta que el servidor confirme)
     this.asignados = this.allAsignados.filter(id => !this.docente.idEstudiante.includes(id));
 
-    // 5) cerrar modal
+    // 8) cerrar modal
     this.closeStudentsModal();
   }
 
