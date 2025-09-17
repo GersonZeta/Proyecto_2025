@@ -503,6 +503,12 @@ applyStudentsSelection(): void {
   this.closeStudentsModal();
 }
 
+canOpenStudentsButton(): boolean {
+  // habilita el botón solo si el campo madre/apoderado no está vacío
+  return !!this.familia.nombremadreapoderado?.trim();
+}
+
+
   // helper que usa asignados y familia actual
   get hayEstudiantesParaSeleccionar(): boolean {
     const asignadosExcluyendoActual = this.allAsignados.filter(id => !this.familia.idestudiantes.includes(id));
