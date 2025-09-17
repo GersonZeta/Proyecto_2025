@@ -725,28 +725,18 @@ closeStudentsModal(): void {
     );
   }
 applyStudentsSelection(): void {
-  // Guardar el estado real de cada estudiante según el modal
   this.allStudents = this.allStudents.map(s => ({
     ...s,
-    selected: !!s.selected // queda true o false según el checkbox
+    selected: !!s.selected
   }));
 
-  // Actualizar los IDs seleccionados en el docente
   this.docente.idEstudiante = this.allStudents
     .filter(s => s.selected)
     .map(s => Number(s.idEstudiante));
 
-  // Refrescar la vista de nombres
   this.onEstudiantesChange();
-
-  // Cerrar modal
   this.closeStudentsModal();
 }
-
-
-
-
-
 
 
   goTo(page: string): void { this.navCtrl.navigateRoot(`/${page}`); }
