@@ -707,21 +707,15 @@ closeStudentsModal(): void {
   this.showStudentsModal = false;
   this.studentFilter = '';
 
-  // NO eliminar a los que ya estaban en el docente
-  const currentIds = new Set(this.docente.idEstudiante);
-
-  // Tomar los seleccionados del modal
-  const selectedIds = this.allStudents
+  // Tomar únicamente los que están seleccionados en el modal
+  this.docente.idEstudiante = this.allStudents
     .filter(s => s.selected)
     .map(s => s.idEstudiante);
 
-  // Unir ambos (mantener los del docente aunque estén desmarcados en el modal)
-  const merged = new Set([...currentIds, ...selectedIds]);
-
-  this.docente.idEstudiante = Array.from(merged);
-
   this.onEstudiantesChange();
 }
+
+
 
 
   filterStudents(): void {
