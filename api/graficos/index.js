@@ -7,40 +7,34 @@ export default async function handler(req, res) {
 
   try {
     // --- 1) Discapacidad ---
-    if (action === "discapacidad") {
-      if (req.method !== "GET")
-        return res
-          .status(405)
-          .json({ ok: false, mensaje: "Método no permitido" });
+if (action === "discapacidad") {
+  if (req.method !== "GET")
+    return res.status(405).json({ ok: false, mensaje: "Método no permitido" });
 
-      // Traer todas las columnas posibles que puedan guardar el tipo de discapacidad
-      let query = supabase
-        .from("estudiantes")
-        .select("tipodiscapacidad,TipoDiscapacidad,tipo_discapacidad,idinstitucioneducativa");
-      if (idInst) query = query.eq("idinstitucioneducativa", idInst);
+  // Traemos *todas* las columnas de estudiantes (para no fallar con el nombre)
+  let query = supabase.from("estudiantes").select("*");
+  if (idInst) query = query.eq("idinstitucioneducativa", idInst);
 
-      const { data, error } = await query;
-      if (error) throw error;
+  const { data, error } = await query;
+  if (error) throw error;
 
-      const counts = new Map();
-      (data || []).forEach(row => {
-        // Buscar en varias variantes de nombre
-        const raw =
-          (row.tipodiscapacidad ??
-            row.TipoDiscapacidad ??
-            row.tipo_discapacidad ??
-            "").toString().trim();
+  const counts = new Map();
+  (data || []).forEach(row => {
+    // Buscamos dinámicamente la columna que contenga "discapacidad"
+    const keyName = Object.keys(row).find(k => k.toLowerCase().includes("discapacidad"));
+    const raw = keyName ? (row[keyName] ?? "").toString().trim() : "";
 
-        const key = raw ? raw : "Sin especificar";
-        counts.set(key, (counts.get(key) || 0) + 1);
-      });
+    const key = raw || "Sin especificar";
+    counts.set(key, (counts.get(key) || 0) + 1);
+  });
 
-      const result = Array.from(counts.entries())
-        .map(([label, value]) => ({ label, value }))
-        .sort((a, b) => b.value - a.value);
+  const result = Array.from(counts.entries())
+    .map(([label, value]) => ({ label, value }))
+    .sort((a, b) => b.value - a.value);
 
-      return res.json({ ok: true, data: result });
-    }
+  return res.json({ ok: true, data: result });
+}
+
 
     // --- 2) IPP vs PEP ---
     if (action === "ipp-pep") {
