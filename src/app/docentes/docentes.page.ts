@@ -222,7 +222,7 @@ private cargarAsignadosGlobal(): void {
 buscarDocente(): void {
   const raw = this.nombreBusqueda.trim();
   if (!raw) {
-    this.mostrarErrorCampos = true;  // 🔹 Igual que en registrar
+    this.mostrarErrorCampos = true;  // 🔹 Mensaje: "Completa todos los campos requeridos"
     return;
   }
 
@@ -239,7 +239,7 @@ buscarDocente(): void {
   );
 
   if (!matches.length) {
-    this.mostrarErrorCampos = true;  // 🔹 Misma alerta si no encuentra nada
+    this.mostrarAlerta('Error', 'Docente no encontrado, vuelve a intentar');
     return;
   }
 
