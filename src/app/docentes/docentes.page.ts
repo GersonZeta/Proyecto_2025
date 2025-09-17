@@ -726,29 +726,33 @@ closeStudentsModal(): void {
   }
 
 applyStudentsSelection(): void {
-  // Asegurar que los checkboxes se reflejen
-  this.allStudents = this.allStudents.map(s => ({ ...s, selected: !!s.selected }));
-
-  // Obtener IDs seleccionados
+  // 1) IDs seleccionados ahora
   const seleccionados = this.allStudents
     .filter(s => !!s.selected)
     .map(s => Number(s.idEstudiante))
     .filter(n => !isNaN(n));
 
-  // 🔹 Mantener los que ya tenía el docente + los seleccionados
+  // 2) Mantener los que ya tenía el docente + los seleccionados
   const union = Array.from(new Set([...(this.docente.idEstudiante || []), ...seleccionados]));
-
   this.docente.idEstudiante = union;
+
+  // 3) Actualizar checkboxes: solo los que están en `seleccionados` quedan marcados
+  this.allStudents = this.allStudents.map(s => ({
+    ...s,
+    selected: seleccionados.includes(Number(s.idEstudiante))
+  }));
+
   this.onEstudiantesChange();
 
-  // Recalcular asignados visual
+  // 4) Recalcular asignados visual
   this.asignados = this.allAsignados.filter(id => !this.docente.idEstudiante.includes(id));
 
-  // Cerrar modal
+  // 5) Cerrar modal
   this.showStudentsModal = false;
   this.studentFilter = '';
   this.filteredStudents = [...this.allStudents];
 }
+
 
   goTo(page: string): void { this.navCtrl.navigateRoot(`/${page}`); }
 
