@@ -123,12 +123,10 @@
     [(ngModel)]="busquedaMadre"
     name="busquedaMadre"
     required
-    placeholder="Ingresa un nombre para buscar."
     (keypress)="validateLetters($event)"
   ></ion-input>
   <ion-icon name="search-outline" slot="end" (click)="buscarFamilia()" style="cursor: pointer;"></ion-icon>
 </ion-item>
-
 
         </ion-col>
         <ion-col size="1.5">
