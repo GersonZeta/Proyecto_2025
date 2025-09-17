@@ -706,27 +706,9 @@ export class DocentesPage {
 closeStudentsModal(): void {
   this.showStudentsModal = false;
   this.studentFilter = '';
-
-  // Mantener TODOS los estudiantes que ya estaban asignados al docente
-  const actuales = new Set(this.docente.idEstudiante);
-
-  this.allStudents.forEach(s => {
-    if (s.selected) {
-      // si está marcado lo añadimos
-      actuales.add(s.idEstudiante);
-    } else {
-      // si estaba desmarcado pero ya era del docente, lo dejamos
-      if (this.docente.idEstudiante.includes(s.idEstudiante)) {
-        actuales.add(s.idEstudiante);
-      }
-    }
-  });
-
-  // Volvemos a asignar los ids sin perder los desmarcados
-  this.docente.idEstudiante = Array.from(actuales);
-
-  this.onEstudiantesChange();
+  this.filteredStudents = [...this.allStudents];
 }
+
 
 
 
@@ -743,29 +725,30 @@ closeStudentsModal(): void {
     );
   }
 
-  applyStudentsSelection(): void {
-    // Sin eliminar elementos de arrays locales.
-    // 1) Asegurar que this.allStudents refleje los checkboxes actuales
-    this.allStudents = this.allStudents.map(s => ({ ...s, selected: !!s.selected }));
+applyStudentsSelection(): void {
+  // Asegurar que los checkboxes se reflejen
+  this.allStudents = this.allStudents.map(s => ({ ...s, selected: !!s.selected }));
 
-    // 2) Obtener IDs seleccionados
-    const seleccionados = this.allStudents
-      .filter(s => !!s.selected)
-      .map(s => Number(s.idEstudiante))
-      .filter(n => !isNaN(n));
+  // Obtener IDs seleccionados
+  const seleccionados = this.allStudents
+    .filter(s => !!s.selected)
+    .map(s => Number(s.idEstudiante))
+    .filter(n => !isNaN(n));
 
-    const selNums = Array.from(new Set(seleccionados));
+  // 🔹 Mantener los que ya tenía el docente + los seleccionados
+  const union = Array.from(new Set([...(this.docente.idEstudiante || []), ...seleccionados]));
 
-    // 3) Actualizar al docente (UI local). No tocar allAsignados ni availableStudents aquí.
-    this.docente.idEstudiante = selNums;
-    this.onEstudiantesChange();
+  this.docente.idEstudiante = union;
+  this.onEstudiantesChange();
 
-    // 4) recalcular asignados visual (no tocar allAsignados hasta que el servidor confirme)
-    this.asignados = this.allAsignados.filter(id => !this.docente.idEstudiante.includes(id));
+  // Recalcular asignados visual
+  this.asignados = this.allAsignados.filter(id => !this.docente.idEstudiante.includes(id));
 
-    // 5) cerrar modal
-    this.closeStudentsModal();
-  }
+  // Cerrar modal
+  this.showStudentsModal = false;
+  this.studentFilter = '';
+  this.filteredStudents = [...this.allStudents];
+}
 
   goTo(page: string): void { this.navCtrl.navigateRoot(`/${page}`); }
 
