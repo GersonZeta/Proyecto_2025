@@ -726,23 +726,31 @@ closeStudentsModal(): void {
   }
 
 applyStudentsSelection(): void {
-  // 1) IDs seleccionados ahora en el modal
+  // IDs seleccionados en el modal
   const seleccionados = this.allStudents
     .filter(s => !!s.selected)
     .map(s => Number(s.idEstudiante))
     .filter(n => !isNaN(n));
 
-  // 🚨 CAMBIO AQUÍ:
-  // Antes: solo te quedabas con "union" (lo nuevo)
-  // Ahora: asignamos exactamente lo que está en el modal (seleccionados)
-  this.docente.idEstudiante = seleccionados;
+  // 🚨 En vez de reemplazar todo, mantenemos lo que ya estaba
+  const actuales = new Set(this.docente.idEstudiante);
 
-  // 2) Actualizar nombres visibles
+  // Añadir los que se seleccionaron en el modal
+  seleccionados.forEach(id => actuales.add(id));
+
+  // 🔑 Mantener también los que ya estaban en docente.idEstudiante,
+  // aunque hayan sido desmarcados en este modal.
+  // (Si quieres permitir quitarlos, dime y ajustamos)
+
+  this.docente.idEstudiante = Array.from(actuales);
+
+  // Actualizar nombres visibles
   this.onEstudiantesChange();
 
-  // 3) Cerrar modal
+  // Cerrar modal
   this.closeStudentsModal();
 }
+
 
 
 
