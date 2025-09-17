@@ -222,15 +222,21 @@ private cargarAsignadosGlobal(): void {
 buscarDocente(): void {
   const raw = this.nombreBusqueda.trim();
   if (!raw) {
-    this.mostrarAlerta('Error', 'Ingresa un nombre de docente para buscar.');
+    this.mostrarErrorCampos = true;  // 🔹 Usa el mismo overlay que en registrar
     return;
   }
 
-  const normalize = (s: string) => (s || '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
+  const normalize = (s: string) =>
+    (s || '')
+      .normalize('NFD')
+      .replace(/[\u0300-\u036f]/g, '')
+      .toLowerCase();
   const normalizedRaw = normalize(raw);
 
   // Filtrar todos los docentes cuyo nombre contenga la búsqueda
-  const matches = this.docentes.filter(d => normalize(d.NombreDocente).includes(normalizedRaw));
+  const matches = this.docentes.filter(d =>
+    normalize(d.NombreDocente).includes(normalizedRaw)
+  );
 
   if (!matches.length) {
     this.mostrarAlerta('Error', 'No hay docentes con ese nombre.');
@@ -238,7 +244,9 @@ buscarDocente(): void {
   }
 
   // Filtrar coincidencias exactas
-  const exactMatches = matches.filter(d => normalize(d.NombreDocente) === normalizedRaw);
+  const exactMatches = matches.filter(
+    d => normalize(d.NombreDocente) === normalizedRaw
+  );
 
   // Agrupar por DNIDocente para saber si son realmente distintos docentes
   const mapByDNI = new Map<string, DocenteView[]>();
@@ -272,7 +280,9 @@ buscarDocente(): void {
       GradoSeccionLabora: d.GradoSeccionLabora,
       idEstudiante: estudiantesIds
     };
-    this.asignados = this.allAsignados.filter(id => !estudiantesIds.includes(id));
+    this.asignados = this.allAsignados.filter(
+      id => !estudiantesIds.includes(id)
+    );
     this.onEstudiantesChange();
     this.updateAvailableStudents();
     this.allStudents = [];
@@ -292,7 +302,9 @@ buscarDocente(): void {
 }
 
 
+
 buscarPorId(d: DocenteView | (DocenteView & { index: number })): void {
+  // cancelar sub existente
   if (this.searchSub) {
     this.searchSub.unsubscribe();
     this.searchSub = undefined;
@@ -301,11 +313,14 @@ buscarPorId(d: DocenteView | (DocenteView & { index: number })): void {
   this.searchLoading = true;
   this.datosCargados = false;
 
+  // Usar la información que ya tenemos en 'd' para identificar al docente,
+  // en lugar de depender de displayId (que puede confundir cuando hay búsquedas parciales).
   const dniParam = ((d as DocenteView).DNIDocente || '').toString().trim();
   const nombreParam = ((d as DocenteView).NombreDocente || '').toString().trim();
   const emailParam = ((d as DocenteView).Email || '').toString().trim();
   const telParam = ((d as DocenteView).Telefono || '').toString().trim();
 
+  // si hay DNIs confiable, filtrar por DNIDocente; si no, usar la clave compuesta
   let relatedRows: DocenteView[] = [];
   if (dniParam) {
     relatedRows = this.docentes.filter(x => ((x.DNIDocente || '').toString().trim()) === dniParam);
@@ -317,6 +332,7 @@ buscarPorId(d: DocenteView | (DocenteView & { index: number })): void {
     });
   }
 
+  // Si encontramos filas locales suficientes, construir vista y terminar
   if (relatedRows && relatedRows.length > 0) {
     const seen = new Set<number>();
     const views: DocenteView[] = [];
@@ -338,6 +354,7 @@ buscarPorId(d: DocenteView | (DocenteView & { index: number })): void {
       });
     });
 
+    // Si hay resultados, asignarlos y setear estado
     if (views.length) {
       this.docentesFiltrados = views;
       this.docente = {
@@ -354,17 +371,20 @@ buscarPorId(d: DocenteView | (DocenteView & { index: number })): void {
       this.buscandoDocente = false;
       this.searchLoading = false;
 
+      // recalcular asignados UI
       this.asignados = this.allAsignados.filter(id => !Array.from(seen).includes(id));
       this.onEstudiantesChange();
 
+      // actualizar disponibles y limpiar buffers modal
       this.updateAvailableStudents();
       this.allStudents = [];
       this.filteredStudents = [];
+
       return;
     }
   }
 
-  // fallback al servidor
+  // Si no hay filas locales, fallback al servidor (igual que antes)
   const params = new HttpParams()
     .set('action', 'buscar')
     .set('nombreDocente', (d as DocenteView).NombreDocente || '');
