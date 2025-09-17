@@ -175,3 +175,60 @@
   background-color: #ffffff !important;
   transition: background-color 0.2s ease !important;
 }
+
+
+
+/* Overlay de error – idéntico a export */
+.error-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(0, 0, 0, 0.4);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 10000;
+}
+
+.error-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background-color: #ffffff;
+  width: 90%;
+  max-width: 340px;
+  border-radius: 1rem;
+  box-shadow: 0 6px 22px rgba(0, 0, 0, 0.2);
+  padding: 2rem 1rem;
+}
+
+.error-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #000;
+  margin: 0;
+  margin-bottom: 1rem;
+}
+
+.error-message {
+  margin: 0 0 1rem;
+  color: #000;
+}
+
+.btn-ok {
+  display: block;   /* para que respete width en bloque */
+  width: 20%;      /* ocupa todo el ancho disponible */
+  padding: 0.7rem 0;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 1rem;
+  font-weight: bold;
+  cursor: pointer;
+  background-color: #c54e4e;
+  color: #fff;
+  transition: background-color 0.2s ease;
+}
+
+.btn-ok:hover {
+  background-color: #a03030;
+}
+

@@ -390,10 +390,11 @@ private cargarEstudiantes(): void {
             return { ...g, idestudiantes: uniqueIds, NombreEstudiante: uniqueNames.join(', ') };
           });
 
-          if (resultado.length === 0) {
-            this.mostrarAlerta('Aviso', 'No se encontró la familia.');
-            return;
-          }
+if (!res?.ok) {
+  this.mostrarAlerta('Aviso', 'Familia no encontrado.');
+  return;
+}
+
 
           if (resultado.length === 1) {
             const fam = resultado[0];
