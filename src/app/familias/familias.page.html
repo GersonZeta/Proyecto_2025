@@ -92,10 +92,12 @@
   expand="block"
   color="tertiary"
   (click)="openStudentsModal()"
-  [disabled]="datosCargados && (!familia.idestudiantes || familia.idestudiantes.length === 0) && estudiantesDisponibles.length === 0"
+  [disabled]="!canOpenStudentsButton()"
 >
   Estudiantes
 </ion-button>
+
+
 
 
 
