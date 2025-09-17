@@ -513,33 +513,41 @@ openStudentsModal(): void {
   this.studentFilter = '';
 
   const idsFamiliaActual = new Set(
-    (this.familia.idestudiantes || []).map((n: any) => Number(n)).filter((x: number) => !isNaN(x))
+    (this.familia.idestudiantes || [])
+      .map((n: any) => Number(n))
+      .filter((x: number) => !isNaN(x))
   );
 
-  // Si aún no cargaron estudiantes desde el servidor, intenta recargarlos rápido
   if (!this.estudiantes || this.estudiantes.length === 0) {
     console.warn('openStudentsModal: no hay estudiantes cargados, reintentando cargarEstudiantes() antes de abrir modal.');
     this.cargarEstudiantes();
   }
 
-  // 🔥 CAMBIO CLAVE:
-  // ya no filtramos con "|| !this.allAsignados.includes(...)"
-  // porque eso hacía que desaparecieran los desmarcados.
-  // Ahora SIEMPRE mostramos todos los estudiantes cargados.
-  this.allStudents = (this.estudiantes || []).map(e => ({
-    ...e,
-    selected: idsFamiliaActual.has(e.idEstudiante),
-    assignedToOther: this.allAsignados.includes(e.idEstudiante) && !idsFamiliaActual.has(e.idEstudiante)
-  }));
+  // 🔑 Mostrar SOLO:
+  // - estudiantes de esta familia (idsFamiliaActual)
+  // - estudiantes no asignados en otra familia (!allAsignados.includes)
+  this.allStudents = (this.estudiantes || [])
+    .filter(e =>
+      idsFamiliaActual.has(e.idEstudiante) ||
+      !this.allAsignados.includes(e.idEstudiante)
+    )
+    .map(e => ({
+      ...e,
+      selected: idsFamiliaActual.has(e.idEstudiante),
+      assignedToOther: this.allAsignados.includes(e.idEstudiante) && !idsFamiliaActual.has(e.idEstudiante)
+    }));
+
+  // mantener copia para búsquedas
+  this.filteredStudents = [...this.allStudents];
 
   // debug
   console.log('openStudentsModal -> idsFamiliaActual:', Array.from(idsFamiliaActual));
   console.log('openStudentsModal -> allAsignados:', this.allAsignados);
-  console.log('openStudentsModal -> allStudents (TODOS):', this.allStudents);
+  console.log('openStudentsModal -> allStudents (filtrados):', this.allStudents);
 
-  this.filteredStudents = [...this.allStudents];
   this.showStudentsModal = true;
 }
+
 
 
 
