@@ -9,9 +9,14 @@ export default async function handler(req, res) {
     // --- 1) Discapacidad ---
     if (action === "discapacidad") {
       if (req.method !== "GET")
-        return res.status(405).json({ ok: false, mensaje: "Método no permitido" });
+        return res
+          .status(405)
+          .json({ ok: false, mensaje: "Método no permitido" });
 
-      let query = supabase.from("estudiantes").select("tipodiscapacidad,TipoDiscapacidad,idinstitucioneducativa");
+      // Traer todas las columnas posibles que puedan guardar el tipo de discapacidad
+      let query = supabase
+        .from("estudiantes")
+        .select("tipodiscapacidad,TipoDiscapacidad,tipo_discapacidad,idinstitucioneducativa");
       if (idInst) query = query.eq("idinstitucioneducativa", idInst);
 
       const { data, error } = await query;
@@ -19,8 +24,13 @@ export default async function handler(req, res) {
 
       const counts = new Map();
       (data || []).forEach(row => {
-        // tratar distintas capitalizaciones y valores vacíos
-        const raw = (row.tipodiscapacidad ?? row.TipoDiscapacidad ?? "").toString().trim();
+        // Buscar en varias variantes de nombre
+        const raw =
+          (row.tipodiscapacidad ??
+            row.TipoDiscapacidad ??
+            row.tipo_discapacidad ??
+            "").toString().trim();
+
         const key = raw ? raw : "Sin especificar";
         counts.set(key, (counts.get(key) || 0) + 1);
       });
