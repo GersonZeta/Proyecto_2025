@@ -222,7 +222,7 @@ private cargarAsignadosGlobal(): void {
 buscarDocente(): void {
   const raw = this.nombreBusqueda.trim();
   if (!raw) {
-    this.mostrarErrorCampos = true;  // 🔹 Usa el mismo overlay que en registrar
+    this.mostrarErrorCampos = true;  // 🔹 Igual que en registrar
     return;
   }
 
@@ -239,7 +239,7 @@ buscarDocente(): void {
   );
 
   if (!matches.length) {
-    this.mostrarAlerta('Error', 'No hay docentes con ese nombre.');
+    this.mostrarErrorCampos = true;  // 🔹 Misma alerta si no encuentra nada
     return;
   }
 
@@ -300,6 +300,7 @@ buscarDocente(): void {
   this.datosCargados = true;
   this.buscandoDocente = true; // Solo aquí pedimos elegir, porque son docentes distintos
 }
+
 
 
 
