@@ -342,33 +342,31 @@ buscarPorId(d: DocenteView | (DocenteView & { index: number })): void {
     });
 
     // Si hay resultados, asignarlos y setear estado
-    if (views.length) {
-      this.docentesFiltrados = views;
-      this.docente = {
-        idDocente: relatedRows[0]?.idDocente,
-        DNIDocente: relatedRows[0]?.DNIDocente ?? '',
-        NombreDocente: relatedRows[0]?.NombreDocente ?? '',
-        Email: relatedRows[0]?.Email ?? '',
-        Telefono: relatedRows[0]?.Telefono ?? '',
-        GradoSeccionLabora: relatedRows[0]?.GradoSeccionLabora ?? '',
-        idEstudiante: Array.from(seen)
-      };
+if (views.length) {
+  // No tocar docentesFiltrados, solo llenar el form
+  this.docente = {
+    idDocente: relatedRows[0]?.idDocente,
+    DNIDocente: relatedRows[0]?.DNIDocente ?? '',
+    NombreDocente: relatedRows[0]?.NombreDocente ?? '',
+    Email: relatedRows[0]?.Email ?? '',
+    Telefono: relatedRows[0]?.Telefono ?? '',
+    GradoSeccionLabora: relatedRows[0]?.GradoSeccionLabora ?? '',
+    idEstudiante: Array.from(seen)
+  };
 
-      this.datosCargados = true;
-      this.buscandoDocente = false;
-      this.searchLoading = false;
+  this.datosCargados = true;
+  this.buscandoDocente = false;
+  this.searchLoading = false;
 
-      // recalcular asignados UI
-      this.asignados = this.allAsignados.filter(id => !Array.from(seen).includes(id));
-      this.onEstudiantesChange();
+  this.asignados = this.allAsignados.filter(id => !Array.from(seen).includes(id));
+  this.onEstudiantesChange();
+  this.updateAvailableStudents();
+  this.allStudents = [];
+  this.filteredStudents = [];
 
-      // actualizar disponibles y limpiar buffers modal
-      this.updateAvailableStudents();
-      this.allStudents = [];
-      this.filteredStudents = [];
+  return;
+}
 
-      return;
-    }
   }
 
   // Si no hay filas locales, fallback al servidor (igual que antes)
