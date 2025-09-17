@@ -722,93 +722,38 @@ filterStudents(): void {
 
 
 applyStudentsSelection(): void {
-  // Guardar selección previa para detectar removidos
-  const prevSelected = Array.isArray(this.docente.idEstudiante)
-    ? Array.from(this.docente.idEstudiante)
-    : [];
-
-  // Obtener seleccionados actuales desde el modal
+  // obtener ids seleccionados actualmente en el modal
   const seleccionados = this.allStudents
     .filter(s => !!s.selected)
     .map(s => Number(s.idEstudiante))
     .filter(n => !isNaN(n));
 
   const selNums = Array.from(new Set(seleccionados));
+  const selSet = new Set<number>(selNums);
 
-  // Actualizar el docente con los seleccionados
+  // actualizar el modelo del docente (ids escogidos)
   this.docente.idEstudiante = selNums;
   this.onEstudiantesChange();
 
-  // Calcular añadidos y removidos respecto a la selección previa
-  const prevSet = new Set(prevSelected);
-  const newSet = new Set(selNums);
-  const removed = prevSelected.filter(id => !newSet.has(id)); // fueron desmarcados
-  const added = selNums.filter(id => !prevSet.has(id));      // fueron nuevos seleccionados
+  // RECONSTRUIR availableStudents correctamente: incluir todos los estudiantes que
+  // no estén asignados globalmente a otro docente y que no estén actualmente seleccionados
+  const assignedGlobalSet = new Set<number>(this.allAsignados.map(n => Number(n)));
+  this.availableStudents = this.estudiantes.filter(s => {
+    const id = Number(s.idEstudiante);
+    // si está globalmente asignado a otro docente *y* no está seleccionado por el docente actual -> excluir
+    if (assignedGlobalSet.has(id) && !selSet.has(id)) return false;
+    // si está seleccionado por el docente actual -> no debe aparecer como disponible
+    return !selSet.has(id);
+  });
 
-  // 1) Para los nuevos seleccionados: quitar de available/all/filtered (como ya hacías)
-  if (added.length) {
-    const addedSet = new Set(added);
-    this.availableStudents = this.availableStudents.filter(s => !addedSet.has(s.idEstudiante));
-    this.allStudents = this.allStudents.filter(s => !addedSet.has(s.idEstudiante));
-    this.filteredStudents = this.filteredStudents.filter(s => !addedSet.has(s.idEstudiante));
-  }
+  // ACTUALIZAR flags selected en las listas del modal (para que sigan apareciendo, marcados o no)
+  this.allStudents = this.allStudents.map(s => ({ ...s, selected: selSet.has(Number(s.idEstudiante)) }));
+  this.filteredStudents = this.filteredStudents.map(s => ({ ...s, selected: selSet.has(Number(s.idEstudiante)) }));
 
-  // 2) Para los removidos: volver a insertarlos en available/all/filtered
-  //    (si no están ya presentes), y asegurar selected = false en el modal.
-  if (removed.length) {
-    removed.forEach(id => {
-      // buscar en this.estudiantes (fuente maestra)
-      const found = this.estudiantes.find(e => Number(e.idEstudiante) === Number(id));
-      const studentObj: Student = found ? { ...found } : {
-        idEstudiante: Number(id),
-        ApellidosNombres: '-',
-        idInstitucionEducativa: this.idInstitucionEducativa
-      };
-
-      // añadir a availableStudents si no está
-      if (!this.availableStudents.some(s => Number(s.idEstudiante) === Number(id))) {
-        this.availableStudents.push(studentObj);
-      }
-
-      // añadir a allStudents/modal list si no está
-      if (!this.allStudents.some((s: any) => Number(s.idEstudiante) === Number(id))) {
-        // marcar selected = false (desmarcado)
-        (this.allStudents as Array<any>).push({ ...studentObj, selected: false });
-      } else {
-        // si está en allStudents, asegurarnos que selected = false
-        (this.allStudents as Array<any>).forEach((s: any) => {
-          if (Number(s.idEstudiante) === Number(id)) s.selected = false;
-        });
-      }
-
-      // actualizar filteredStudents coherentemente: si el filtro está activo,
-      // solo agregar si coincide; si no hay filtro, agregar también.
-      const term = (this.studentFilter || '').trim().toLowerCase();
-      const matchesFilter = !term || (studentObj.ApellidosNombres || '').toLowerCase().includes(term);
-      if (matchesFilter && !this.filteredStudents.some((s: any) => Number(s.idEstudiante) === Number(id))) {
-        (this.filteredStudents as Array<any>).push({ ...studentObj, selected: false });
-      }
-    });
-
-    // Opcional: mantener orden (primero selected true si hubiera, luego alfabetico)
-    this.allStudents = (this.allStudents as Array<any>).sort((a, b) => {
-      const aSel = a.selected ? 1 : 0;
-      const bSel = b.selected ? 1 : 0;
-      if (aSel !== bSel) return bSel - aSel;
-      return (a.ApellidosNombres || '').localeCompare(b.ApellidosNombres || '');
-    });
-
-    this.filteredStudents = (this.filteredStudents as Array<any>).sort((a, b) => {
-      const aSel = a.selected ? 1 : 0;
-      const bSel = b.selected ? 1 : 0;
-      if (aSel !== bSel) return bSel - aSel;
-      return (a.ApellidosNombres || '').localeCompare(b.ApellidosNombres || '');
-    });
-  }
-
-  // Recalcular asignados visual (no tocar allAsignados hasta confirmar servidor)
+  // recalcular asignados visual (sin tocar allAsignados)
   this.asignados = this.allAsignados.filter(id => !this.docente.idEstudiante.includes(id));
 
+  // cerramos modal
   this.closeStudentsModal();
 }
 
