@@ -92,17 +92,11 @@
   expand="block"
   color="tertiary"
   (click)="openStudentsModal()"
-  [disabled]="!canOpenStudentsButton()"
+  [disabled]="datosCargados && (!familia.idestudiantes || familia.idestudiantes.length === 0) && estudiantesDisponibles.length === 0"
 >
   Estudiantes
 </ion-button>
-
-
-
-
-
         </ion-col>
-
         <ion-col size="1">
           <ion-button expand="block" color="primary" (click)="validarYRegistrar()" [disabled]="datosCargados">
             Agregar
@@ -237,9 +231,7 @@
           <ion-button class="modal-footer-button cancel-button" (click)="closeStudentsModal()">CANCELAR</ion-button>
         </ion-buttons>
         <ion-buttons slot="end">
-          <ion-button class="modal-footer-button accept-button" (click)="applyStudentsSelection()">
-  ACEPTAR
-</ion-button>
+          <ion-button class="modal-footer-button accept-button" (click)="applyStudentsSelection()">ACEPTAR</ion-button>
         </ion-buttons>
       </ion-toolbar>
     </ion-footer>

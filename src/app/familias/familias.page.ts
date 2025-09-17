@@ -36,7 +36,6 @@ export class FamiliasPage {
   familiasFiltradas: Familia[] = [];
   estudiantes: { idEstudiante: number; ApellidosNombres: string }[] = [];
 
-  // Asignados: mantenemos allAsignados (global) y asignados (excluye los de la familia actual)
   allAsignados: number[] = [];
   asignados: number[] = [];
 
@@ -97,7 +96,6 @@ export class FamiliasPage {
       });
   }
 
-  // ahora guarda allAsignados y asignados (copia)
   private cargarAsignados(): void {
     const params = new HttpParams().set('idInstitucionEducativa', this.idInstitucionEducativa.toString());
     this.http.get<number[]>(`${this.baseUrl}/estudiantes-con-familia`, { params })
@@ -144,10 +142,11 @@ private cargarFamilias(callback?: () => void): void {
 
   // Este getter determina si se muestran en el modal los estudiantes ya de la familia + no asignados
 get estudiantesDisponibles() {
-  const idsFamiliaActual = this.familia.idestudiantes || [];
-  return this.estudiantes.filter(
-    e => !this.asignados.includes(e.idEstudiante) || idsFamiliaActual.includes(e.idEstudiante)
-  );
+  // Mostrar todos los estudiantes de la institución
+  return this.estudiantes.map(e => ({
+    ...e,
+    selected: this.familia.idestudiantes.includes(e.idEstudiante)  // marcado solo si pertenece a la familia
+  }));
 }
 
 
@@ -218,8 +217,6 @@ get estudiantesDisponibles() {
     // Solo un padre -> auto-seleccionar
     this.seleccionMultiple = false;
     this.familiasFiltradas = filas; // 👈 filas separadas en la tabla
-
-    // 👇 familia consolidada con todos los hijos
     const f = matches[0];
     this.familia = {
       ...f,
@@ -445,21 +442,19 @@ openStudentsModal(): void {
     (this.familia.idestudiantes || []).map((n: any) => Number(n)).filter((x: number) => !isNaN(x))
   );
 
-  // Mostrar SOLO:
-  // - estudiantes que ya pertenecen a esta familia (idsFamiliaActual)
-  // - O estudiantes que NO están asignados globalmente (no están en allAsignados)
   this.allStudents = this.estudiantes
     .filter(e => idsFamiliaActual.has(e.idEstudiante) || !this.allAsignados.includes(e.idEstudiante))
     .map(e => ({
       ...e,
       selected: idsFamiliaActual.has(e.idEstudiante),
-      // optional flag if you want to show diference in UI
+      // flag opcional por si quieres diferenciar en UI
       assignedToOther: this.allAsignados.includes(e.idEstudiante) && !idsFamiliaActual.has(e.idEstudiante)
     }));
 
   this.filteredStudents = [...this.allStudents];
   this.showStudentsModal = true;
 }
+
 
 
   filterStudents(): void {
@@ -479,56 +474,59 @@ closeStudentsModal(): void {
 
 
 applyStudentsSelection(): void {
-  // 1) Obtener seleccionados del modal
+  // 1) Obtener seleccionados del modal (números únicos)
   const seleccionados = this.allStudents
     .filter(s => !!s.selected)
     .map(s => Number(s.idEstudiante))
     .filter(n => !isNaN(n));
-
   const selNums = Array.from(new Set(seleccionados));
 
-  // 2) Guardar prevAssigned (para comparar después)
-  const prevAssigned = Array.isArray(this.familia.idestudiantes)
-    ? [...this.familia.idestudiantes]
-    : [];
+  // ids que tenía la familia antes de los cambios
+  const prevIds = (this.familia.idestudiantes || [])
+    .map((n: any) => Number(n))
+    .filter((n: number) => !isNaN(n));
+
+  // 2) Actualizar los idEstudiantes de la familia
   this.familia.idestudiantes = selNums;
 
-  // 3) Actualizar estado de selección en la lista del modal (no borrar items)
-  this.allStudents.forEach(s => {
-    s.selected = selNums.includes(Number(s.idEstudiante));
-  });
-  this.filteredStudents = [...this.allStudents];
+  // 3) Actualizar nombres mostrados
+  this.selectedStudentNames = this.allStudents
+    .filter(s => s.selected)
+    .map(s => s.ApellidosNombres)
+    .join(', ');
 
-  // 4) Sincronizar allAsignados
-  const prevSet = new Set(prevAssigned.map(n => Number(n)));
-  const newSet = new Set(selNums.map(n => Number(n)));
-
-  // quitar desasignados
-  prevAssigned.forEach(id => {
-    const num = Number(id);
-    if (!newSet.has(num)) {
-      const idx = this.allAsignados.indexOf(num);
-      if (idx !== -1) this.allAsignados.splice(idx, 1);
+  // 4) Mantener sincronizado allAsignados:
+  //    - Añadir los nuevos seleccionados
+  //    - Quitar los que antes pertenecían a esta familia y ahora fueron desmarcados
+  const allSet = new Set(this.allAsignados.map((n: any) => Number(n)).filter((n: number) => !isNaN(n)));
+  selNums.forEach(id => allSet.add(Number(id)));
+  prevIds.forEach(id => {
+    if (!selNums.includes(id)) {
+      allSet.delete(id);
     }
   });
+  this.allAsignados = Array.from(allSet);
 
-  // añadir nuevas asignaciones
-  selNums.forEach(id => {
-    const num = Number(id);
-    if (!this.allAsignados.includes(num)) this.allAsignados.push(num);
-  });
+  // 5) Recalcular 'asignados' (todos los asignados excepto los de la familia actual)
+  this.asignados = this.allAsignados.filter(id => !this.familia.idestudiantes.includes(Number(id)));
 
-  // 5) Recalcular disponibles
-  this.updateAvailableStudents();
-
-  // 6) Recalcular asignados temporales
-  this.asignados = this.allAsignados.filter(
-    id => !this.familia.idestudiantes.includes(id)
+  // 6) Actualizar allStudents/filteredStudents para que la UI del modal refleje assignedToOther y selected inmediatamente
+  const idsFamiliaActual = new Set(
+    (this.familia.idestudiantes || []).map((n: any) => Number(n)).filter((x: number) => !isNaN(x))
   );
+  this.allStudents = this.estudiantes
+    .filter(e => idsFamiliaActual.has(e.idEstudiante) || !this.allAsignados.includes(e.idEstudiante))
+    .map(e => ({
+      ...e,
+      selected: idsFamiliaActual.has(e.idEstudiante),
+      assignedToOther: this.allAsignados.includes(e.idEstudiante) && !idsFamiliaActual.has(e.idEstudiante)
+    }));
+  this.filteredStudents = [...this.allStudents];
 
   // 7) Cerrar modal
   this.closeStudentsModal();
 }
+
 
   // helper que usa asignados y familia actual
   get hayEstudiantesParaSeleccionar(): boolean {
@@ -635,8 +633,6 @@ actualizarFamilia(): void {
     idInstitucionEducativa: this.idInstitucionEducativa
   };
 
-  // Guardar copia de los ids anteriores por si quieres comparar (opcional, útil para debugging)
-  // const prevIds = [...(this.familias.find(f => f.idfamilia === idFamilia)?.idestudiantes || [])];
 
 this.http.put(`${this.baseUrl}/actualizar-familia`, payload)
   .subscribe({
