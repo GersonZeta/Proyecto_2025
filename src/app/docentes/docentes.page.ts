@@ -722,28 +722,31 @@ filterStudents(): void {
 
 
 applyStudentsSelection(): void {
-  // obtener seleccionados
+  // obtener los estudiantes seleccionados
   const seleccionados = this.allStudents
     .filter(s => !!s.selected)
     .map(s => Number(s.idEstudiante))
     .filter(n => !isNaN(n));
 
-  // actualizar ids en el docente
-  this.docente.idEstudiante = Array.from(new Set(seleccionados));
+  const selNums = Array.from(new Set(seleccionados));
+  this.docente.idEstudiante = selNums;
   this.onEstudiantesChange();
 
-  // 🔑 en vez de borrarlos, recorremos todos y actualizamos su estado
+  // 🔑 Aquí estaba el problema: estabas borrando con filter.
+  // ❌ NUNCA borres de allStudents, availableStudents, filteredStudents.
+  // ✅ Solo actualiza el estado selected de cada uno.
   this.allStudents.forEach(s => {
-    s.selected = this.docente.idEstudiante.includes(Number(s.idEstudiante));
+    s.selected = selNums.includes(Number(s.idEstudiante));
   });
 
-  // recalcular asignados visual
+  // recalcular asignados visual (sin borrar nada)
   this.asignados = this.allAsignados.filter(
     id => !this.docente.idEstudiante.includes(id)
   );
 
   this.closeStudentsModal();
 }
+
 
 
 
