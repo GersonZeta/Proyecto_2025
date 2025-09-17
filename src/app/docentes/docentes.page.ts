@@ -524,28 +524,33 @@ buscarPorId(d: DocenteView | (DocenteView & { index: number })): void {
     });
   }
 
-  eliminarDocente(): void {
-    if (!this.docente.idDocente) {
-      this.mostrarAlerta('Error', 'No hay docente seleccionado para eliminar.');
-      return;
-    }
-
-    const params = new HttpParams().set('action', 'eliminar').set('id', String(this.docente.idDocente));
-    this.http.delete<{ ok?: boolean; mensaje?: string; count?: number }>(`${this.baseUrl}`, { params })
-      .subscribe({
-        next: res => {
-          if (!res || (res.ok === false && res.mensaje)) {
-            this.mostrarAlerta('Error', res.mensaje || 'No fue posible eliminar.');
-            return;
-          }
-          this.mostrarAlerta('Éxito', 'Docente eliminado correctamente.');
-          this.resetForm();
-          this.cargarAsignadosGlobal();
-          this.cargarDocentes();
-        },
-        error: err => this.mostrarAlerta('Error', err.error?.mensaje || 'No fue posible eliminar el docente.')
-      });
+eliminarDocente(): void {
+  if (!this.docente.idDocente) {
+    this.mostrarAlerta('Error', 'No hay docente seleccionado para eliminar.');
+    return;
   }
+
+  const params = new HttpParams()
+    .set('action', 'eliminar')
+    .set('id', String(this.docente.idDocente));
+
+  this.http.delete<{ ok?: boolean; mensaje?: string; count?: number }>(`${this.baseUrl}`, { params })
+    .subscribe({
+      next: res => {
+        if (!res || (res.ok === false && res.mensaje)) {
+          this.mostrarAlerta('Error', res.mensaje || 'No fue posible eliminar.');
+          return;
+        }
+        // 🔹 Aquí quitamos el mensaje de "Docente eliminado correctamente"
+        this.resetForm();
+        this.cargarAsignadosGlobal();
+        this.cargarDocentes();
+      },
+      error: err =>
+        this.mostrarAlerta('Error', err.error?.mensaje || 'No fue posible eliminar el docente.')
+    });
+}
+
 
   async showExportOptions(): Promise<void> {
     const sheet = await this.actionSheetCtrl.create({
