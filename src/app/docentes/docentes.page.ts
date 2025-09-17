@@ -292,9 +292,7 @@ buscarDocente(): void {
 }
 
 
-
 buscarPorId(d: DocenteView | (DocenteView & { index: number })): void {
-  // cancelar sub existente
   if (this.searchSub) {
     this.searchSub.unsubscribe();
     this.searchSub = undefined;
@@ -303,14 +301,11 @@ buscarPorId(d: DocenteView | (DocenteView & { index: number })): void {
   this.searchLoading = true;
   this.datosCargados = false;
 
-  // Usar la información que ya tenemos en 'd' para identificar al docente,
-  // en lugar de depender de displayId (que puede confundir cuando hay búsquedas parciales).
   const dniParam = ((d as DocenteView).DNIDocente || '').toString().trim();
   const nombreParam = ((d as DocenteView).NombreDocente || '').toString().trim();
   const emailParam = ((d as DocenteView).Email || '').toString().trim();
   const telParam = ((d as DocenteView).Telefono || '').toString().trim();
 
-  // si hay DNIs confiable, filtrar por DNIDocente; si no, usar la clave compuesta
   let relatedRows: DocenteView[] = [];
   if (dniParam) {
     relatedRows = this.docentes.filter(x => ((x.DNIDocente || '').toString().trim()) === dniParam);
@@ -322,7 +317,6 @@ buscarPorId(d: DocenteView | (DocenteView & { index: number })): void {
     });
   }
 
-  // Si encontramos filas locales suficientes, construir vista y terminar
   if (relatedRows && relatedRows.length > 0) {
     const seen = new Set<number>();
     const views: DocenteView[] = [];
@@ -344,7 +338,6 @@ buscarPorId(d: DocenteView | (DocenteView & { index: number })): void {
       });
     });
 
-    // Si hay resultados, asignarlos y setear estado
     if (views.length) {
       this.docentesFiltrados = views;
       this.docente = {
@@ -361,20 +354,17 @@ buscarPorId(d: DocenteView | (DocenteView & { index: number })): void {
       this.buscandoDocente = false;
       this.searchLoading = false;
 
-      // recalcular asignados UI
       this.asignados = this.allAsignados.filter(id => !Array.from(seen).includes(id));
       this.onEstudiantesChange();
 
-      // actualizar disponibles y limpiar buffers modal
       this.updateAvailableStudents();
       this.allStudents = [];
       this.filteredStudents = [];
-
       return;
     }
   }
 
-  // Si no hay filas locales, fallback al servidor (igual que antes)
+  // fallback al servidor
   const params = new HttpParams()
     .set('action', 'buscar')
     .set('nombreDocente', (d as DocenteView).NombreDocente || '');
