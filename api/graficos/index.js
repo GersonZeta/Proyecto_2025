@@ -6,31 +6,61 @@ export default async function handler(req, res) {
   const idInst = req.query.idInstitucionEducativa ? Number(req.query.idInstitucionEducativa) : null;
 
   try {
-    // --- 1) Discapacidad ---
-    if (action === "discapacidad") {
-      if (req.method !== "GET")
-        return res.status(405).json({ ok: false, mensaje: "Método no permitido" });
+// --- 1) Discapacidad (mejorada, normaliza y agrupa "otros") ---
+if (action === "discapacidad") {
+  if (req.method !== "GET")
+    return res.status(405).json({ ok: false, mensaje: "Método no permitido" });
 
-      let query = supabase.from("estudiantes").select("tipodiscapacidad,TipoDiscapacidad,idinstitucioneducativa");
-      if (idInst) query = query.eq("idinstitucioneducativa", idInst);
+  let query = supabase.from("estudiantes").select("tipodiscapacidad,TipoDiscapacidad,idinstitucioneducativa");
+  if (idInst) query = query.eq("idinstitucioneducativa", idInst);
 
-      const { data, error } = await query;
-      if (error) throw error;
+  const { data, error } = await query;
+  if (error) throw error;
 
-      const counts = new Map();
-      (data || []).forEach(row => {
-        // tratar distintas capitalizaciones y valores vacíos
-        const raw = (row.tipodiscapacidad ?? row.TipoDiscapacidad ?? "").toString().trim();
-        const key = raw ? raw : "Sin especificar";
-        counts.set(key, (counts.get(key) || 0) + 1);
-      });
+  // Normalizador: trim, lowercase, reemplaza múltiples espacios, y map a "sin especificar" si vacío
+  const normalizeKey = v => {
+    const s = (v ?? "").toString().replace(/\s+/g, " ").trim().toLowerCase();
+    return s || "sin especificar";
+  };
 
-      const result = Array.from(counts.entries())
-        .map(([label, value]) => ({ label, value }))
-        .sort((a, b) => b.value - a.value);
+  // Title case para etiquetas de salida (más presentable)
+  const titleCase = str =>
+    str.split(" ").map(w => w ? w[0].toUpperCase() + w.slice(1) : "").join(" ");
 
-      return res.json({ ok: true, data: result });
-    }
+  const counts = new Map();
+  (data || []).forEach(row => {
+    // soporte para distintas capitalizaciones de la columna
+    const raw = row.tipodiscapacidad ?? row.TipoDiscapacidad ?? "";
+    const keyNorm = normalizeKey(raw);
+    counts.set(keyNorm, (counts.get(keyNorm) || 0) + 1);
+  });
+
+  // convertir a array y ordenar
+  let entries = Array.from(counts.entries()).map(([k, v]) => ({ key: k, value: v }));
+
+  // si hay muchas categorías (ej. > 10), agrupar las menos frecuentes en "Otros"
+  const MAX_CATS = 10;
+  if (entries.length > MAX_CATS) {
+    entries = entries.sort((a, b) => b.value - a.value);
+    const top = entries.slice(0, MAX_CATS);
+    const others = entries.slice(MAX_CATS);
+    const othersSum = others.reduce((s, it) => s + it.value, 0);
+    top.push({ key: "otros", value: othersSum });
+    entries = top;
+  } else {
+    entries = entries.sort((a, b) => b.value - a.value);
+  }
+
+  const result = entries.map(e => {
+    const label = e.key === "sin especificar" ? "Sin especificar"
+                 : e.key === "otros" ? "Otros"
+                 : titleCase(e.key);
+    return { label, value: e.value };
+  });
+
+  return res.json({ ok: true, data: result });
+}
+
 
     // --- 2) IPP vs PEP ---
     if (action === "ipp-pep") {
