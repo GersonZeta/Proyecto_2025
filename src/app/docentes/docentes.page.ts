@@ -82,6 +82,7 @@ export class DocentesPage {
   buscandoDocente = false;
   mostrarAlertaExportar = false;
   mostrarErrorCampos = false;
+  private originalOrder: number[] = [];
 
   nombreBusqueda = '';
   docente: DocenteForm = {
@@ -101,11 +102,13 @@ export class DocentesPage {
   searchLoading = false;
   isLoadingAsignados = false;
 
+
   constructor(
     private http: HttpClient,
     private alertCtrl: AlertController,
     private actionSheetCtrl: ActionSheetController,
     private navCtrl: NavController
+
   ) {}
 
   cerrarAlertaExportar(): void { this.mostrarAlertaExportar = false; }
@@ -123,6 +126,7 @@ export class DocentesPage {
     this.cargarEstudiantes();
     this.cargarAsignadosGlobal();
     this.cargarDocentes();
+
   }
 
   // ------------------ CARGAS ------------------
@@ -485,6 +489,12 @@ buscarPorId(d: DocenteView | (DocenteView & { index: number })): void {
     });
   }
 
+  ngOnInit() {
+  // cuando inicialices allStudents, guarda el orden por id
+  this.originalOrder = this.allStudents.map(s => Number(s.idEstudiante));
+}
+
+
   registrarDocente(): void {
     this.validarEmail();
 
@@ -720,8 +730,9 @@ filterStudents(): void {
   );
 }
 
+
 applyStudentsSelection(): void {
-  // 1) Obtener seleccionados del modal
+  // obtener seleccionados
   const seleccionados = this.allStudents
     .filter(s => !!s.selected)
     .map(s => Number(s.idEstudiante))
@@ -729,46 +740,30 @@ applyStudentsSelection(): void {
 
   const selNums = Array.from(new Set(seleccionados));
 
-  // 2) Antes: docente.idEstudiante cambia (lo que verá el formulario)
-  const prevAssigned = Array.isArray(this.docente.idEstudiante) ? [...this.docente.idEstudiante] : [];
+  // actualizar ids en el docente
   this.docente.idEstudiante = selNums;
   this.onEstudiantesChange();
 
-  // 3) Actualizar estado de selection en la lista del modal (no borrar items)
+  // 🔑 actualizar estado de selección en TODOS
   this.allStudents.forEach(s => {
     s.selected = selNums.includes(Number(s.idEstudiante));
   });
+
+  // mantener filteredStudents sincronizado
   this.filteredStudents = [...this.allStudents];
 
-  // 4) SINCRONIZAR allAsignados (estado global en UI)
-  //    - Quitar los ids que antes estaban en el docente y ahora NO están (desasignados)
-  //    - Añadir los ids que ahora están pero antes no (nuevas asignaciones)
-  const prevSet = new Set(prevAssigned.map(n => Number(n)));
-  const newSet = new Set(selNums.map(n => Number(n)));
+  // conservar orden original (según originalOrder)
+  this.filteredStudents.sort(
+    (a, b) =>
+      this.originalOrder.indexOf(Number(a.idEstudiante)) -
+      this.originalOrder.indexOf(Number(b.idEstudiante))
+  );
 
-  // quitar desasignados de allAsignados
-  prevAssigned.forEach(id => {
-    const num = Number(id);
-    if (!newSet.has(num)) {
-      // remover de allAsignados si existe
-      const idx = this.allAsignados.indexOf(num);
-      if (idx !== -1) this.allAsignados.splice(idx, 1);
-    }
-  });
+  // recalcular asignados visual (sin borrar estudiantes del modal)
+  this.asignados = this.allAsignados.filter(
+    id => !this.docente.idEstudiante.includes(id)
+  );
 
-  // añadir nuevas asignaciones a allAsignados (si no están)
-  selNums.forEach(id => {
-    const num = Number(id);
-    if (!this.allAsignados.includes(num)) this.allAsignados.push(num);
-  });
-
-  // 5) Recalcular availableStudents a partir de estudiantes - allAsignados
-  this.updateAvailableStudents();
-
-  // 6) Recalcular 'asignados' (vista temporal)
-  this.asignados = this.allAsignados.filter(id => !this.docente.idEstudiante.includes(id));
-
-  // 7) Cerrar modal
   this.closeStudentsModal();
 }
 
