@@ -342,31 +342,33 @@ buscarPorId(d: DocenteView | (DocenteView & { index: number })): void {
     });
 
     // Si hay resultados, asignarlos y setear estado
-if (views.length) {
-  // No tocar docentesFiltrados, solo llenar el form
-  this.docente = {
-    idDocente: relatedRows[0]?.idDocente,
-    DNIDocente: relatedRows[0]?.DNIDocente ?? '',
-    NombreDocente: relatedRows[0]?.NombreDocente ?? '',
-    Email: relatedRows[0]?.Email ?? '',
-    Telefono: relatedRows[0]?.Telefono ?? '',
-    GradoSeccionLabora: relatedRows[0]?.GradoSeccionLabora ?? '',
-    idEstudiante: Array.from(seen)
-  };
+    if (views.length) {
+      this.docentesFiltrados = views;
+      this.docente = {
+        idDocente: relatedRows[0]?.idDocente,
+        DNIDocente: relatedRows[0]?.DNIDocente ?? '',
+        NombreDocente: relatedRows[0]?.NombreDocente ?? '',
+        Email: relatedRows[0]?.Email ?? '',
+        Telefono: relatedRows[0]?.Telefono ?? '',
+        GradoSeccionLabora: relatedRows[0]?.GradoSeccionLabora ?? '',
+        idEstudiante: Array.from(seen)
+      };
 
-  this.datosCargados = true;
-  this.buscandoDocente = false;
-  this.searchLoading = false;
+      this.datosCargados = true;
+      this.buscandoDocente = false;
+      this.searchLoading = false;
 
-  this.asignados = this.allAsignados.filter(id => !Array.from(seen).includes(id));
-  this.onEstudiantesChange();
-  this.updateAvailableStudents();
-  this.allStudents = [];
-  this.filteredStudents = [];
+      // recalcular asignados UI
+      this.asignados = this.allAsignados.filter(id => !Array.from(seen).includes(id));
+      this.onEstudiantesChange();
 
-  return;
-}
+      // actualizar disponibles y limpiar buffers modal
+      this.updateAvailableStudents();
+      this.allStudents = [];
+      this.filteredStudents = [];
 
+      return;
+    }
   }
 
   // Si no hay filas locales, fallback al servidor (igual que antes)
@@ -720,43 +722,80 @@ filterStudents(): void {
 
 
 applyStudentsSelection(): void {
-  // obtener los ids seleccionados (los que están marcados en el modal)
+  // guardar previos para poder detectar removidos/agregados si quieres (no obligatorio)
+  const prevAssigned = Array.isArray(this.docente.idEstudiante) ? [...this.docente.idEstudiante] : [];
+
+  // obtener seleccionados del modal
   const seleccionados = this.allStudents
-    .filter(s => s.selected)
-    .map(s => Number(s.idEstudiante));
+    .filter(s => !!s.selected)
+    .map(s => Number(s.idEstudiante))
+    .filter(n => !isNaN(n));
 
-  const selSet = new Set(seleccionados);
+  const selNums = Array.from(new Set(seleccionados));
 
-  // actualizar docente con lo seleccionado
-  this.docente.idEstudiante = seleccionados;
+  // asignar al docente
+  this.docente.idEstudiante = selNums;
+
+  // actualizar el texto mostrado
   this.onEstudiantesChange();
 
-  // 🔴 CORRECCIÓN: en lugar de quitar estudiantes, solo actualizo "selected"
-  this.allStudents = this.allStudents.map(s => ({
-    ...s,
-    selected: selSet.has(Number(s.idEstudiante))
-  }));
+  // ---------------------------
+  // RECONSTRUIR listas locales:
+  // 1) recalcular availableStudents (basado en allAsignados globales)
+  this.updateAvailableStudents();
 
-  this.filteredStudents = this.filteredStudents.map(s => ({
-    ...s,
-    selected: selSet.has(Number(s.idEstudiante))
-  }));
+  // 2) reconstruir el map/lista igual que en openStudentsModal()
+  const map = new Map<number, Student & { selected?: boolean }>();
 
-  // recalcular disponibles → aquí tampoco elimino nada, solo filtro visual
-  const assignedGlobalSet = new Set(this.allAsignados.map(id => Number(id)));
-  this.availableStudents = this.estudiantes.filter(s => {
-    const id = Number(s.idEstudiante);
-    if (assignedGlobalSet.has(id) && !selSet.has(id)) return false;
-    return !selSet.has(id);
+  // añadir todos los estudiantes NO asignados (availableStudents) - por defecto NOT selected
+  this.availableStudents.forEach(s => {
+    map.set(Number(s.idEstudiante), { ...s, selected: false });
   });
 
-  // recalcular asignados visual
-  this.asignados = this.allAsignados.filter(id => !seleccionados.includes(id));
+  // añadir también los estudiantes actualmente asignados al docente y marcarlos selected = true
+  if (this.docente && Array.isArray(this.docente.idEstudiante) && this.docente.idEstudiante.length) {
+    this.docente.idEstudiante.forEach(id => {
+      const num = Number(id);
+      if (isNaN(num)) return;
+
+      if (map.has(num)) {
+        const existing = map.get(num)!;
+        existing.selected = true;
+        map.set(num, existing);
+      } else {
+        const found = this.estudiantes.find(e => Number(e.idEstudiante) === num);
+        if (found) {
+          map.set(num, { ...found, selected: true });
+        } else {
+          map.set(num, {
+            idEstudiante: num,
+            ApellidosNombres: '-',
+            idInstitucionEducativa: this.idInstitucionEducativa,
+            selected: true
+          });
+        }
+      }
+    });
+  }
+
+  // ordenar: primero los selected, luego los no selected, y dentro orden alfabético
+  const list = Array.from(map.values()).sort((a, b) => {
+    const aSel = a.selected ? 1 : 0;
+    const bSel = b.selected ? 1 : 0;
+    if (aSel !== bSel) return bSel - aSel; // selected primero
+    return (a.ApellidosNombres || '').localeCompare(b.ApellidosNombres || '');
+  });
+
+  // actualizar buffers/modal con la lista reconstruida
+  this.allStudents = list;
+  this.filteredStudents = [...this.allStudents];
+
+  // recalcular asignados visual (no tocar allAsignados hasta que el servidor confirme)
+  this.asignados = this.allAsignados.filter(id => !this.docente.idEstudiante.includes(id));
 
   // cerrar modal
   this.closeStudentsModal();
 }
-
 
 
   goTo(page: string): void { this.navCtrl.navigateRoot(`/${page}`); }
