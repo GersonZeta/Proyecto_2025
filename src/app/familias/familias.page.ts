@@ -419,9 +419,10 @@ if (!res?.ok) {
           this.seleccionMultiple = true;
           this.hoverActivo = true;
         },
-        error: () => {
-          this.mostrarAlerta('Error', 'No fue posible consultar la familia en el servidor.');
-        }
+error: () => {
+  this.errorMessage = 'Familia no encontrada.'; // 👈 mismo mensaje corto
+  this.mostrarErrorCampos = true;               // 👈 activa el overlay custom
+}
       });
   }
 
