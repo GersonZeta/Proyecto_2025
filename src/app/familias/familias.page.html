@@ -253,10 +253,10 @@
 </div>
 
 <!-- Overlay de error -->
-<div class="error-overlay" *ngIf="mostrarErrorCampos">
-  <div class="error-box">
-    <h2 class="error-title">Error</h2>
-    <p class="error-message">Ingresa un nombre para buscar.</p>
+<div class="error-overlay" *ngIf="mostrarErrorCampos" role="dialog" aria-modal="true" aria-labelledby="errorTitle" (click)="cerrarErrorCampos()">
+  <div class="error-box" (click)="$event.stopPropagation()" tabindex="0" role="document">
+    <h2 id="errorTitle" class="error-title">Error</h2>
+    <p class="error-message">{{ errorMessage ?? 'Ingresa un nombre para buscar.' }}</p>
     <button class="btn-ok" (click)="cerrarErrorCampos()">OK</button>
   </div>
 </div>

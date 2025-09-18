@@ -69,6 +69,7 @@ export class FamiliasPage {
 
   mostrarAlertaExportar = false;
   mostrarErrorCampos = false;
+  errorMessage: string | null = null;
 
   constructor(
     private http: HttpClient,
@@ -229,11 +230,11 @@ private cargarEstudiantes(): void {
     this.busquedaRealizada = false;
 
     const raw = (this.busquedaMadre ?? '').trim();
-    if (!raw) {
-      this.mostrarAlerta('Error', 'Ingresa parte del nombre de la Madre/Apoderado');
-      return;
-    }
-
+if (!raw) {
+  this.errorMessage = 'Ingresa un nombre para buscar.';
+  this.mostrarErrorCampos = true;
+  return;
+}
     const normalize = (s: string) => (s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
     const q = normalize(raw);
 
@@ -351,10 +352,12 @@ private cargarEstudiantes(): void {
     this.http.get<any>(this.baseUrl, { params })
       .subscribe({
         next: res => {
-          if (!res?.ok) {
-            this.mostrarAlerta('Aviso', 'No se encontró la familia.');
-            return;
-          }
+if (!res?.ok) {
+  // Mostrar overlay local con mensaje reutilizable
+  this.errorMessage = 'Familia no encontrada.';
+  this.mostrarErrorCampos = true;
+  return;
+}
 
           // res.data es lo que devuelve el handler (obj o array)
           const rows: any[] = Array.isArray(res.data) ? res.data : [res.data];
@@ -709,7 +712,11 @@ canOpenStudentsButton(): boolean {
     doc.save('familias.pdf');
   }
 
-  cerrarErrorCampos(): void { this.mostrarErrorCampos = false; }
+cerrarErrorCampos(): void {
+  this.mostrarErrorCampos = false;
+  this.errorMessage = null;
+}
+
 
   private reloadAll(): void {
     this.resetForm();
