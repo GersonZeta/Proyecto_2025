@@ -25,7 +25,8 @@ export interface Familia {
   styleUrls: [
     './familias.page.scss',
     './familias.page2.scss',
-    './familias.page3.scss'
+    './familias.page3.scss',
+    './familias.page4.scss'
   ],
   standalone: false,
 })
