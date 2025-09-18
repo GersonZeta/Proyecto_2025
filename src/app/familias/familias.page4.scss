@@ -1,5 +1,4 @@
 :host ::ng-deep {
-  /* --- Export overlay --- */
   .export-overlay {
     position: fixed;
     inset: 0;
@@ -65,7 +64,6 @@
     background-color: #a03030;
   }
 
-  /* --- Error overlay --- */
   .error-overlay {
     position: fixed;
     inset: 0;
@@ -99,7 +97,6 @@
   .error-message {
     margin: 0 0 1rem;
     color: #000;
-    text-align: center;
   }
 
   .btn-ok {
@@ -118,23 +115,5 @@
 
   .btn-ok:hover {
     background-color: #a03030;
-  }
-
-  /* pequeñas mejoras responsivas */
-  @media (min-width: 480px) {
-    .export-box,
-    .error-box {
-      max-width: 420px;
-      padding: 2.4rem 1.2rem;
-    }
-
-    .btn-ok {
-      width: 28%;
-    }
-
-    .export-buttons button {
-      padding: 0.75rem 0;
-      font-size: 1.05rem;
-    }
   }
 }
