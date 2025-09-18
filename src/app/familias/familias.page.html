@@ -252,10 +252,23 @@
   </div>
 </div>
 
-<div class="error-overlay" *ngIf="mostrarErrorCampos">
-  <div class="error-box">
-    <h2 class="error-title">Error</h2>
-    <p class="error-message">Ingresa un nombre para buscar.</p>
-    <button class="btn-ok" (click)="cerrarErrorCampos()">OK</button>
+<!-- Coloca esto justo AFTER de </ion-content> (fuera del scrolling) -->
+<!-- Alerta: campo vacío / pedir nombre -->
+<div class="error-overlay error-overlay--center" *ngIf="mostrarErrorCampos" role="alertdialog" aria-modal="true" aria-labelledby="err-title-1" aria-describedby="err-desc-1">
+  <div class="error-box" role="document">
+    <h2 id="err-title-1" class="error-title">Atención</h2>
+    <p id="err-desc-1" class="error-message">Ingresa un nombre para buscar.</p>
+    <ion-button class="btn-ok" fill="solid" (click)="cerrarErrorCampos()" aria-label="Cerrar alerta">OK</ion-button>
   </div>
 </div>
+
+<!-- Coloca esto justo AFTER de </ion-content> (fuera del scrolling) -->
+<!-- Alerta: familia/docente no encontrada -->
+<div class="error-overlay error-overlay--center error-overlay--notfound" *ngIf="mostrarErrorDocenteNoEncontrado" role="alertdialog" aria-modal="true" aria-labelledby="err-title-2" aria-describedby="err-desc-2">
+  <div class="error-box" role="document">
+    <h2 id="err-title-2" class="error-title">No encontrado</h2>
+    <p id="err-desc-2" class="error-message">Familia no encontrada.</p>
+    <ion-button class="btn-ok" fill="solid" (click)="cerrarErrorDocenteNoEncontrado()" aria-label="Cerrar alerta">OK</ion-button>
+  </div>
+</div>
+
