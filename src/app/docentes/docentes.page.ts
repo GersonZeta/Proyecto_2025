@@ -486,7 +486,7 @@ actualizarDocente(): void {
   }
 
   const payload: any = {
-    idDocente: this.docente.idDocente, // 🔹 clave para que el backend actualice en lugar de insertar
+    idDocente: this.docente.idDocente, // 🔹 clave necesaria
     DNIDocente: this.docente.DNIDocente,
     NombreDocente: this.docente.NombreDocente,
     Email: this.docente.Email,
@@ -500,9 +500,10 @@ actualizarDocente(): void {
   this.http.put<{ ok: boolean }>(`${this.baseUrl}`, payload, { params }).subscribe({
     next: (res) => {
       if (res.ok) {
-        // 🔹 Solo refresca la lista, no crear ni resetear todo
-        this.cargarDocentes();
+        this.cargarDocentes(); // 🔹 refresca tabla
         this.mostrarAlerta('Éxito', 'Datos actualizados correctamente.');
+        this.resetForm(); // 🧹 limpia todas las casillas después de actualizar
+        this.datosCargados = false; // opcional: evita botones activos
       } else {
         this.mostrarAlerta('Error', 'No fue posible actualizar el docente.');
       }
@@ -513,6 +514,7 @@ actualizarDocente(): void {
     }
   });
 }
+
 
   registrarDocente(): void {
     this.validarEmail();
