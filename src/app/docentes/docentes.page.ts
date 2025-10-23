@@ -469,38 +469,50 @@ buscarPorId(d: DocenteView | (DocenteView & { index: number })): void {
     this.emailInvalid = !!this.docente.Email && !this.emailPattern.test(this.docente.Email);
   }
 
-  actualizarDocente(): void {
-    this.validarEmail();
+actualizarDocente(): void {
+  this.validarEmail();
 
-    if (!this.docente.NombreDocente.trim() ||
-        !this.docente.DNIDocente.trim() ||
-        !this.docente.Email.trim() ||
-        this.emailInvalid) {
-      this.mostrarErrorCampos = true;
-      return;
-    }
-
-    const payload: any = {
-      DNIDocente: this.docente.DNIDocente,
-      NombreDocente: this.docente.NombreDocente,
-      Email: this.docente.Email,
-      Telefono: this.docente.Telefono,
-      GradoSeccionLabora: this.docente.GradoSeccionLabora,
-      idEstudiante: this.docente.idEstudiante || []
-    };
-
-    const params = new HttpParams().set('action', 'actualizar');
-
-    this.http.put(`${this.baseUrl}`, payload, { params }).subscribe({
-      next: () => {
-        this.cargarAsignadosGlobal();
-        this.resetForm();
-        this.cargarDocentes();
-        this.mostrarAlerta('Éxito', 'Datos actualizados.');
-      },
-      error: () => this.mostrarAlerta('Error', 'No fue posible actualizar')
-    });
+  if (!this.docente.NombreDocente.trim() ||
+      !this.docente.DNIDocente.trim() ||
+      !this.docente.Email.trim() ||
+      this.emailInvalid) {
+    this.mostrarErrorCampos = true;
+    return;
   }
+
+  if (!this.docente.idDocente) {
+    this.mostrarAlerta('Error', 'No hay docente seleccionado para actualizar.');
+    return;
+  }
+
+  const payload: any = {
+    idDocente: this.docente.idDocente, // 🔹 clave para que el backend actualice en lugar de insertar
+    DNIDocente: this.docente.DNIDocente,
+    NombreDocente: this.docente.NombreDocente,
+    Email: this.docente.Email,
+    Telefono: this.docente.Telefono,
+    GradoSeccionLabora: this.docente.GradoSeccionLabora,
+    idEstudiante: this.docente.idEstudiante || []
+  };
+
+  const params = new HttpParams().set('action', 'actualizar');
+
+  this.http.put<{ ok: boolean }>(`${this.baseUrl}`, payload, { params }).subscribe({
+    next: (res) => {
+      if (res.ok) {
+        // 🔹 Solo refresca la lista, no crear ni resetear todo
+        this.cargarDocentes();
+        this.mostrarAlerta('Éxito', 'Datos actualizados correctamente.');
+      } else {
+        this.mostrarAlerta('Error', 'No fue posible actualizar el docente.');
+      }
+    },
+    error: (err) => {
+      console.error('Error actualizando docente:', err);
+      this.mostrarAlerta('Error', 'Ocurrió un error al actualizar.');
+    }
+  });
+}
 
   registrarDocente(): void {
     this.validarEmail();
