@@ -80,14 +80,14 @@
 
 /* 3ª columna: nombre apoderado */
 .tabla-familias ion-row > ion-col:nth-child(3) {
-  flex: 0 0 420px !important;
-  max-width: 420px !important;
+  flex: 0 0 330px !important;
+  max-width: 330px !important;
 }
 
 /* 4ª columna: DNI */
 .tabla-familias ion-row > ion-col:nth-child(4) {
-  flex: 0 0 95px !important;
-  max-width: 95px !important;
+  flex: 0 0 125px !important;
+  max-width: 125px !important;
 }
 
 /* 5ª columna: direccion*/
@@ -98,8 +98,8 @@
 
 /* 6ª columna: Telefono */
 .tabla-familias ion-row > ion-col:nth-child(6) {
-  flex: 0 0 95px !important;
-  max-width: 95px !important;
+  flex: 0 0 145px !important;
+  max-width: 145px !important;
 }
 
 /* 7ª columna: Ocupacion */
