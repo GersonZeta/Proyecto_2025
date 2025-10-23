@@ -224,7 +224,7 @@ private cargarAsignadosGlobal(): void {
 buscarDocente(): void {
   const raw = this.nombreBusqueda.trim();
   if (!raw) {
-    this.mostrarErrorCampos = true;  // 🔹 Mensaje: "Completa todos los campos requeridos"
+    this.mostrarErrorCampos = true; // "Completa todos los campos requeridos"
     return;
   }
 
@@ -233,26 +233,22 @@ buscarDocente(): void {
       .normalize('NFD')
       .replace(/[\u0300-\u036f]/g, '')
       .toLowerCase();
+
   const normalizedRaw = normalize(raw);
 
-  // Filtrar todos los docentes cuyo nombre contenga la búsqueda
+  // 🔹 Buscar coincidencias parciales (nombre o apellido)
   const matches = this.docentes.filter(d =>
     normalize(d.NombreDocente).includes(normalizedRaw)
   );
 
   if (!matches.length) {
-    this.mostrarErrorDocenteNoEncontrado = true; // 🔹 Mensaje: "Docente no encontrado, vuelve a intentar"
+    this.mostrarErrorDocenteNoEncontrado = true; // "Docente no encontrado, vuelve a intentar"
     return;
   }
 
-  // Filtrar coincidencias exactas
-  const exactMatches = matches.filter(
-    d => normalize(d.NombreDocente) === normalizedRaw
-  );
-
-  // Agrupar por DNIDocente para saber si son realmente distintos docentes
+  // 🔹 Agrupar por DNI (cada docente puede tener varios estudiantes)
   const mapByDNI = new Map<string, DocenteView[]>();
-  exactMatches.forEach(d => {
+  matches.forEach(d => {
     const dni = (d.DNIDocente || '').toString().trim();
     if (!mapByDNI.has(dni)) mapByDNI.set(dni, []);
     mapByDNI.get(dni)!.push({
@@ -268,7 +264,7 @@ buscarDocente(): void {
     });
   });
 
-  // Si solo hay un docente exacto (mismo DNI), seleccionamos automáticamente todos sus estudiantes
+  // 🔹 Si solo hay un docente (mismo DNI), seleccionarlo automáticamente
   if (mapByDNI.size === 1) {
     const estudiantes = Array.from(mapByDNI.values())[0];
     const estudiantesIds = estudiantes.map(e => e.idEstudiante);
@@ -282,27 +278,24 @@ buscarDocente(): void {
       GradoSeccionLabora: d.GradoSeccionLabora,
       idEstudiante: estudiantesIds
     };
-    this.asignados = this.allAsignados.filter(
-      id => !estudiantesIds.includes(id)
-    );
+    this.asignados = this.allAsignados.filter(id => !estudiantesIds.includes(id));
     this.onEstudiantesChange();
     this.updateAvailableStudents();
     this.allStudents = [];
     this.filteredStudents = [];
     this.docentesFiltrados = estudiantes; // Mostrar todos sus estudiantes
     this.datosCargados = true;
-    this.buscandoDocente = false; // NO pedir elección
+    this.buscandoDocente = false; // No pedir elección
     return;
   }
 
-  // Si hay varios DNIs diferentes con el mismo nombre: mostrar todos los estudiantes agrupados por docente
+  // 🔹 Si hay varios docentes distintos (por DNI), mostrar todos para elegir
   const allStudents: DocenteView[] = [];
   mapByDNI.forEach(arr => allStudents.push(...arr));
   this.docentesFiltrados = allStudents;
   this.datosCargados = true;
-  this.buscandoDocente = true; // Solo aquí pedimos elegir, porque son docentes distintos
+  this.buscandoDocente = true; // Pedir selección manual
 }
-
 
 
 
