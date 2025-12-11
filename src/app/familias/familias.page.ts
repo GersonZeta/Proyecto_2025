@@ -420,8 +420,8 @@ if (!res?.ok) {
           this.hoverActivo = true;
         },
 error: () => {
-  this.errorMessage = 'Familia no encontrada.'; // 👈 mismo mensaje corto
-  this.mostrarErrorCampos = true;               // 👈 activa el overlay custom
+  this.errorMessage = 'Familia no encontrada.';
+  this.mostrarErrorCampos = true;
 }
       });
   }

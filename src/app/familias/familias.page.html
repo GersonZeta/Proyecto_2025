@@ -180,7 +180,6 @@
   </ion-list>
 </ion-content>
 
-<!-- Modal de Estudiantes -->
 <ion-modal
   [isOpen]="showStudentsModal"
   backdropDismiss="true"
@@ -240,7 +239,6 @@
   </ng-template>
 </ion-modal>
 
-<!-- Export Overlay -->
 <div class="export-overlay" *ngIf="mostrarAlertaExportar">
   <div class="export-box">
     <h2 class="export-title">Exportar como</h2>
@@ -252,7 +250,6 @@
   </div>
 </div>
 
-<!-- Overlay de error -->
 <div class="error-overlay" *ngIf="mostrarErrorCampos" role="dialog" aria-modal="true" aria-labelledby="errorTitle" (click)="cerrarErrorCampos()">
   <div class="error-box" (click)="$event.stopPropagation()" tabindex="0" role="document">
     <h2 id="errorTitle" class="error-title">Error</h2>

@@ -54,7 +54,7 @@ interface EstudianteLocal {
   ],
   standalone: false,
 })
-export class EstudiantesPage implements AfterViewInit, OnDestroy {
+export class EstudiantesPage implements OnDestroy {
   private baseUrl = environment.apiUrl + '/estudiantes';
   idIE!: number;
   nombreBusqueda = '';
@@ -78,27 +78,27 @@ export class EstudiantesPage implements AfterViewInit, OnDestroy {
     private zone: NgZone
   ) {}
 
-  ngAfterViewInit() {
-    this.resizeListener = () =>
-      this.zone.runOutsideAngular(() => this.fixZoom());
-    window.addEventListener('resize', this.resizeListener);
-    this.fixZoom();
-  }
+  // ngAfterViewInit() {
+  //   this.resizeListener = () =>
+  //     this.zone.runOutsideAngular(() => this.fixZoom());
+  //   window.addEventListener('resize', this.resizeListener);
+  //   this.fixZoom();
+  // }
 
   ngOnDestroy() {
     window.removeEventListener('resize', this.resizeListener);
   }
 
-  private fixZoom() {
-    const container = document.getElementById('zoom-fix');
-    if (!container) return;
-    const zoomFactor = window.outerWidth / window.innerWidth;
-    const scale = 1 / zoomFactor;
-    (container.style as any).transformOrigin = '0 0';
-    (container.style as any).transform = `scale(${scale})`;
-    (container.style as any).width = `${zoomFactor * 100}%`;
-    (container.style as any).height = `${zoomFactor * 100}%`;
-  }
+  // private fixZoom() {
+  //   const container = document.getElementById('zoom-fix');
+  //   if (!container) return;
+  //   const zoomFactor = window.outerWidth / window.innerWidth;
+  //   const scale = 1 / zoomFactor;
+  //   (container.style as any).transformOrigin = '0 0';
+  //   (container.style as any).transform = `scale(${scale})`;
+  //   (container.style as any).width = `${zoomFactor * 100}%`;
+  //   (container.style as any).height = `${zoomFactor * 100}%`;
+  // }
 
   ionViewWillEnter(): void {
     this.hoverActivo = false;
