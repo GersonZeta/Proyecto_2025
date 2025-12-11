@@ -97,8 +97,8 @@
 
 /* 2ª columna: Apellido y Nombres */
 .tabla-estudiantes ion-row > ion-col:nth-child(2) {
-  flex: 0 0 420px !important;
-  min-width: 420px !important;
+  flex: 0 0 340px !important;
+  min-width: 340px !important;
 }
 
 /* 3ª columna: Fecha Nac. */
@@ -109,8 +109,8 @@
 
 /* 4ª columna: Edad */
 .tabla-estudiantes ion-row > ion-col:nth-child(4) {
-  flex: 0 0 70px !important;
-  max-width: 70px !important;
+  flex: 0 0 130px !important;
+  max-width: 130px !important;
 }
 
 /* 5ª columna: DNI */
